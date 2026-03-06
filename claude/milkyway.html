@@ -160,7 +160,15 @@
     color: #8899bb; cursor: pointer; font-family: inherit; transition: all 0.2s;
   }
   .tour-btn:hover { background: rgba(80,110,160,0.5); color: #bbccee; }
-  .tour-btn.primary { background: rgba(70,100,160,0.5); color: #aaccff; }
+  .tour-btn.primary { color: #aaffaa; border-color: rgba(80,200,80,0.6); background: rgba(40,120,40,0.4); }
+  .tour-btn.primary:hover { background: rgba(60,160,60,0.5); color: #ccffcc; }
+  @keyframes flash-green {
+    0%, 100% { box-shadow: 0 0 4px rgba(80,220,80,0.2); }
+    50% { box-shadow: 0 0 18px rgba(80,255,80,0.7); border-color: rgba(80,255,80,0.9); }
+  }
+  .tour-btn.primary { animation: flash-green 1.8s ease-in-out infinite; }
+  .tour-btn.stop-btn { background: rgba(140,40,40,0.5); color: #ff8888; border-color: rgba(180,60,60,0.5); }
+  .tour-btn.stop-btn:hover { background: rgba(180,50,50,0.6); color: #ffaaaa; }
   #tour-progress {
     position: fixed; bottom: 0; left: 0; right: 0; height: 3px;
     background: rgba(40,50,70,0.4); z-index: 31; display: none; border-radius: 1px;
@@ -339,9 +347,10 @@
       <div class="help-row"><span class="help-key">Scroll</span><span class="help-desc">Zoom in / out (two-finger up/down or mouse wheel)</span></div>
       <div class="help-row"><span class="help-key" style="font-size:9px">Swipe L/R</span><span class="help-desc">Strafe horizontally (two-finger left/right)</span></div>
       <div class="help-row"><span class="help-key">Drag</span><span class="help-desc">Look around (click + drag)</span></div>
-      <div class="help-row"><span class="help-key">W / S</span><span class="help-desc">Orbit: tilt up / down (elevation)</span></div>
+      <div class="help-row"><span class="help-key">W / S</span><span class="help-desc">Move up / down (relative to view)</span></div>
       <div class="help-row"><span class="help-key">A / D</span><span class="help-desc">Orbit: rotate left / right</span></div>
-      <div class="help-row"><span class="help-key">&uarr; &darr; &larr; &rarr;</span><span class="help-desc">Same as WASD orbit controls</span></div>
+      <div class="help-row"><span class="help-key">&uarr; &darr;</span><span class="help-desc">Orbit: tilt up / down (elevation)</span></div>
+      <div class="help-row"><span class="help-key">&larr; &rarr;</span><span class="help-desc">Orbit: rotate left / right</span></div>
       <div class="help-row"><span class="help-key">Q / E</span><span class="help-desc">Move target up / down off the plane</span></div>
     </div>
 
@@ -402,7 +411,7 @@
   <div id="tour-controls">
     <button class="tour-btn" onclick="window._app.tour.prev()">Prev</button>
     <button class="tour-btn primary" onclick="window._app.tour.next()">Next</button>
-    <button class="tour-btn" onclick="window._app.tour.stop()">End Tour</button>
+    <button class="tour-btn stop-btn" onclick="window._app.tour.stop()">Stop</button>
   </div>
 </div>
 
@@ -965,16 +974,26 @@ class Navigator {
     this.yaw += (this.targetYaw - this.yaw) * 0.12;
     this.pitch += (this.targetPitch - this.pitch) * 0.12;
 
-    // W/S = orbit elevation (circle up/down around target)
     // A/D = orbit yaw (circle left/right around target)
-    // Q/E = move target up/down
-    if (this.keys['w']) this.targetPitch += this.orbitSpeed;
-    if (this.keys['s']) this.targetPitch -= this.orbitSpeed;
     if (this.keys['a']) this.targetYaw += this.orbitSpeed;
     if (this.keys['d']) this.targetYaw -= this.orbitSpeed;
     this.targetPitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, this.targetPitch));
 
     const speed = this.moveSpeed * (this.distance * 0.02 + 0.01);
+
+    // W/S = move target up/down relative to current camera perspective
+    if (this.keys['w'] || this.keys['s']) {
+      // Camera's local up vector based on current orientation
+      const up = new THREE.Vector3(
+        -Math.sin(this.pitch) * Math.sin(this.yaw),
+        Math.cos(this.pitch),
+        -Math.sin(this.pitch) * Math.cos(this.yaw)
+      ).normalize();
+      const dir = this.keys['w'] ? 1 : -1;
+      this.target.addScaledVector(up, speed * dir);
+    }
+
+    // Q/E = move target up/down (absolute Y)
     if (this.keys['q'] || this.keys['e']) {
       this.target.y += (this.keys['q'] ? speed : -speed);
     }
@@ -1618,61 +1637,62 @@ class Tour {
         name: "Welcome, Navigator",
         narration: "This is the Milky Way Browser — an interactive 3D map of our galaxy. Let's learn how to fly. You're currently at Sol, our Sun. The yellow dot with the pulsing ring.",
         target: () => this.app.galaxy.sunPosition.toThree(),
-        distance: 8, pitch: -0.2, duration: 8000
+        distance: 5, pitch: -0.15, duration: 10000
       },
       {
         name: "Look Around — Drag",
         narration: "Click and drag anywhere to rotate your view. Try it now! You're orbiting around your current target point. The camera always looks at the center of your view.",
         target: () => this.app.galaxy.sunPosition.toThree(),
-        distance: 8, pitch: -0.2, duration: 8000
+        distance: 5, pitch: -0.15, duration: 10000
       },
       {
-        name: "Zoom — Pinch or Shift+Scroll",
-        narration: "Pinch-to-zoom on trackpad, or hold Shift and scroll with a mouse wheel. Watch the zoom level label change in the top-left. Try zooming out to see more of the galaxy!",
+        name: "Zoom — Scroll Up/Down",
+        narration: "Two-finger scroll up/down to zoom in and out. Watch the zoom level label change in the top-left. Try zooming out to see more of the galaxy!",
         target: () => this.app.galaxy.sunPosition.toThree(),
-        distance: 30, pitch: -0.4, duration: 8000
+        distance: 25, pitch: -0.35, duration: 10000
       },
       {
-        name: "Orbit Elevation — Scroll or Arrow Keys",
-        narration: "Two-finger scroll (no pinch) changes your elevation above the galactic plane. Or use the Up/Down arrow keys. Try looking at the galaxy from above! Left/Right arrows orbit horizontally.",
+        name: "Orbit — Arrow Keys",
+        narration: "Use Arrow Up/Down to tilt your view higher or lower. Arrow Left/Right rotates around your target. Try looking at the galaxy from above!",
         target: () => new THREE.Vector3(0, 0, 0),
-        distance: 60, pitch: -1.0, duration: 8000
+        distance: 60, pitch: -1.0, duration: 10000
       },
       {
-        name: "Move Through Space — WASD",
-        narration: "Press W to fly forward toward what you're looking at. S goes backward. A/D strafe left and right. Q/E move vertically. The speed scales with zoom — zoom in to move precisely.",
+        name: "Move — W/S and Swipe",
+        narration: "W moves up and S moves down relative to your current view. Two-finger swipe left/right strafes horizontally. A/D also orbit. Q/E move straight up/down. Speed scales with zoom.",
         target: () => new THREE.Vector3(0, 0, 0),
-        distance: 40, pitch: -0.5, duration: 8000
+        distance: 40, pitch: -0.5, duration: 11000
       },
       {
         name: "Click a Star",
         narration: "Click on any glowing star to see its info card — name, type, distance, and a portrait. If it hosts exoplanets, you'll see planet buttons to visit their surface sky views!",
         target: () => this.app.galaxy.sunPosition.toThree(),
-        distance: 5, pitch: -0.15, duration: 8000
+        distance: 3, pitch: -0.12, duration: 10000
       },
       {
-        name: "Recenter — Ctrl+Click",
-        narration: "Hold Ctrl (or Cmd on Mac) and click any empty space to make that point your new navigation center. Great for exploring a specific region. You'll see the sector designation flash up.",
+        name: "Recenter — Double-Click",
+        narration: "Double-click any empty space to make that point your new navigation center. Great for exploring a specific region. You'll see the sector designation flash up.",
         target: () => this.app.galaxy.sunPosition.toThree(),
-        distance: 15, pitch: -0.3, duration: 8000
+        distance: 12, pitch: -0.25, duration: 10000
       },
       {
-        name: "Sector Grid — Press L",
-        narration: "Press L to open the Layers panel. Turn on 'Sector Grid' to see the galactic coordinate system. Sectors are named Ring.Spoke — like '4.Cyren' for Sol's neighborhood. Your current sector shows in the top-left HUD.",
+        name: "Grids — Z and X Keys",
+        narration: "Press Z to toggle the Sector Grid — named spokes and numbered rings (Sol is in 4.Cyren). Press X for the Coordinate Grid with degree lines and distances. Press L to open the Layers panel for more controls.",
         target: () => new THREE.Vector3(0, 0, 0),
-        distance: 80, pitch: -1.1, duration: 9000
+        distance: 80, pitch: -1.1, duration: 11000,
+        showGrids: true
       },
       {
         name: "Filter Modes — 1, 2, 3",
         narration: "Press 1 for All stars, 2 for only planet-hosting stars, 3 for stars without known planets. The mode buttons at the top center also work. Great for finding worlds to visit.",
         target: () => this.app.galaxy.sunPosition.toThree(),
-        distance: 10, pitch: -0.2, duration: 7000
+        distance: 6, pitch: -0.15, duration: 10000
       },
       {
         name: "Quick Nav — H, G, T",
         narration: "Press H to fly home to Sol. Press G for the Galactic Center overview. Press T to start the Galaxy Tour — a narrated journey through the most interesting objects in the Milky Way. That's everything — go explore!",
         target: () => this.app.galaxy.sunPosition.toThree(),
-        distance: 8, pitch: -0.25, duration: 9000
+        distance: 5, pitch: -0.2, duration: 11000
       }
     ];
 
@@ -1681,114 +1701,198 @@ class Tour {
         name: "Welcome — Our Sun",
         narration: "You're standing at Sol, our home star. A G2V yellow dwarf, 26,000 light-years from the galactic center in the Orion Spur — a minor arm between Perseus and Sagittarius.",
         target: () => this.app.galaxy.sunPosition.toThree(),
-        distance: 8, pitch: -0.2, duration: 7000
+        distance: 1.2, pitch: -0.08, duration: 10000
+      },
+      {
+        name: "Sirius — Brightest in the Sky",
+        narration: "Just 8.6 light-years away — the brightest star in Earth's night sky. A hot A1V binary, actually twice as luminous as it looks. Its companion, Sirius B, is a white dwarf the size of Earth but as massive as the Sun.",
+        target: () => this._findStar("Sirius"),
+        distance: 0.5, pitch: -0.05, duration: 10000,
+        selectStar: "Sirius"
       },
       {
         name: "The Galactic Center",
         narration: "Sagittarius A* — a supermassive black hole of 4 million solar masses. Everything orbits this. The dense central bulge is packed with ancient stars, many older than our Sun.",
         target: () => new THREE.Vector3(0, 0, 0),
-        distance: 12, pitch: -0.15, duration: 7000
+        distance: 4, pitch: -0.08, duration: 10000
       },
       {
         name: "Rising Above the Plane",
         narration: "From above, the spiral structure reveals itself. Four major arms — Perseus, Sagittarius, Scutum-Centaurus, and Norma — wind outward from the central bar. Our galaxy is 105,000 light-years across.",
         target: () => new THREE.Vector3(0, 0, 0),
-        distance: 80, pitch: -1.2, duration: 8000
+        distance: 80, pitch: -1.2, duration: 11000
+      },
+      {
+        name: "Galactic Coordinates",
+        narration: "The galaxy is mapped with two grid systems. Press Z to toggle the Sector Grid — named spokes (Aurel, Cyren, Kael…) with numbered rings. Sol is in Sector 4.Cyren. Press X for the Coordinate Grid — degree lines and distance markers. Try them anytime!",
+        target: () => new THREE.Vector3(0, 0, 0),
+        distance: 85, pitch: -1.1, duration: 13000,
+        showGrids: true
       },
       {
         name: "The Perseus Arm",
         narration: "The Perseus Arm is one of two major arms, rich with young blue stars and active star-forming regions. It sweeps past our neighborhood on the far side.",
         target: () => new THREE.Vector3(-30, 0, 15),
-        distance: 25, pitch: -0.4, duration: 7000
+        distance: 12, pitch: -0.3, duration: 10000
       },
       {
         name: "Proxima Centauri — Our Nearest Neighbor",
         narration: "Just 4.24 light-years away — the closest star to our Sun. It hosts Proxima b, a rocky world in the habitable zone. Tidally locked, with a permanent red sunset on the terminator. Click the planet button to see its sky!",
         target: () => this._findStar("Proxima Centauri"),
-        distance: 3, pitch: -0.1, duration: 8000,
+        distance: 0.4, pitch: -0.05, duration: 11000,
         selectStar: "Proxima Centauri"
       },
       {
         name: "TRAPPIST-1 — Seven Worlds",
         narration: "39 light-years away. An ultra-cool red dwarf with SEVEN Earth-sized planets, three in the habitable zone. From TRAPPIST-1e, sister planets are visible as bright discs in a salmon-pink sky.",
         target: () => this._findStar("TRAPPIST-1"),
-        distance: 3, pitch: -0.1, duration: 8000,
+        distance: 0.4, pitch: -0.05, duration: 11000,
         selectStar: "TRAPPIST-1"
       },
       {
         name: "K2-18 b — A Possible Biosignature",
         narration: "In 2023, the James Webb Space Telescope detected dimethyl sulfide — a possible biosignature — in this sub-Neptune's atmosphere. A 'Hycean' world: hydrogen atmosphere over a global ocean. The most exciting exoplanet alive.",
         target: () => this._findStar("K2-18"),
-        distance: 3, pitch: -0.1, duration: 8000,
+        distance: 0.4, pitch: -0.05, duration: 11000,
         selectStar: "K2-18"
       },
       {
         name: "55 Cancri e — The Lava World",
         narration: "A super-Earth so close to its star that the year lasts 18 hours. Surface temperature: 2,000°C. The star fills a quarter of the sky. The ground itself glows. Possibly made partly of diamond.",
         target: () => this._findStar("55 Cancri"),
-        distance: 3, pitch: -0.1, duration: 7000,
+        distance: 0.4, pitch: -0.05, duration: 10000,
         selectStar: "55 Cancri"
+      },
+      {
+        name: "Polaris — The North Star",
+        narration: "433 light-years away. A Cepheid variable — a pulsating supergiant that has guided navigators for centuries. It's actually a triple star system, and it's slowly getting brighter. In 2,000 years it won't be the pole star anymore.",
+        target: () => this._findStar("Polaris"),
+        distance: 0.5, pitch: -0.05, duration: 10000,
+        selectStar: "Polaris"
       },
       {
         name: "Betelgeuse — The Shoulder of Orion",
         narration: "A red supergiant 700 light-years away, 700 times the radius of our Sun. It will explode as a supernova within the next 100,000 years. When it does, it'll be visible in daylight for weeks.",
         target: () => this._findStar("Betelgeuse"),
-        distance: 4, pitch: -0.1, duration: 7000,
+        distance: 0.6, pitch: -0.05, duration: 10000,
         selectStar: "Betelgeuse"
+      },
+      {
+        name: "Rigel — Blue Fire",
+        narration: "860 light-years away in the foot of Orion. A blue supergiant 120,000 times more luminous than the Sun. If it were as close as Sirius, it would cast shadows at night. It will also end as a supernova.",
+        target: () => this._findStar("Rigel"),
+        distance: 0.5, pitch: -0.05, duration: 10000,
+        selectStar: "Rigel"
+      },
+      {
+        name: "Tabby's Star — The Mystery",
+        narration: "1,470 light-years away. Its bizarre, irregular dimming sparked 'alien megastructure' headlines in 2015. The real answer? Probably clouds of dust — but nobody is completely sure. Still one of the strangest stars known.",
+        target: () => this._findStar("Tabby's Star"),
+        distance: 0.5, pitch: -0.05, duration: 11000,
+        selectStar: "Tabby's Star"
+      },
+      {
+        name: "Cygnus X-1 — The First Black Hole",
+        narration: "6,100 light-years away. The first object widely accepted as a black hole — 21 solar masses. It's devouring a blue supergiant companion, ripping off streams of gas that spiral in and glow in X-rays.",
+        target: () => this._findStar("Cygnus X-1"),
+        distance: 0.6, pitch: -0.05, duration: 11000,
+        selectStar: "Cygnus X-1"
       },
       {
         name: "Eta Carinae — Ticking Time Bomb",
         narration: "One of the most massive and luminous stars known. 7,500 light-years away. It's unstable and could go hypernova at any time — producing a gamma-ray burst. Fortunately, it's not pointed at us.",
         target: () => this._findStar("Eta Carinae"),
-        distance: 5, pitch: -0.15, duration: 7000,
+        distance: 0.6, pitch: -0.05, duration: 10000,
         selectStar: "Eta Carinae"
+      },
+      {
+        name: "Deneb — The Distant Beacon",
+        narration: "2,600 light-years away — one of the most distant stars visible to the naked eye. A white supergiant 200,000 times more luminous than the Sun. It appears as bright as nearby stars despite being hundreds of times farther away.",
+        target: () => this._findStar("Deneb"),
+        distance: 0.5, pitch: -0.05, duration: 10000,
+        selectStar: "Deneb"
       },
       {
         name: "The Pistol Star — Near the Heart",
         narration: "Deep in the galactic center, just 100 light-years from the supermassive black hole. One of the most luminous stars known — 1.6 million times our Sun. It ejected a nebula 4 light-years wide in a single eruption 6,000 years ago.",
         target: () => this._findStar("The Pistol Star"),
-        distance: 6, pitch: -0.2, duration: 7000,
+        distance: 0.8, pitch: -0.05, duration: 10000,
         selectStar: "The Pistol Star"
+      },
+      {
+        name: "The Fried Egg Nebula",
+        narration: "A yellow hypergiant 13,000 light-years away, 500,000 times more luminous than the Sun. It's shedding its outer layers in concentric shells — giving it the look of a sunny-side-up egg. One of only a handful of yellow hypergiants known.",
+        target: () => this._findStar("IRAS 17163-3907"),
+        distance: 0.7, pitch: -0.05, duration: 11000,
+        selectStar: "IRAS 17163-3907"
       },
       {
         name: "Pillars of Creation — Eagle Nebula",
         narration: "20,000 light-years away in the Sagittarius Arm. Columns of gas and dust where new stars are being born right now. The Hubble photo of these pillars is one of the most iconic images in astronomy.",
         target: () => this._findStar("Eagle Nebula (M16)"),
-        distance: 6, pitch: -0.15, duration: 7000,
+        distance: 0.8, pitch: -0.05, duration: 10000,
         selectStar: "Eagle Nebula (M16)"
+      },
+      {
+        name: "UY Scuti — Among the Largest",
+        narration: "5,100 light-years away. One of the largest known stars — if placed at the center of our solar system, its surface would engulf Jupiter's orbit. A red supergiant in its final stages, burning through its fuel at a staggering rate.",
+        target: () => this._findStar("UY Scuti"),
+        distance: 0.6, pitch: -0.05, duration: 10000,
+        selectStar: "UY Scuti"
       },
       {
         name: "Stephenson 2-18 — The Monster",
         narration: "On the far side of the galaxy in the Scutum-Centaurus Arm. Possibly the largest known star — 2,150 times the Sun's radius. If placed at the center of our solar system, its surface would reach past the orbit of Saturn.",
         target: () => this._findStar("Stephenson 2-18"),
-        distance: 6, pitch: -0.15, duration: 8000,
+        distance: 0.8, pitch: -0.05, duration: 11000,
         selectStar: "Stephenson 2-18"
       },
       {
         name: "SGR 1806-20 — The Magnetar",
         narration: "A neutron star with the most powerful magnetic field ever measured. In 2004 it released a gamma-ray flare so powerful it briefly ionized Earth's upper atmosphere — from 50,000 light-years away. The most energetic event ever observed in our galaxy.",
         target: () => this._findStar("SGR 1806-20"),
-        distance: 6, pitch: -0.15, duration: 8000,
+        distance: 0.8, pitch: -0.05, duration: 11000,
         selectStar: "SGR 1806-20"
+      },
+      {
+        name: "WR 102 — Hottest Known Star",
+        narration: "9,800 light-years away. Surface temperature: 210,000 Kelvin — 35 times hotter than our Sun. An oxygen-sequence Wolf-Rayet star, blasting away its outer layers in a furious stellar wind before it goes supernova.",
+        target: () => this._findStar("WR 102"),
+        distance: 0.6, pitch: -0.05, duration: 10000,
+        selectStar: "WR 102"
+      },
+      {
+        name: "The Brick — G0.253+0.016",
+        narration: "A dense molecular cloud near the galactic center that defies physics — it has enough gas to birth 100,000 stars, but almost no star formation is happening. Astronomers call it 'The Brick' because it just sits there, dark and stubborn.",
+        target: () => this._findStar("G0.253+0.016"),
+        distance: 0.7, pitch: -0.05, duration: 11000,
+        selectStar: "G0.253+0.016"
       },
       {
         name: "The Far Side — W49A",
         narration: "36,000 light-years from Sol, on the opposite side of the galaxy. The most luminous star-forming region in the entire Milky Way. We can only see it in radio waves — visible light is completely blocked by dust.",
         target: () => this._findStar("W49A"),
-        distance: 8, pitch: -0.2, duration: 7000,
+        distance: 1.0, pitch: -0.08, duration: 10000,
         selectStar: "W49A"
+      },
+      {
+        name: "The Runaway — SDSS J1229+1122",
+        narration: "A hypervelocity star ejected from the galactic center at 1,600 km/s — fast enough to escape the Milky Way entirely. Flung out by a close encounter with the supermassive black hole. It's already 40,000 light-years from home and will never return.",
+        target: () => this._findStar("SDSS J1229+1122"),
+        distance: 0.8, pitch: -0.05, duration: 11000,
+        selectStar: "SDSS J1229+1122"
       },
       {
         name: "The Full Galaxy",
         narration: "100–400 billion stars. At least as many planets. Thousands of confirmed exoplanets so far, with billions more waiting. This is just one galaxy among two trillion in the observable universe. And here we are.",
         target: () => new THREE.Vector3(0, 0, 0),
-        distance: 100, pitch: -0.8, duration: 9000
+        distance: 100, pitch: -0.8, duration: 12000
       },
       {
         name: "Home",
         narration: "Back to Sol. A small yellow star in a quiet arm. Eight planets. One with liquid water, an atmosphere, and seven billion curious souls building things like this to help them understand where they are.",
         target: () => this.app.galaxy.sunPosition.toThree(),
-        distance: 6, pitch: -0.25, duration: 8000
+        distance: 0.8, pitch: -0.1, duration: 11000
       }
     ];
   }
@@ -1800,6 +1904,21 @@ class Tour {
 
   _findStarObj(name) {
     return this.app.galaxy.stars.find(s => s.name === name) || null;
+  }
+
+  _setGrids(on) {
+    // Toggle both sector and coord grids for the tour grid step
+    const toggle = (layerKey, cbId) => {
+      const objs = this.app.galaxy.layers[layerKey] || [];
+      const cb = document.getElementById(cbId);
+      for (const obj of objs) {
+        obj.visible = on;
+        if (obj.isGroup) obj.traverse(c => { c.visible = on; });
+      }
+      if (cb) cb.checked = on;
+    };
+    toggle('sectors', 'layer-sectors');
+    toggle('coordgrid', 'layer-coordgrid');
   }
 
   start(mode) {
@@ -1816,6 +1935,7 @@ class Tour {
   stop() {
     this.running = false;
     clearTimeout(this.autoTimer);
+    this._setGrids(false); // clean up grids if the grid step was showing
     document.getElementById('tour-bar').classList.remove('active');
     document.getElementById('tour-progress').classList.remove('active');
     document.getElementById('tour-start-btn').classList.remove('hidden');
@@ -1860,6 +1980,9 @@ class Tour {
         this.app._showStarInfo(starObj);
       }
     }
+
+    // Show/hide grids for the grid showcase step
+    this._setGrids(!!stop.showGrids);
 
     // Auto-advance
     this.autoTimer = setTimeout(() => this.next(), stop.duration);
