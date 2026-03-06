@@ -145,14 +145,14 @@
   #tour-bar {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
     background: rgba(6,10,20,0.92); border-top: 1px solid rgba(80,120,180,0.2);
-    padding: 16px 24px; display: none; backdrop-filter: blur(10px);
+    padding: 20px 32px; display: none; backdrop-filter: blur(10px);
     transition: opacity 0.4s;
   }
   #tour-bar.active { display: flex; align-items: center; gap: 16px; }
   #tour-narration {
-    flex: 1; font-size: 14px; color: #99aabb; line-height: 1.5;
+    flex: 1; font-size: 28px; color: #99aabb; line-height: 1.45;
   }
-  #tour-narration .tour-stop-name { color: #aaccff; font-weight: 500; font-size: 15px; display: block; margin-bottom: 3px; }
+  #tour-narration .tour-stop-name { color: #aaccff; font-weight: 500; font-size: 32px; display: block; margin-bottom: 6px; }
   #tour-controls { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
   .tour-btn {
     padding: 6px 14px; font-size: 12px; background: rgba(60,80,120,0.4);
@@ -162,7 +162,7 @@
   .tour-btn:hover { background: rgba(80,110,160,0.5); color: #bbccee; }
   .tour-btn.primary { background: rgba(70,100,160,0.5); color: #aaccff; }
   #tour-progress {
-    position: fixed; bottom: 68px; left: 24px; right: 24px; height: 2px;
+    position: fixed; bottom: 0; left: 0; right: 0; height: 3px;
     background: rgba(40,50,70,0.4); z-index: 31; display: none; border-radius: 1px;
   }
   #tour-progress.active { display: block; }
@@ -319,13 +319,14 @@
   <div class="layer-row"><input type="checkbox" id="layer-notable" checked data-layer="notable"><label for="layer-notable">Notable Stars</label></div>
   <div class="layer-row"><input type="checkbox" id="layer-sun" checked data-layer="sun"><label for="layer-sun">Sol (Sun)</label></div>
   <div class="layer-row"><input type="checkbox" id="layer-plane" checked data-layer="plane"><label for="layer-plane">Galactic Plane</label></div>
-  <div class="layer-row"><input type="checkbox" id="layer-sectors" data-layer="sectors"><label for="layer-sectors">Sector Grid</label></div>
+  <div class="layer-row"><input type="checkbox" id="layer-sectors" checked data-layer="sectors"><label for="layer-sectors">Sector Grid (Z)</label></div>
+  <div class="layer-row"><input type="checkbox" id="layer-coordgrid" data-layer="coordgrid"><label for="layer-coordgrid">Coord Grid (X)</label></div>
 </div>
 
 <div id="help-btn" class="pulsing" title="Help &amp; Controls (?)">?</div>
 
 <div id="controls">
-  <div>Ctrl+Click : Recenter</div>
+  <div>Double-Click : Recenter</div>
 </div>
 
 <div id="help-overlay">
@@ -335,38 +336,35 @@
 
     <div class="help-section">
       <h3>Navigation</h3>
-      <div class="help-row"><span class="help-key">Scroll</span><span class="help-desc">Zoom in / out</span></div>
+      <div class="help-row"><span class="help-key">Scroll</span><span class="help-desc">Zoom in / out (two-finger up/down or mouse wheel)</span></div>
+      <div class="help-row"><span class="help-key" style="font-size:9px">Swipe L/R</span><span class="help-desc">Strafe horizontally (two-finger left/right)</span></div>
       <div class="help-row"><span class="help-key">Drag</span><span class="help-desc">Look around (click + drag)</span></div>
-      <div class="help-row"><span class="help-key">&uarr; &darr;</span><span class="help-desc">Orbit: change elevation above/below galactic plane</span></div>
-      <div class="help-row"><span class="help-key">&larr; &rarr;</span><span class="help-desc">Orbit: rotate around the target</span></div>
-      <div class="help-row"><span class="help-key">W A S D</span><span class="help-desc">Pan: move the target point through the galaxy</span></div>
-      <div class="help-row"><span class="help-key">Q / E</span><span class="help-desc">Pan: move target up / down off the plane</span></div>
+      <div class="help-row"><span class="help-key">W / S</span><span class="help-desc">Orbit: tilt up / down (elevation)</span></div>
+      <div class="help-row"><span class="help-key">A / D</span><span class="help-desc">Orbit: rotate left / right</span></div>
+      <div class="help-row"><span class="help-key">&uarr; &darr; &larr; &rarr;</span><span class="help-desc">Same as WASD orbit controls</span></div>
+      <div class="help-row"><span class="help-key">Q / E</span><span class="help-desc">Move target up / down off the plane</span></div>
     </div>
 
     <div class="help-section">
       <h3>Shortcuts</h3>
       <div class="help-row"><span class="help-key">T</span><span class="help-desc">Start / stop guided tour</span></div>
       <div class="help-row"><span class="help-key">H</span><span class="help-desc">Fly home to Sol (our Sun)</span></div>
-      <div class="help-row"><span class="help-key">G</span><span class="help-desc">Fly to galactic center overview</span></div>
+      <div class="help-row"><span class="help-key">G</span><span class="help-desc">Galaxy overview — overhead, 50% visible</span></div>
       <div class="help-row"><span class="help-key">1</span><span class="help-desc">Mode: All (stars + planet hosts)</span></div>
       <div class="help-row"><span class="help-key">2</span><span class="help-desc">Mode: Planets only (exoplanet hosts)</span></div>
       <div class="help-row"><span class="help-key">3</span><span class="help-desc">Mode: Stars only (no planet hosts)</span></div>
       <div class="help-row"><span class="help-key">L</span><span class="help-desc">Toggle layer panel (inc. sector grid overlay)</span></div>
+      <div class="help-row"><span class="help-key">X</span><span class="help-desc">Toggle coordinate grid (lat/long lines)</span></div>
+      <div class="help-row"><span class="help-key">Z</span><span class="help-desc">Toggle sector grid (named sectors)</span></div>
       <div class="help-row"><span class="help-key">?</span><span class="help-desc">Toggle this help screen</span></div>
       <div class="help-row"><span class="help-key">ESC</span><span class="help-desc">Close overlays / end tour</span></div>
     </div>
 
-    <div class="help-section">
-      <h3>Trackpad</h3>
-      <div class="help-row"><span class="help-key">Swipe</span><span class="help-desc">Two-finger vertical = orbit elevation, horizontal = orbit yaw</span></div>
-      <div class="help-row"><span class="help-key">Pinch</span><span class="help-desc">Pinch-to-zoom in / out</span></div>
-      <div class="help-row"><span class="help-key" style="font-size:9px">Shift+Scroll</span><span class="help-desc">Alternative zoom (mouse wheel)</span></div>
-    </div>
 
     <div class="help-section">
       <h3>Interaction</h3>
       <div class="help-row"><span class="help-key">Click</span><span class="help-desc">Select a star — see info + portrait panel</span></div>
-      <div class="help-row"><span class="help-key" style="font-size:9px">Ctrl+Click</span><span class="help-desc">Re-center navigation on that point in space</span></div>
+      <div class="help-row"><span class="help-key" style="font-size:9px">Dbl-Click</span><span class="help-desc">Re-center navigation on that point in space</span></div>
       <div class="help-row"><span class="help-key" style="font-size:10px">Planet btn</span><span class="help-desc">Open surface sky view from that planet</span></div>
     </div>
 
@@ -378,6 +376,10 @@
       </div>
     </div>
 
+    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
+      <button class="tour-btn primary" id="help-tutorial-btn" style="pointer-events:auto;">How to Use This</button>
+      <button class="tour-btn" id="help-galaxy-tour-btn" style="pointer-events:auto;">Galaxy Tour</button>
+    </div>
     <div class="help-footer">Press ? or click &times; to close</div>
   </div>
 </div>
@@ -392,7 +394,7 @@
   <div id="sky-hint">ESC to return to galaxy · Drag to look around</div>
 </div>
 
-<button id="tour-start-btn" onclick="window._app && window._app.tour.start()">Take the Tour</button>
+<button id="tour-start-btn" onclick="window._app && window._app.tour.start('galaxy')">Take the Tour</button>
 
 <div id="tour-progress"><div id="tour-progress-fill" style="width:0%"></div></div>
 <div id="tour-bar">
@@ -556,7 +558,8 @@ const GALAXY_DATA = {
     { id: "quadrant", label: "Quadrant View",       minDist: 30, maxDist: 80,  starsVisible: "arms" },
     { id: "sector",   label: "Sector View",         minDist: 8,  maxDist: 30,  starsVisible: "clusters" },
     { id: "local",    label: "Local Neighborhood",   minDist: 1,  maxDist: 8,   starsVisible: "individual" },
-    { id: "stellar",  label: "Stellar View",         minDist: 0.01, maxDist: 1, starsVisible: "detail" }
+    { id: "stellar",  label: "Stellar View",         minDist: 0.05, maxDist: 1, starsVisible: "detail" },
+    { id: "surface",  label: "Approach",             minDist: 0.001, maxDist: 0.05, starsVisible: "surface" }
   ]
 };
 
@@ -848,7 +851,7 @@ class Navigator {
     this.targetPitch = this.pitch;
     this.distance = 90; // from look target
     this.target = new THREE.Vector3(0, 0, 0);
-    this.minDist = 0.05;
+    this.minDist = 0.005;
     this.maxDist = 180;
     this.keys = {};
     this.dragging = false;
@@ -876,15 +879,12 @@ class Navigator {
       this.targetPitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, this.targetPitch));
       this.lastMouse = { x: e.clientX, y: e.clientY };
     });
-    // Bind wheel on window so overlays/HUD elements can't swallow it
-    //
     // Scroll behavior:
-    //   Plain scroll (two-finger swipe) → orbit elevation (up/down) + orbit yaw (left/right)
-    //   Pinch-to-zoom (ctrlKey on macOS)  → zoom in/out
-    //   Shift + scroll                    → zoom in/out (mouse wheel alternative)
+    //   Two-finger up/down (or mouse wheel) → zoom in/out
+    //   Two-finger left/right               → strafe horizontally
+    //   Pinch (ctrlKey on macOS)            → zoom in/out
     //
     window.addEventListener('wheel', e => {
-      // Don't interact if overlays are active
       if (document.getElementById('sky-view').classList.contains('active')) return;
       if (document.getElementById('help-overlay').classList.contains('active')) return;
 
@@ -898,22 +898,18 @@ class Navigator {
 
       if (Math.abs(dy) < 0.01 && Math.abs(dx) < 0.01) return;
 
-      // Pinch-to-zoom (macOS sends ctrlKey:true for pinch gestures)
-      // or Shift+scroll = zoom
-      if (e.ctrlKey || e.shiftKey) {
+      // Vertical scroll (up/down) = zoom
+      if (Math.abs(dy) > 0.01) {
         const clamped = Math.max(-150, Math.min(150, dy));
         const factor = 1 + clamped * 0.0012;
         this.smoothZoom = Math.max(this.minDist, Math.min(this.maxDist, this.smoothZoom * factor));
-      } else {
-        // Plain scroll → orbital camera movement
-        // Vertical scroll = change elevation above/below galactic plane
-        const pitchDelta = dy * 0.0008;
-        this.targetPitch -= pitchDelta;
-        this.targetPitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, this.targetPitch));
+      }
 
-        // Horizontal scroll = orbit horizontally
-        const yawDelta = dx * 0.0008;
-        this.targetYaw -= yawDelta;
+      // Horizontal scroll (left/right) = strafe target horizontally
+      if (Math.abs(dx) > 0.01) {
+        const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
+        const speed = dx * 0.0005 * (this.distance * 0.3 + 0.1);
+        this.target.addScaledVector(right, speed);
       }
     }, { passive: false });
     window.addEventListener('keydown', e => {
@@ -969,24 +965,16 @@ class Navigator {
     this.yaw += (this.targetYaw - this.yaw) * 0.12;
     this.pitch += (this.targetPitch - this.pitch) * 0.12;
 
-    // WASD movement — W/S move toward/away from what you're looking at
-    // (the vector from camera to target, which respects pitch)
+    // W/S = orbit elevation (circle up/down around target)
+    // A/D = orbit yaw (circle left/right around target)
+    // Q/E = move target up/down
+    if (this.keys['w']) this.targetPitch += this.orbitSpeed;
+    if (this.keys['s']) this.targetPitch -= this.orbitSpeed;
+    if (this.keys['a']) this.targetYaw += this.orbitSpeed;
+    if (this.keys['d']) this.targetYaw -= this.orbitSpeed;
+    this.targetPitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, this.targetPitch));
+
     const speed = this.moveSpeed * (this.distance * 0.02 + 0.01);
-
-    // Forward = direction from camera toward the target (includes pitch)
-    const forward = new THREE.Vector3(
-      -Math.cos(this.pitch) * Math.sin(this.yaw),
-      -Math.sin(this.pitch),
-      -Math.cos(this.pitch) * Math.cos(this.yaw)
-    ).normalize();
-
-    // Right = perpendicular to forward on the horizontal plane
-    const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
-
-    if (this.keys['w']) this.target.addScaledVector(forward, speed);
-    if (this.keys['s']) this.target.addScaledVector(forward, -speed);
-    if (this.keys['a']) this.target.addScaledVector(right, -speed);
-    if (this.keys['d']) this.target.addScaledVector(right, speed);
     if (this.keys['q'] || this.keys['e']) {
       this.target.y += (this.keys['q'] ? speed : -speed);
     }
@@ -1129,9 +1117,13 @@ class Galaxy {
       this.clickableObjects.push(mesh);
     }
 
-    // Sector overlay
+    // Sector overlay (named grid)
     this.layers.sectors = [];
     this._addSectorOverlay();
+
+    // Coordinate grid (simple gray lat/long lines, toggled with X)
+    this.layers.coordgrid = [];
+    this._addCoordGrid();
 
     // Sun marker
     this._addSun();
@@ -1208,7 +1200,7 @@ class Galaxy {
     // Rings: numbered 0–9 from core outward (each ~5.5 kly wide)
     // Spokes: 12 angular sectors, 30° each, named with phonetic designators
     //
-    // Sector designation: "Ring.Spoke"  e.g. "5.Kael" = Sol's neighborhood
+    // Sector designation: "Ring.Spoke"  e.g. "4.Cyren" = Sol's neighborhood
     // Bridge callout: "Sector 7-Braxis, the Homgrad-Zordon parsec"
 
     // --- 12 angular spoke names ---
@@ -1313,40 +1305,12 @@ class Galaxy {
       group.add(makeLabel(spoke.name, x, z, 3.5, 'rgba(140,180,230,0.5)', true));
     }
 
-    // === Key sector intersection labels ===
-    const labeledSectors = [
-      { ring: 0, spoke: 0,  text: 'CORE\n0.Aurel' },
-      { ring: 5, spoke: 9,  text: 'SOL\n5.Kael' },
-      { ring: 3, spoke: 3,  text: '3.Dorne' },
-      { ring: 7, spoke: 1,  text: '7.Braxis' },
-      { ring: 2, spoke: 6,  text: '2.Grynn' },
-      { ring: 6, spoke: 4,  text: '6.Errai' },
-      { ring: 8, spoke: 7,  text: '8.Halar' },
-      { ring: 4, spoke: 10, text: '4.Lorath' },
-      { ring: 9, spoke: 5,  text: '9.Fael' },
-      { ring: 7, spoke: 11, text: '7.Maren' },
-      { ring: 3, spoke: 8,  text: '3.Ixen' },
-      { ring: 6, spoke: 2,  text: '6.Cyren' },
-    ];
-
-    for (const ls of labeledSectors) {
-      const r = (ls.ring + 0.5) * ringWidth_ly * scale;
-      const a = this.sectorSpokes[ls.spoke].angle + Math.PI/12; // center of wedge
-      const x = Math.cos(a) * r;
-      const z = Math.sin(a) * r;
-      const isSol = ls.text.includes('SOL');
-      const col = isSol ? 'rgba(200,190,100,0.5)' : 'rgba(90,120,160,0.3)';
-      const sz = isSol ? 3.5 : 2.8;
-      group.add(makeLabel(ls.text, x, z, sz, col, isSol));
-    }
-
-    // Start hidden — user toggles on via Layers panel
-    group.visible = false;
+    // Visible by default
     this.layers.sectors.push(group);
     this.scene.add(group);
   }
 
-  /** Convert a 3D position to sector designation string, e.g. "5.Kael" */
+  /** Convert a 3D position to sector designation string, e.g. "4.Cyren" */
   getSectorDesignation(pos) {
     const x = pos.x || 0, z = pos.z || 0;
     const scale = this.data.meta.scale;
@@ -1357,6 +1321,99 @@ class Galaxy {
     const spokeIdx = Math.floor(angle / (Math.PI / 6)) % 12;
     const spoke = this.sectorSpokes[spokeIdx];
     return `${ring}.${spoke.name}`;
+  }
+
+  _addCoordGrid() {
+    const group = new THREE.Group();
+    group.userData.layerName = 'coordgrid';
+    const outerR = 55; // galaxy edge in scene units
+
+    // Concentric rings every ~5 scene units (~5000 ly)
+    for (let r = 5; r <= outerR; r += 5) {
+      const segments = 128;
+      const pts = [];
+      for (let i = 0; i <= segments; i++) {
+        const a = (i / segments) * Math.PI * 2;
+        pts.push(new THREE.Vector3(Math.cos(a) * r, 0.005, Math.sin(a) * r));
+      }
+      const geom = new THREE.BufferGeometry().setFromPoints(pts);
+      const line = new THREE.Line(geom, new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: (r % 10 === 0) ? 0.8 : 0.4,
+        depthWrite: false
+      }));
+      group.add(line);
+    }
+
+    // Radial lines every 30° (12 spokes)
+    for (let d = 0; d < 360; d += 30) {
+      const a = d * Math.PI / 180;
+      const pts = [
+        new THREE.Vector3(0, 0.005, 0),
+        new THREE.Vector3(Math.cos(a) * outerR, 0.005, Math.sin(a) * outerR)
+      ];
+      const geom = new THREE.BufferGeometry().setFromPoints(pts);
+      const line = new THREE.Line(geom, new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: (d % 90 === 0) ? 0.9 : 0.5,
+        depthWrite: false
+      }));
+      group.add(line);
+    }
+
+    // Degree labels at outer edge
+    for (let d = 0; d < 360; d += 30) {
+      const a = d * Math.PI / 180;
+      const r = outerR + 1.5;
+      const canvas = document.createElement('canvas');
+      canvas.width = 128; canvas.height = 48;
+      const ctx = canvas.getContext('2d');
+      ctx.font = 'bold 34px monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.lineWidth = 3;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.strokeText(d + '°', 64, 24);
+      ctx.fillText(d + '°', 64, 24);
+      const tex = new THREE.CanvasTexture(canvas);
+      const mat = new THREE.SpriteMaterial({
+        map: tex, transparent: true, depthWrite: false, depthTest: false,
+        sizeAttenuation: true
+      });
+      const sprite = new THREE.Sprite(mat);
+      sprite.position.set(Math.cos(a) * r, 0.1, Math.sin(a) * r);
+      sprite.scale.set(3, 1.1, 1);
+      group.add(sprite);
+    }
+
+    // Distance labels along 0° spoke
+    for (let r = 10; r <= 50; r += 10) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 192; canvas.height = 48;
+      const ctx = canvas.getContext('2d');
+      ctx.font = 'bold 30px monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.lineWidth = 3;
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      const label = r + 'k ly';
+      ctx.strokeText(label, 96, 24);
+      ctx.fillText(label, 96, 24);
+      const tex = new THREE.CanvasTexture(canvas);
+      const mat = new THREE.SpriteMaterial({
+        map: tex, transparent: true, depthWrite: false, depthTest: false,
+        sizeAttenuation: true
+      });
+      const sprite = new THREE.Sprite(mat);
+      sprite.position.set(r + 1.5, 0.1, -0.8);
+      sprite.scale.set(4, 1, 1);
+      group.add(sprite);
+    }
+
+    // Start hidden — toggle with X key
+    group.visible = false;
+    this.layers.coordgrid.push(group);
+    this.scene.add(group);
   }
 
   _addPlaneHint() {
@@ -1554,6 +1611,70 @@ class Tour {
     this.running = false;
     this.currentStop = -1;
     this.autoTimer = null;
+    this.activeStops = null; // which stop list is currently running
+
+    this.tutorialStops = [
+      {
+        name: "Welcome, Navigator",
+        narration: "This is the Milky Way Browser — an interactive 3D map of our galaxy. Let's learn how to fly. You're currently at Sol, our Sun. The yellow dot with the pulsing ring.",
+        target: () => this.app.galaxy.sunPosition.toThree(),
+        distance: 8, pitch: -0.2, duration: 8000
+      },
+      {
+        name: "Look Around — Drag",
+        narration: "Click and drag anywhere to rotate your view. Try it now! You're orbiting around your current target point. The camera always looks at the center of your view.",
+        target: () => this.app.galaxy.sunPosition.toThree(),
+        distance: 8, pitch: -0.2, duration: 8000
+      },
+      {
+        name: "Zoom — Pinch or Shift+Scroll",
+        narration: "Pinch-to-zoom on trackpad, or hold Shift and scroll with a mouse wheel. Watch the zoom level label change in the top-left. Try zooming out to see more of the galaxy!",
+        target: () => this.app.galaxy.sunPosition.toThree(),
+        distance: 30, pitch: -0.4, duration: 8000
+      },
+      {
+        name: "Orbit Elevation — Scroll or Arrow Keys",
+        narration: "Two-finger scroll (no pinch) changes your elevation above the galactic plane. Or use the Up/Down arrow keys. Try looking at the galaxy from above! Left/Right arrows orbit horizontally.",
+        target: () => new THREE.Vector3(0, 0, 0),
+        distance: 60, pitch: -1.0, duration: 8000
+      },
+      {
+        name: "Move Through Space — WASD",
+        narration: "Press W to fly forward toward what you're looking at. S goes backward. A/D strafe left and right. Q/E move vertically. The speed scales with zoom — zoom in to move precisely.",
+        target: () => new THREE.Vector3(0, 0, 0),
+        distance: 40, pitch: -0.5, duration: 8000
+      },
+      {
+        name: "Click a Star",
+        narration: "Click on any glowing star to see its info card — name, type, distance, and a portrait. If it hosts exoplanets, you'll see planet buttons to visit their surface sky views!",
+        target: () => this.app.galaxy.sunPosition.toThree(),
+        distance: 5, pitch: -0.15, duration: 8000
+      },
+      {
+        name: "Recenter — Ctrl+Click",
+        narration: "Hold Ctrl (or Cmd on Mac) and click any empty space to make that point your new navigation center. Great for exploring a specific region. You'll see the sector designation flash up.",
+        target: () => this.app.galaxy.sunPosition.toThree(),
+        distance: 15, pitch: -0.3, duration: 8000
+      },
+      {
+        name: "Sector Grid — Press L",
+        narration: "Press L to open the Layers panel. Turn on 'Sector Grid' to see the galactic coordinate system. Sectors are named Ring.Spoke — like '4.Cyren' for Sol's neighborhood. Your current sector shows in the top-left HUD.",
+        target: () => new THREE.Vector3(0, 0, 0),
+        distance: 80, pitch: -1.1, duration: 9000
+      },
+      {
+        name: "Filter Modes — 1, 2, 3",
+        narration: "Press 1 for All stars, 2 for only planet-hosting stars, 3 for stars without known planets. The mode buttons at the top center also work. Great for finding worlds to visit.",
+        target: () => this.app.galaxy.sunPosition.toThree(),
+        distance: 10, pitch: -0.2, duration: 7000
+      },
+      {
+        name: "Quick Nav — H, G, T",
+        narration: "Press H to fly home to Sol. Press G for the Galactic Center overview. Press T to start the Galaxy Tour — a narrated journey through the most interesting objects in the Milky Way. That's everything — go explore!",
+        target: () => this.app.galaxy.sunPosition.toThree(),
+        distance: 8, pitch: -0.25, duration: 9000
+      }
+    ];
 
     this.stops = [
       {
@@ -1681,7 +1802,9 @@ class Tour {
     return this.app.galaxy.stars.find(s => s.name === name) || null;
   }
 
-  start() {
+  start(mode) {
+    // mode: 'galaxy' (default) or 'tutorial'
+    this.activeStops = (mode === 'tutorial') ? this.tutorialStops : this.stops;
     this.running = true;
     this.currentStop = -1;
     document.getElementById('tour-start-btn').classList.add('hidden');
@@ -1701,7 +1824,7 @@ class Tour {
   next() {
     if (!this.running) return;
     this.currentStop++;
-    if (this.currentStop >= this.stops.length) {
+    if (this.currentStop >= this.activeStops.length) {
       this.stop();
       return;
     }
@@ -1716,7 +1839,7 @@ class Tour {
 
   _goToStop(idx) {
     clearTimeout(this.autoTimer);
-    const stop = this.stops[idx];
+    const stop = this.activeStops[idx];
 
     // Fly camera
     const pos = stop.target();
@@ -1727,7 +1850,7 @@ class Tour {
     el.innerHTML = `<span class="tour-stop-name">${stop.name}</span>${stop.narration}`;
 
     // Progress bar
-    const pct = ((idx + 1) / this.stops.length) * 100;
+    const pct = ((idx + 1) / this.activeStops.length) * 100;
     document.getElementById('tour-progress-fill').style.width = pct + '%';
 
     // If this stop highlights a star, show its info panel
@@ -1755,7 +1878,7 @@ class App {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     document.body.appendChild(this.renderer.domElement);
 
-    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 600);
+    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.001, 600);
     this.galaxy = new Galaxy(GALAXY_DATA);
     this.scene = this.galaxy.build();
 
@@ -1838,6 +1961,33 @@ class App {
             const galX = (hitPoint.x / GALAXY_DATA.meta.scale).toFixed(0);
             const galZ = (hitPoint.z / GALAXY_DATA.meta.scale).toFixed(0);
             document.getElementById('si-detail').textContent = `Recentered · ${galX}, ${galZ} ly`;
+            el.classList.add('visible');
+            clearTimeout(this._infoTimer);
+            this._infoTimer = setTimeout(() => el.classList.remove('visible'), 2000);
+          }
+        }
+      }
+    });
+
+    // Double-click = recenter on that point
+    this.renderer.domElement.addEventListener('dblclick', e => {
+      const mx = (e.clientX / window.innerWidth) * 2 - 1;
+      const my = -(e.clientY / window.innerHeight) * 2 + 1;
+      this.raycaster.setFromCamera(new THREE.Vector2(mx, my), this.camera);
+      const ray = this.raycaster.ray;
+      if (Math.abs(ray.direction.y) > 0.0001) {
+        const t = -ray.origin.y / ray.direction.y;
+        if (t > 0) {
+          const hitPoint = ray.origin.clone().addScaledVector(ray.direction, t);
+          const r = Math.sqrt(hitPoint.x * hitPoint.x + hitPoint.z * hitPoint.z);
+          if (r < 60) {
+            this.nav.flyTo(hitPoint, this.nav.distance);
+            const el = document.getElementById('star-info');
+            const sectorName = this.galaxy.getSectorDesignation(hitPoint);
+            document.getElementById('si-name').textContent = `Sector ${sectorName}`;
+            const galX = (hitPoint.x / GALAXY_DATA.meta.scale).toFixed(0);
+            const galZ = (hitPoint.z / GALAXY_DATA.meta.scale).toFixed(0);
+            document.getElementById('si-detail').textContent = `Recentered \u00b7 ${galX}, ${galZ} ly`;
             el.classList.add('visible');
             clearTimeout(this._infoTimer);
             this._infoTimer = setTimeout(() => el.classList.remove('visible'), 2000);
@@ -1938,6 +2088,18 @@ class App {
       helpBtn.classList.remove('pulsing');
     });
 
+    // Tutorial & Galaxy tour buttons inside help overlay
+    document.getElementById('help-tutorial-btn').addEventListener('click', () => {
+      document.getElementById('help-overlay').classList.remove('active');
+      if (this.tour.running) this.tour.stop();
+      this.tour.start('tutorial');
+    });
+    document.getElementById('help-galaxy-tour-btn').addEventListener('click', () => {
+      document.getElementById('help-overlay').classList.remove('active');
+      if (this.tour.running) this.tour.stop();
+      this.tour.start('galaxy');
+    });
+
     // Keyboard shortcuts
     window.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
@@ -1960,7 +2122,29 @@ class App {
 
       const k = e.key.toLowerCase();
       if (k === 'h') this.nav.flyTo(this.galaxy.sunPosition.toThree(), 5);
-      if (k === 'g') this.nav.flyTo(new THREE.Vector3(0,0,0), 80);
+      if (k === 'g') this.nav.flyTo(new THREE.Vector3(0, 0, 0), 45); // 50% galaxy, keep current pitch
+      if (k === 'x') {
+        // Toggle coordinate grid
+        const objs = this.galaxy.layers.coordgrid || [];
+        const cb = document.getElementById('layer-coordgrid');
+        const nowVisible = objs.length > 0 && !objs[0].visible;
+        for (const obj of objs) {
+          obj.visible = nowVisible;
+          if (obj.isGroup) obj.traverse(c => { c.visible = nowVisible; });
+        }
+        if (cb) cb.checked = nowVisible;
+      }
+      if (k === 'z') {
+        // Toggle sector grid
+        const objs = this.galaxy.layers.sectors || [];
+        const cb = document.getElementById('layer-sectors');
+        const nowVisible = objs.length > 0 && !objs[0].visible;
+        for (const obj of objs) {
+          obj.visible = nowVisible;
+          if (obj.isGroup) obj.traverse(c => { c.visible = nowVisible; });
+        }
+        if (cb) cb.checked = nowVisible;
+      }
       if (k === 'l') {
         const panel = document.getElementById('layer-panel');
         const btn = document.getElementById('layer-toggle-btn');
@@ -1969,7 +2153,7 @@ class App {
       }
       if (k === 't') {
         if (this.tour.running) this.tour.stop();
-        else this.tour.start();
+        else this.tour.start('galaxy');
       }
 
       // Mode shortcuts: 1=all, 2=planets, 3=stars
@@ -2177,13 +2361,29 @@ class App {
     this._updateHUD();
     this.minimap.draw(this.nav.target, this.nav.distance, this.galaxy.sunPosition.toThree());
 
-    // Adjust point sizes based on zoom
-    const sizeFactor = Math.max(0.03, Math.min(1, this.nav.distance * 0.01));
-    this.scene.traverse(obj => {
-      if (obj.isPoints && obj.material) {
-        obj.material.size = 0.06 + sizeFactor * 0.12;
-      }
-    });
+    // Adjust point sizes based on zoom (cached refs, not traverse)
+    const dist = this.nav.distance;
+    const sizeFactor = Math.max(0.03, Math.min(1, dist * 0.01));
+    if (!this._pointsCache) {
+      this._pointsCache = [];
+      this.scene.traverse(obj => { if (obj.isPoints && obj.material) this._pointsCache.push(obj); });
+    }
+    for (const p of this._pointsCache) {
+      p.material.size = 0.06 + sizeFactor * 0.12;
+    }
+
+    // Scale notable star meshes by zoom — delayed shrink so stars stay clickable
+    let starScale;
+    if (dist > 60)      starScale = 1.0;    // galaxy view — full size
+    else if (dist > 25) starScale = 0.8;    // quadrant view
+    else if (dist > 8)  starScale = 0.5;    // sector view
+    else if (dist > 2)  starScale = 0.25;   // local neighborhood
+    else if (dist > 0.6) starScale = 0.1;   // stellar close-up
+    else if (dist > 0.15) starScale = 0.04; // extreme close
+    else                starScale = 0.015;  // practically on top of it
+    for (const mesh of this.galaxy.clickableObjects) {
+      mesh.scale.setScalar(starScale);
+    }
 
     // Pulse the Sun ring
     if (this.galaxy.sunMesh && this.galaxy.sunMesh.children.length > 1) {
