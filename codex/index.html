@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Codex Milky Way Lab</title>
+    <style>
+      :root {
+        --bg: #07111d;
+        --panel: rgba(8, 19, 32, 0.84);
+        --border: rgba(149, 221, 255, 0.2);
+        --text: #ecf5ff;
+        --muted: #9db7cb;
+        --accent: #9de4ff;
+        --accent-2: #ffd36f;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background:
+          radial-gradient(circle at top, rgba(56, 110, 168, 0.26), transparent 28%),
+          radial-gradient(circle at bottom left, rgba(255, 174, 81, 0.08), transparent 24%),
+          linear-gradient(180deg, #06101a 0%, #02070c 100%);
+      }
+      main {
+        width: min(1160px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0 42px;
+      }
+      h1 {
+        margin: 0;
+        max-width: 11ch;
+        line-height: 0.94;
+        font-size: clamp(2.4rem, 5vw, 5rem);
+      }
+      .lede {
+        max-width: 720px;
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 1.05rem;
+        margin: 18px 0 30px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+      }
+      article {
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 18px;
+        background: var(--panel);
+        backdrop-filter: blur(10px);
+      }
+      .tag {
+        margin: 0 0 8px;
+        color: var(--accent);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+      h2 { margin: 0 0 10px; font-size: 1.5rem; }
+      p { color: var(--muted); line-height: 1.5; }
+      ul { margin: 16px 0 0; padding-left: 18px; color: var(--muted); }
+      li + li { margin-top: 8px; }
+      a.button {
+        display: inline-block;
+        margin-top: 18px;
+        color: #04101b;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        text-decoration: none;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 11px 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="tag">Codex Preview Lab</p>
+      <h1>Milky Way browse variants</h1>
+      <p class="lede">
+        Three isolated versions, all under <code>codex/</code>. The goal is the same in each: make the zoom from lived-in sky to readable galaxy context actually make sense.
+      </p>
+      <section class="grid">
+        <article>
+          <p class="tag">V1</p>
+          <h2>Staged</h2>
+          <p>Baseline JSON-driven canvas version with discrete explanatory viewpoints.</p>
+          <ul>
+            <li>Fastest to evaluate</li>
+            <li>Most diagrammatic</li>
+            <li>Weakest sense of exploration</li>
+          </ul>
+          <a class="button" href="./versions/staged/">Open staged</a>
+        </article>
+        <article>
+          <p class="tag">V2</p>
+          <h2>Cinematic</h2>
+          <p>Scroll and autoplay drive a guided dissolve from immersive sky into local structure and then whole-galaxy abstraction.</p>
+          <ul>
+            <li>Best for “make it make sense”</li>
+            <li>Strongest storytelling</li>
+            <li>Less freeform browsing</li>
+          </ul>
+          <a class="button" href="./versions/cinematic/">Open cinematic</a>
+        </article>
+        <article>
+          <p class="tag">V3</p>
+          <h2>Explorer</h2>
+          <p>Hybrid version with semantic zoom stages, minimap, keyboard navigation, and landmark focus.</p>
+          <ul>
+            <li>Best interaction model</li>
+            <li>Still keeps explanatory stages</li>
+            <li>Most complex of the three</li>
+          </ul>
+          <a class="button" href="./versions/explorer/">Open explorer</a>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

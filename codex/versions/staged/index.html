@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Milky Way Browse | Staged</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hud">
+        <div>
+          <p class="eyebrow">Milky Way Browse / Staged</p>
+          <h1>First-person zoom from local sky to galactic context</h1>
+        </div>
+        <div class="hud-copy">
+          <p id="stage-title"></p>
+          <p id="stage-description"></p>
+        </div>
+      </header>
+      <main class="viewport-frame">
+        <canvas id="scene" width="1440" height="900" aria-label="Milky Way browse scene"></canvas>
+        <aside class="sidebar">
+          <section>
+            <p class="sidebar-label">View</p>
+            <div id="view-buttons" class="button-stack"></div>
+          </section>
+          <section>
+            <p class="sidebar-label">Landmarks</p>
+            <div id="landmarks" class="landmark-list"></div>
+          </section>
+          <section>
+            <p class="sidebar-label">Notes</p>
+            <ul class="notes-list">
+              <li>Baseline explanatory version.</li>
+              <li>Discrete stages over literal navigation.</li>
+              <li>JSON scene graph loaded from file.</li>
+            </ul>
+          </section>
+        </aside>
+      </main>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

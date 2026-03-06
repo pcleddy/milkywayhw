@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Milky Way Browse | Cinematic</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Milky Way Browse / Cinematic</p>
+          <h1>Guide the viewer from felt sky to readable galaxy</h1>
+        </div>
+        <div class="panel copy">
+          <p id="stage-kicker" class="stage-kicker"></p>
+          <p id="stage-title" class="stage-title"></p>
+          <p id="stage-description" class="stage-description"></p>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="viewport panel">
+          <canvas id="scene" width="1440" height="900"></canvas>
+          <div class="overlay-copy">
+            <p id="scale-label"></p>
+            <p id="story-label"></p>
+          </div>
+        </section>
+
+        <aside class="stack">
+          <section class="panel controls">
+            <p class="eyebrow">Sequence</p>
+            <input id="timeline" type="range" min="0" max="1000" value="0" />
+            <div class="button-row">
+              <button id="play-toggle" type="button">Pause Autoplay</button>
+              <button id="restart" type="button">Restart</button>
+            </div>
+            <div id="stage-buttons" class="stage-buttons"></div>
+          </section>
+
+          <section class="panel">
+            <p class="eyebrow">Intent</p>
+            <ul>
+              <li>Start with a first-person sky impression.</li>
+              <li>Let the Orion Spur appear before the full galaxy does.</li>
+              <li>End on an abstract model rather than fake literalism.</li>
+            </ul>
+          </section>
+        </aside>
+      </main>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

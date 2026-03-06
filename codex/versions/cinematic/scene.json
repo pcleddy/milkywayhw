@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "title": "Milky Way Browse Cinematic",
+    "description": "A guided, blended sequence from immersive local sky to abstract galaxy model."
+  },
+  "camera": {
+    "autoplaySpeed": 0.00005,
+    "starCount": 1200
+  },
+  "stages": [
+    {
+      "id": "sky",
+      "label": "01 Local Sky",
+      "title": "Begin with the sky as experience",
+      "description": "The Milky Way starts as a bright, dusty band overhead. This is not yet a map. It is the sensation that needs explaining.",
+      "story": "Dense light in the sky, no global context yet.",
+      "progress": 0.0,
+      "zoom": 1.45,
+      "pitch": -0.16,
+      "bandOpacity": 1.0,
+      "bandCurve": 1.2,
+      "armOpacity": 0.0,
+      "gridOpacity": 0.0,
+      "mapOpacity": 0.0,
+      "labelOpacity": 0.08,
+      "dustOpacity": 0.9,
+      "localHalo": 0.85,
+      "scaleLabel": "Immersive / first-person sky"
+    },
+    {
+      "id": "spur",
+      "label": "02 Orion Spur",
+      "title": "Then show where we sit in the disk",
+      "description": "The Orion Spur fades in before the whole galaxy does. That preserves the feeling of being embedded rather than instantly jumping to a god view.",
+      "story": "The Sun is one marker inside a minor arm segment.",
+      "progress": 0.42,
+      "zoom": 0.88,
+      "pitch": -0.06,
+      "bandOpacity": 0.72,
+      "bandCurve": 0.94,
+      "armOpacity": 0.36,
+      "gridOpacity": 0.18,
+      "mapOpacity": 0.34,
+      "labelOpacity": 0.72,
+      "dustOpacity": 0.44,
+      "localHalo": 0.56,
+      "scaleLabel": "Local / Orion Spur context"
+    },
+    {
+      "id": "galaxy",
+      "label": "03 Whole Galaxy",
+      "title": "End with an explicit abstraction",
+      "description": "The final view is a model, not a literal photo. Spiral arms, bulge, and our offset position become readable without pretending the scale is natural.",
+      "story": "Readable abstraction replaces lived-in sky.",
+      "progress": 1.0,
+      "zoom": 0.42,
+      "pitch": 0.0,
+      "bandOpacity": 0.1,
+      "bandCurve": 0.62,
+      "armOpacity": 0.96,
+      "gridOpacity": 0.5,
+      "mapOpacity": 1.0,
+      "labelOpacity": 1.0,
+      "dustOpacity": 0.1,
+      "localHalo": 0.2,
+      "scaleLabel": "Whole-galaxy abstract view"
+    }
+  ],
+  "landmarks": [
+    { "id": "core", "name": "Galactic Center", "x": 0.5, "y": 0.5, "body": "Dense central bulge and the direction of Sagittarius A*." },
+    { "id": "sun", "name": "Sun", "x": 0.63, "y": 0.58, "body": "Our position within the Orion Spur, far from the core." },
+    { "id": "orion", "name": "Orion Spur", "x": 0.59, "y": 0.55, "body": "A minor arm segment used as the bridge between personal sky and galaxy map." }
+  ],
+  "arms": [
+    { "id": "perseus", "color": "#9de4ff", "points": [[0.53,0.44],[0.62,0.35],[0.73,0.28],[0.85,0.3],[0.89,0.43],[0.86,0.58],[0.78,0.71],[0.64,0.8],[0.48,0.84],[0.31,0.8],[0.19,0.7],[0.13,0.56]] },
+    { "id": "scutum", "color": "#ffd36f", "points": [[0.48,0.46],[0.39,0.38],[0.29,0.31],[0.2,0.3],[0.15,0.38],[0.15,0.49],[0.2,0.63],[0.3,0.74],[0.44,0.81],[0.61,0.8],[0.75,0.72],[0.84,0.61]] },
+    { "id": "orion", "color": "#ff9b70", "points": [[0.57,0.55],[0.61,0.51],[0.67,0.47],[0.73,0.44],[0.78,0.43]] }
+  ]
+}

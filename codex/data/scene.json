@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "title": "Milky Way Browse Prototype",
+    "description": "A compact JSON scene graph for a first-person-to-galaxy browse experience.",
+    "units": "normalized"
+  },
+  "camera": {
+    "defaultTransitionMs": 2200,
+    "drift": 0.015,
+    "starCount": 950
+  },
+  "views": [
+    {
+      "id": "immersive",
+      "label": "01 Immersive Sky",
+      "title": "Inside the local sky",
+      "description": "Start in first person. The band of the Milky Way dominates the sky before labels or structure appear.",
+      "zoom": 1.35,
+      "bandOpacity": 0.95,
+      "bandThickness": 1.15,
+      "gridOpacity": 0.0,
+      "armOpacity": 0.0,
+      "landmarkOpacity": 0.18,
+      "nebulaOpacity": 0.75,
+      "sunPulse": 0.0,
+      "offsetX": -0.03,
+      "offsetY": 0.02
+    },
+    {
+      "id": "local",
+      "label": "02 Orion Spur",
+      "title": "Local structure comes into focus",
+      "description": "Zoom back enough to explain where the Sun sits within the Orion Spur while preserving a sense of being embedded in the disk.",
+      "zoom": 0.86,
+      "bandOpacity": 0.72,
+      "bandThickness": 0.86,
+      "gridOpacity": 0.2,
+      "armOpacity": 0.42,
+      "landmarkOpacity": 0.9,
+      "nebulaOpacity": 0.35,
+      "sunPulse": 0.75,
+      "offsetX": 0.06,
+      "offsetY": 0.01
+    },
+    {
+      "id": "galaxy",
+      "label": "03 Whole Galaxy",
+      "title": "Pull out to the galaxy model",
+      "description": "The final view is intentionally abstract. It compresses the Milky Way into a readable face-on diagram with only the most important anchors.",
+      "zoom": 0.42,
+      "bandOpacity": 0.12,
+      "bandThickness": 0.55,
+      "gridOpacity": 0.55,
+      "armOpacity": 0.95,
+      "landmarkOpacity": 1.0,
+      "nebulaOpacity": 0.16,
+      "sunPulse": 1.0,
+      "offsetX": 0.0,
+      "offsetY": 0.0
+    }
+  ],
+  "landmarks": [
+    {
+      "id": "sun",
+      "name": "Sun",
+      "kind": "star",
+      "x": 0.62,
+      "y": 0.58,
+      "description": "Home position in the Orion Spur, offset from the galactic center."
+    },
+    {
+      "id": "core",
+      "name": "Galactic Center",
+      "kind": "core",
+      "x": 0.5,
+      "y": 0.5,
+      "description": "Dense central bulge and the direction of Sagittarius A*."
+    },
+    {
+      "id": "orion",
+      "name": "Orion Spur",
+      "kind": "arm-segment",
+      "x": 0.59,
+      "y": 0.56,
+      "description": "Minor arm segment that contains the Sun and much of our local neighborhood."
+    }
+  ],
+  "arms": [
+    {
+      "id": "scutum-centaurus",
+      "name": "Scutum-Centaurus",
+      "color": "#ffd36f",
+      "points": [[0.49,0.46],[0.41,0.38],[0.31,0.31],[0.23,0.29],[0.17,0.36],[0.14,0.47],[0.17,0.6],[0.26,0.7],[0.4,0.78],[0.56,0.79],[0.7,0.73],[0.8,0.62]]
+    },
+    {
+      "id": "perseus",
+      "name": "Perseus",
+      "color": "#9de4ff",
+      "points": [[0.53,0.44],[0.61,0.35],[0.73,0.28],[0.84,0.29],[0.9,0.4],[0.89,0.55],[0.81,0.68],[0.69,0.77],[0.54,0.83],[0.37,0.82],[0.24,0.73],[0.15,0.59]]
+    },
+    {
+      "id": "orion-spur",
+      "name": "Orion Spur",
+      "color": "#ff8f70",
+      "points": [[0.57,0.54],[0.61,0.5],[0.66,0.46],[0.71,0.43],[0.77,0.42]]
+    }
+  ]
+}

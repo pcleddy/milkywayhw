@@ -1,0 +1,2207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Milky Way Browser</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; color: #ccc; }
+  canvas { display: block; }
+
+  #hud {
+    position: fixed; top: 20px; left: 20px; z-index: 10;
+    pointer-events: none; user-select: none;
+  }
+  #hud h1 { font-size: 14px; color: #7799cc; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+  #zoom-label { font-size: 22px; color: #fff; font-weight: 300; margin-bottom: 4px; }
+  #distance-label { font-size: 12px; color: #668; }
+  #coords { font-size: 11px; color: #556; margin-top: 4px; font-family: monospace; }
+
+  #star-info {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(100, 140, 220, 0.3);
+    border-radius: 8px; padding: 14px 24px; z-index: 10;
+    pointer-events: none; opacity: 0; transition: opacity 0.4s;
+    text-align: center; min-width: 260px;
+    backdrop-filter: blur(8px);
+  }
+  #star-info.visible { opacity: 1; }
+  #star-info .name { font-size: 18px; color: #aaccff; margin-bottom: 4px; }
+  #star-info .detail { font-size: 12px; color: #889; }
+
+  #controls {
+    position: fixed; bottom: 20px; right: 20px; z-index: 10;
+    font-size: 11px; color: #445; pointer-events: none;
+  }
+  #controls div { margin-bottom: 2px; }
+
+  /* Glowing help button */
+  #help-btn {
+    position: fixed; bottom: 20px; left: 20px; z-index: 15;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(20,60,30,0.8); border: 2px solid rgba(60,200,80,0.6);
+    color: #5eea75; font-size: 20px; font-weight: bold;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    transition: background 0.3s, border-color 0.3s;
+    box-shadow: 0 0 8px rgba(60,200,80,0.2);
+  }
+  #help-btn:hover {
+    background: rgba(30,80,40,0.9); border-color: rgba(80,230,100,0.8);
+    color: #88ff99;
+  }
+  #help-btn.pulsing {
+    animation: helpPulse 1.2s ease-in-out;
+    animation-iteration-count: 10;
+  }
+  @keyframes helpPulse {
+    0%   { box-shadow: 0 0 4px rgba(60,200,80,0.3);  border-color: rgba(60,200,80,0.4); }
+    50%  { box-shadow: 0 0 20px rgba(60,220,80,0.7), 0 0 40px rgba(60,200,80,0.2);
+           border-color: rgba(100,255,120,0.9); color: #aaffbb; }
+    100% { box-shadow: 0 0 4px rgba(60,200,80,0.3);  border-color: rgba(60,200,80,0.4); }
+  }
+
+  #zoom-bar {
+    position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+    width: 4px; height: 200px; background: rgba(50,60,80,0.4);
+    border-radius: 2px; z-index: 10; pointer-events: none;
+  }
+  #zoom-indicator {
+    width: 10px; height: 10px; background: #6688bb;
+    border-radius: 50%; position: absolute; left: -3px;
+    transition: top 0.3s; box-shadow: 0 0 8px rgba(100,140,220,0.5);
+  }
+
+  #minimap {
+    position: fixed; top: 20px; right: 20px; width: 120px; height: 120px;
+    border: 1px solid rgba(60,80,120,0.3); border-radius: 4px;
+    background: rgba(5,8,15,0.7); z-index: 10; pointer-events: none;
+  }
+  #minimap canvas { width: 100%; height: 100%; }
+
+  #photo-viewer {
+    position: fixed; bottom: 60px; right: 20px; width: 240px;
+    background: rgba(8, 12, 25, 0.95); border: 1px solid rgba(80, 120, 180, 0.3);
+    border-radius: 8px; z-index: 20; overflow: hidden;
+    opacity: 0; transform: translateY(10px);
+    transition: opacity 0.5s, transform 0.5s;
+    pointer-events: none;
+    backdrop-filter: blur(12px);
+  }
+  #photo-viewer.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  #photo-viewer canvas.pv-canvas {
+    width: 100%; height: 140px;
+    display: block;
+  }
+  #photo-viewer .pv-info {
+    padding: 10px 12px;
+  }
+  #photo-viewer .pv-name { font-size: 14px; color: #aaccff; margin-bottom: 4px; font-weight: 500; }
+  #photo-viewer .pv-type { font-size: 11px; color: #778; line-height: 1.4; }
+  #photo-viewer .pv-dist { font-size: 10px; color: #556; margin-top: 4px; font-family: monospace; }
+  #photo-viewer .pv-close {
+    position: absolute; top: 6px; right: 8px; cursor: pointer;
+    color: #667; font-size: 16px; pointer-events: auto;
+    background: rgba(0,0,0,0.6); border-radius: 50%;
+    width: 22px; height: 22px; display: flex; align-items: center;
+    justify-content: center; line-height: 1;
+  }
+  #photo-viewer .pv-close:hover { color: #ccc; }
+  #photo-viewer .pv-planets { margin-top: 6px; }
+  #photo-viewer .pv-planet-btn {
+    display: inline-block; padding: 3px 8px; margin: 2px 3px 2px 0;
+    background: rgba(60,80,120,0.4); border: 1px solid rgba(80,110,160,0.4);
+    border-radius: 4px; color: #8899bb; font-size: 10px; cursor: pointer;
+    pointer-events: auto; transition: background 0.2s;
+  }
+  #photo-viewer .pv-planet-btn:hover { background: rgba(80,110,160,0.5); color: #bbccee; }
+
+  #sky-view {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 50; background: #000; display: none;
+  }
+  #sky-view.active { display: block; }
+  #sky-view canvas { width: 100%; height: 100%; display: block; }
+  #sky-hud {
+    position: absolute; top: 20px; left: 20px; pointer-events: none;
+  }
+  #sky-hud .sky-title { font-size: 20px; color: #aaccff; font-weight: 300; margin-bottom: 4px; }
+  #sky-hud .sky-sub { font-size: 12px; color: #667; max-width: 500px; line-height: 1.5; }
+  #sky-close {
+    position: absolute; top: 20px; right: 24px; cursor: pointer;
+    color: #556; font-size: 28px; z-index: 51;
+    background: rgba(0,0,0,0.4); border-radius: 50%;
+    width: 36px; height: 36px; display: flex; align-items: center;
+    justify-content: center;
+  }
+  #sky-close:hover { color: #ccc; }
+  #sky-hint {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; color: #445; pointer-events: none;
+  }
+
+  /* Tour mode */
+  #tour-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+    background: rgba(6,10,20,0.92); border-top: 1px solid rgba(80,120,180,0.2);
+    padding: 16px 24px; display: none; backdrop-filter: blur(10px);
+    transition: opacity 0.4s;
+  }
+  #tour-bar.active { display: flex; align-items: center; gap: 16px; }
+  #tour-narration {
+    flex: 1; font-size: 14px; color: #99aabb; line-height: 1.5;
+  }
+  #tour-narration .tour-stop-name { color: #aaccff; font-weight: 500; font-size: 15px; display: block; margin-bottom: 3px; }
+  #tour-controls { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+  .tour-btn {
+    padding: 6px 14px; font-size: 12px; background: rgba(60,80,120,0.4);
+    border: 1px solid rgba(80,110,160,0.4); border-radius: 5px;
+    color: #8899bb; cursor: pointer; font-family: inherit; transition: all 0.2s;
+  }
+  .tour-btn:hover { background: rgba(80,110,160,0.5); color: #bbccee; }
+  .tour-btn.primary { background: rgba(70,100,160,0.5); color: #aaccff; }
+  #tour-progress {
+    position: fixed; bottom: 68px; left: 24px; right: 24px; height: 2px;
+    background: rgba(40,50,70,0.4); z-index: 31; display: none; border-radius: 1px;
+  }
+  #tour-progress.active { display: block; }
+  #tour-progress-fill {
+    height: 100%; background: rgba(100,150,220,0.6); border-radius: 1px;
+    transition: width 0.5s;
+  }
+  #tour-start-btn {
+    position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
+    z-index: 15; padding: 8px 20px; font-size: 12px;
+    background: rgba(50,70,110,0.5); border: 1px solid rgba(80,120,180,0.3);
+    border-radius: 6px; color: #7799bb; cursor: pointer;
+    font-family: inherit; backdrop-filter: blur(8px); transition: all 0.3s;
+    letter-spacing: 0.5px;
+  }
+  #tour-start-btn:hover { background: rgba(70,100,150,0.6); color: #aaccee; }
+  #tour-start-btn.hidden { display: none; }
+
+  /* Hover tooltip */
+  #hover-tip {
+    position: fixed; z-index: 25; pointer-events: none;
+    background: rgba(8,12,25,0.9); border: 1px solid rgba(80,120,180,0.3);
+    border-radius: 5px; padding: 5px 10px; font-size: 12px; color: #aaccff;
+    white-space: nowrap; opacity: 0; transition: opacity 0.15s;
+    backdrop-filter: blur(6px);
+  }
+  #hover-tip.visible { opacity: 1; }
+  #hover-tip .ht-type { font-size: 10px; color: #667; display: block; margin-top: 1px; }
+
+  /* Help overlay */
+  #help-overlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 100; background: rgba(3,5,12,0.88);
+    display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px);
+  }
+  #help-overlay.active { display: flex; }
+  #help-box {
+    background: rgba(12,18,35,0.95); border: 1px solid rgba(80,120,180,0.3);
+    border-radius: 12px; padding: 32px 40px; max-width: 520px; width: 90%;
+    position: relative;
+  }
+  #help-box h2 { font-size: 18px; color: #aaccff; margin-bottom: 16px; font-weight: 400; letter-spacing: 1px; }
+  .help-section { margin-bottom: 14px; }
+  .help-section h3 { font-size: 11px; color: #556; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+  .help-row { display: flex; align-items: center; margin-bottom: 4px; }
+  .help-key {
+    display: inline-block; min-width: 28px; padding: 2px 8px;
+    background: rgba(60,80,120,0.35); border: 1px solid rgba(80,110,160,0.4);
+    border-radius: 4px; color: #8899bb; font-size: 12px; font-family: monospace;
+    text-align: center; margin-right: 12px;
+  }
+  .help-desc { font-size: 13px; color: #889; }
+  #help-close {
+    position: absolute; top: 12px; right: 16px; cursor: pointer;
+    color: #556; font-size: 22px;
+  }
+  #help-close:hover { color: #ccc; }
+  .help-footer { margin-top: 16px; font-size: 10px; color: #334; text-align: center; }
+
+  /* Layer toggle panel */
+  #layer-panel {
+    position: fixed; top: 160px; right: 20px; z-index: 15;
+    background: rgba(8,12,25,0.85); border: 1px solid rgba(60,80,120,0.3);
+    border-radius: 8px; padding: 10px 14px; min-width: 140px;
+    backdrop-filter: blur(8px); display: none;
+  }
+  #layer-panel.active { display: block; }
+  #layer-panel h3 {
+    font-size: 10px; color: #556; text-transform: uppercase;
+    letter-spacing: 1.5px; margin-bottom: 8px;
+  }
+  .layer-row {
+    display: flex; align-items: center; margin-bottom: 5px; cursor: pointer;
+  }
+  .layer-row input[type="checkbox"] {
+    margin-right: 8px; accent-color: #6688bb; cursor: pointer;
+  }
+  .layer-row label {
+    font-size: 12px; color: #8899aa; cursor: pointer; user-select: none;
+  }
+  .layer-row:hover label { color: #aaccee; }
+  #layer-toggle-btn {
+    position: fixed; top: 160px; right: 20px; z-index: 14;
+    padding: 5px 10px; font-size: 11px; color: #556;
+    background: rgba(10,15,28,0.7); border: 1px solid rgba(60,80,120,0.3);
+    border-radius: 5px; cursor: pointer; font-family: inherit;
+    transition: all 0.2s; backdrop-filter: blur(6px);
+  }
+  #layer-toggle-btn:hover { color: #99aacc; background: rgba(60,80,120,0.3); }
+  #layer-toggle-btn.hidden { display: none; }
+
+  /* Mode switcher */
+  #mode-switcher {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 15; display: flex; gap: 2px;
+    background: rgba(10,15,28,0.7); border: 1px solid rgba(60,80,120,0.3);
+    border-radius: 6px; padding: 2px; backdrop-filter: blur(8px);
+  }
+  .mode-btn {
+    padding: 5px 14px; font-size: 11px; color: #556;
+    background: transparent; border: none; border-radius: 4px;
+    cursor: pointer; transition: all 0.2s; font-family: inherit;
+    letter-spacing: 0.5px;
+  }
+  .mode-btn:hover { color: #99aacc; background: rgba(60,80,120,0.2); }
+  .mode-btn.active { color: #aaccff; background: rgba(60,90,140,0.4); }
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <h1>Milky Way Browser</h1>
+  <div id="zoom-label">Galaxy View</div>
+  <div id="distance-label"></div>
+  <div id="coords"></div>
+  <div id="mode-label" style="font-size:10px; color:#446688; margin-top:4px; text-transform:uppercase; letter-spacing:1px;">All</div>
+</div>
+
+<div id="star-info">
+  <div class="name" id="si-name"></div>
+  <div class="detail" id="si-detail"></div>
+</div>
+
+<div id="zoom-bar"><div id="zoom-indicator"></div></div>
+
+<div id="minimap"><canvas id="minimap-canvas" width="120" height="120"></canvas></div>
+
+<div id="photo-viewer">
+  <span class="pv-close" onclick="document.getElementById('photo-viewer').classList.remove('visible')">&times;</span>
+  <canvas id="pv-canvas" class="pv-canvas" width="480" height="280"></canvas>
+  <div class="pv-info">
+    <div class="pv-name" id="pv-name"></div>
+    <div class="pv-type" id="pv-type"></div>
+    <div class="pv-dist" id="pv-dist"></div>
+  </div>
+</div>
+
+<div id="hover-tip"><span id="ht-name"></span><span class="ht-type" id="ht-type"></span></div>
+
+<div id="mode-switcher">
+  <button class="mode-btn active" data-mode="all">All</button>
+  <button class="mode-btn" data-mode="planets">Planets</button>
+  <button class="mode-btn" data-mode="stars">Stars</button>
+</div>
+
+<button id="layer-toggle-btn">Layers</button>
+<div id="layer-panel">
+  <h3>Layers</h3>
+  <div class="layer-row"><input type="checkbox" id="layer-background" checked data-layer="background"><label for="layer-background">Background</label></div>
+  <div class="layer-row"><input type="checkbox" id="layer-core" checked data-layer="core"><label for="layer-core">Core</label></div>
+  <div class="layer-row"><input type="checkbox" id="layer-arms" checked data-layer="arms"><label for="layer-arms">Spiral Arms</label></div>
+  <div class="layer-row"><input type="checkbox" id="layer-disk" checked data-layer="disk"><label for="layer-disk">Disk Stars</label></div>
+  <div class="layer-row"><input type="checkbox" id="layer-notable" checked data-layer="notable"><label for="layer-notable">Notable Stars</label></div>
+  <div class="layer-row"><input type="checkbox" id="layer-sun" checked data-layer="sun"><label for="layer-sun">Sol (Sun)</label></div>
+  <div class="layer-row"><input type="checkbox" id="layer-plane" checked data-layer="plane"><label for="layer-plane">Galactic Plane</label></div>
+  <div class="layer-row"><input type="checkbox" id="layer-sectors" data-layer="sectors"><label for="layer-sectors">Sector Grid</label></div>
+</div>
+
+<div id="help-btn" class="pulsing" title="Help &amp; Controls (?)">?</div>
+
+<div id="controls">
+  <div>Ctrl+Click : Recenter</div>
+</div>
+
+<div id="help-overlay">
+  <div id="help-box">
+    <span id="help-close">&times;</span>
+    <h2>Milky Way Browser</h2>
+
+    <div class="help-section">
+      <h3>Navigation</h3>
+      <div class="help-row"><span class="help-key">Scroll</span><span class="help-desc">Zoom in / out</span></div>
+      <div class="help-row"><span class="help-key">Drag</span><span class="help-desc">Look around (click + drag)</span></div>
+      <div class="help-row"><span class="help-key">&uarr; &darr;</span><span class="help-desc">Orbit: change elevation above/below galactic plane</span></div>
+      <div class="help-row"><span class="help-key">&larr; &rarr;</span><span class="help-desc">Orbit: rotate around the target</span></div>
+      <div class="help-row"><span class="help-key">W A S D</span><span class="help-desc">Pan: move the target point through the galaxy</span></div>
+      <div class="help-row"><span class="help-key">Q / E</span><span class="help-desc">Pan: move target up / down off the plane</span></div>
+    </div>
+
+    <div class="help-section">
+      <h3>Shortcuts</h3>
+      <div class="help-row"><span class="help-key">T</span><span class="help-desc">Start / stop guided tour</span></div>
+      <div class="help-row"><span class="help-key">H</span><span class="help-desc">Fly home to Sol (our Sun)</span></div>
+      <div class="help-row"><span class="help-key">G</span><span class="help-desc">Fly to galactic center overview</span></div>
+      <div class="help-row"><span class="help-key">1</span><span class="help-desc">Mode: All (stars + planet hosts)</span></div>
+      <div class="help-row"><span class="help-key">2</span><span class="help-desc">Mode: Planets only (exoplanet hosts)</span></div>
+      <div class="help-row"><span class="help-key">3</span><span class="help-desc">Mode: Stars only (no planet hosts)</span></div>
+      <div class="help-row"><span class="help-key">L</span><span class="help-desc">Toggle layer panel (inc. sector grid overlay)</span></div>
+      <div class="help-row"><span class="help-key">?</span><span class="help-desc">Toggle this help screen</span></div>
+      <div class="help-row"><span class="help-key">ESC</span><span class="help-desc">Close overlays / end tour</span></div>
+    </div>
+
+    <div class="help-section">
+      <h3>Trackpad</h3>
+      <div class="help-row"><span class="help-key">Swipe</span><span class="help-desc">Two-finger vertical = orbit elevation, horizontal = orbit yaw</span></div>
+      <div class="help-row"><span class="help-key">Pinch</span><span class="help-desc">Pinch-to-zoom in / out</span></div>
+      <div class="help-row"><span class="help-key" style="font-size:9px">Shift+Scroll</span><span class="help-desc">Alternative zoom (mouse wheel)</span></div>
+    </div>
+
+    <div class="help-section">
+      <h3>Interaction</h3>
+      <div class="help-row"><span class="help-key">Click</span><span class="help-desc">Select a star — see info + portrait panel</span></div>
+      <div class="help-row"><span class="help-key" style="font-size:9px">Ctrl+Click</span><span class="help-desc">Re-center navigation on that point in space</span></div>
+      <div class="help-row"><span class="help-key" style="font-size:10px">Planet btn</span><span class="help-desc">Open surface sky view from that planet</span></div>
+    </div>
+
+    <div class="help-section">
+      <h3>Zoom Levels</h3>
+      <div class="help-desc" style="line-height:1.6">
+        Galaxy View &rarr; Quadrant &rarr; Sector &rarr; Local Neighborhood &rarr; Stellar View<br>
+        HUD shows current level, distance, and galactic coordinates.
+      </div>
+    </div>
+
+    <div class="help-footer">Press ? or click &times; to close</div>
+  </div>
+</div>
+
+<div id="sky-view">
+  <canvas id="sky-canvas" width="1920" height="1080"></canvas>
+  <div id="sky-hud">
+    <div class="sky-title" id="sky-title"></div>
+    <div class="sky-sub" id="sky-sub"></div>
+  </div>
+  <div id="sky-close" onclick="document.getElementById('sky-view').classList.remove('active')">&times;</div>
+  <div id="sky-hint">ESC to return to galaxy · Drag to look around</div>
+</div>
+
+<button id="tour-start-btn" onclick="window._app && window._app.tour.start()">Take the Tour</button>
+
+<div id="tour-progress"><div id="tour-progress-fill" style="width:0%"></div></div>
+<div id="tour-bar">
+  <div id="tour-narration"></div>
+  <div id="tour-controls">
+    <button class="tour-btn" onclick="window._app.tour.prev()">Prev</button>
+    <button class="tour-btn primary" onclick="window._app.tour.next()">Next</button>
+    <button class="tour-btn" onclick="window._app.tour.stop()">End Tour</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+
+// ============================================================
+//  JSON DATA — Milky Way model
+// ============================================================
+
+const GALAXY_DATA = {
+  meta: {
+    name: "Milky Way",
+    type: "SBbc barred spiral",
+    diameter_ly: 105700,
+    thickness_ly: 2000,
+    num_stars_estimate: "100-400 billion",
+    unit: "light-year",
+    scale: 0.001  // 1 unit = 1000 ly
+  },
+  center: { x: 0, y: 0, z: 0 },
+  arms: [
+    { id: "perseus",       name: "Perseus Arm",          color: "#6688cc", angleOffset: 0,          spread: 0.35, starDensity: 1.0  },
+    { id: "sagittarius",   name: "Sagittarius Arm",      color: "#7799aa", angleOffset: Math.PI/2,   spread: 0.30, starDensity: 0.9  },
+    { id: "scutum",        name: "Scutum-Centaurus Arm", color: "#8888aa", angleOffset: Math.PI,     spread: 0.35, starDensity: 1.0  },
+    { id: "norma",         name: "Norma Arm",            color: "#7788aa", angleOffset: 3*Math.PI/2, spread: 0.30, starDensity: 0.85 }
+  ],
+  bar: {
+    length_ly: 27000,
+    width_ly: 8000,
+    angle_rad: 0.44  // ~25 degrees
+  },
+  sun: {
+    name: "Sol",
+    distance_from_center_ly: 26000,
+    angle_rad: 1.3,
+    arm: "orion_spur",
+    spectralType: "G2V"
+  },
+  notableStars: [
+    // --- Galactic landmarks ---
+    { name: "Sagittarius A*", type: "Supermassive Black Hole · 4M solar masses", x: 0, y: 0, z: 0, magnitude: -1, color: "#ffcc44", size: 3.5, distFromSun_ly: 26000 },
+    { name: "Betelgeuse",     type: "Red Supergiant M1-2 · ~700× solar radius",  dist: 26700, angle: 1.34, z: 0.02, color: "#ff6633", size: 2.2, distFromSun_ly: 700 },
+    { name: "Sirius",         type: "A1V Binary · Brightest star in night sky",   dist: 25991, angle: 1.29, z: 0.0, color: "#aaccff", size: 2.0, distFromSun_ly: 8.6 },
+    { name: "Rigel",          type: "B8Ia Blue Supergiant · 120k× solar luminosity", dist: 25130, angle: 1.32, z: -0.01, color: "#99bbff", size: 2.0, distFromSun_ly: 860 },
+    { name: "Deneb",          type: "A2Ia Supergiant · 200k× solar luminosity",   dist: 23500, angle: 1.25, z: 0.02, color: "#ddeeff", size: 1.8, distFromSun_ly: 2600 },
+    { name: "Eta Carinae",    type: "LBV Hypergiant · May explode any century",   dist: 18500, angle: 1.10, z: -0.01, color: "#ffaa55", size: 2.5, distFromSun_ly: 7500 },
+    { name: "Cygnus X-1",    type: "Stellar Black Hole · 21 solar masses",        dist: 19900, angle: 1.20, z: 0.01, color: "#8866cc", size: 2.0, distFromSun_ly: 6100 },
+    { name: "UY Scuti",      type: "Red Supergiant · One of largest known stars", dist: 20700, angle: 0.95, z: 0.0, color: "#ff4422", size: 2.8, distFromSun_ly: 5100 },
+    { name: "Polaris",        type: "F7Ib Cepheid · The North Star",              dist: 25567, angle: 1.31, z: 0.04, color: "#ffeedd", size: 1.6, distFromSun_ly: 433 },
+    { name: "Tabby's Star",  type: "F3V · Mysterious dimming, alien megastructure?", dist: 24540, angle: 1.24, z: 0.01, color: "#ddcc88", size: 1.4, distFromSun_ly: 1470 },
+
+    // --- Exoplanet hosts astronomers can't stop talking about ---
+    { name: "Proxima Centauri", type: "M5.5Ve Red Dwarf · Nearest star to Sol",   dist: 25996, angle: 1.300, z: 0.0, color: "#ff8866", size: 1.2, distFromSun_ly: 4.24,
+      planets: [
+        { name: "Proxima b", type: "Rocky · Habitable zone", mass: "1.07 Earth", period_days: 11.2, color: "#6688aa",
+          sky: { starColor: "#ff4422", starSize: 3.2, desc: "Huge dim red sun dominates sky. Tidally locked — permanent sunset on terminator. Frequent violent flares light the sky electric blue." }},
+        { name: "Proxima d", type: "Sub-Earth · Very close orbit", mass: "0.26 Earth", period_days: 5.1, color: "#887766",
+          sky: { starColor: "#ff4422", starSize: 5.0, desc: "Star fills much of the sky, blazing red. Surface baked by radiation. Sky a permanent deep crimson." }}
+      ]},
+    { name: "TRAPPIST-1", type: "M8V Ultra-cool Red Dwarf · 7 Earth-sized planets!", dist: 25961, angle: 1.298, z: 0.0, color: "#ff6644", size: 1.4, distFromSun_ly: 39,
+      planets: [
+        { name: "TRAPPIST-1e", type: "Rocky · Best habitable zone candidate", mass: "0.69 Earth", period_days: 6.1, color: "#5577aa",
+          sky: { starColor: "#ff3311", starSize: 4.0, desc: "Salmon-pink sky. Star appears 3× wider than our Sun but dimmer. Sister planets visible as bright discs — closer than our Moon. Perpetual sunset colors." }},
+        { name: "TRAPPIST-1f", type: "Rocky · Possible water world", mass: "0.68 Earth", period_days: 9.2, color: "#4466aa",
+          sky: { starColor: "#ff3311", starSize: 2.8, desc: "Deep orange twilight sky. Other TRAPPIST planets visible as bright dots. Possible ice sheets reflect salmon starlight." }},
+        { name: "TRAPPIST-1g", type: "Rocky · Largest in system", mass: "1.15 Earth", period_days: 12.4, color: "#556688",
+          sky: { starColor: "#ff3311", starSize: 2.2, desc: "Dim burgundy sky. Star looks like a large glowing ember. Inner planets occasionally transit as dark dots across the star." }}
+      ]},
+    { name: "Kepler-442", type: "K5V Orange Dwarf · Hosts one of best Earth analogs", dist: 24770, angle: 1.27, z: 0.01, color: "#ffaa66", size: 1.2, distFromSun_ly: 1206,
+      planets: [
+        { name: "Kepler-442b", type: "Super-Earth · 60% Earth similarity", mass: "2.3 Earth", period_days: 112.3, color: "#558866",
+          sky: { starColor: "#ffaa44", starSize: 1.4, desc: "Warm amber sky, slightly dimmer than Earth's. Orange-tinted sunsets last hours. If oceans exist, they'd shimmer gold." }}
+      ]},
+    { name: "TOI-700", type: "M2V Red Dwarf · Multiple habitable-zone planets", dist: 25899, angle: 1.295, z: 0.0, color: "#ff7755", size: 1.1, distFromSun_ly: 101.4,
+      planets: [
+        { name: "TOI-700 d", type: "Earth-sized · Habitable zone confirmed by TESS", mass: "1.07 Earth", period_days: 37.4, color: "#667799",
+          sky: { starColor: "#ff5533", starSize: 2.0, desc: "Ruddy peach sky. Star appears larger and redder than our Sun. Plants here might be black to absorb all available light." }},
+        { name: "TOI-700 e", type: "Earth-sized · Optimistic habitable zone", mass: "0.95 Earth", period_days: 28.4, color: "#778899",
+          sky: { starColor: "#ff5533", starSize: 2.5, desc: "Deep rose sky. Closer orbit means bigger star in sky. Tidal heating may drive volcanism, painting the horizon with volcanic haze." }}
+      ]},
+    { name: "Kepler-186", type: "M1V Red Dwarf · First Earth-size in HZ", dist: 25419, angle: 1.285, z: 0.01, color: "#ff7744", size: 1.1, distFromSun_ly: 582,
+      planets: [
+        { name: "Kepler-186f", type: "Earth-sized · Historic first HZ Earth-size find", mass: "~1.4 Earth", period_days: 129.9, color: "#557755",
+          sky: { starColor: "#ff5522", starSize: 1.2, desc: "Dim copper sky. Noon looks like Earth's sunset. Photography here would always be golden hour. Red dwarf flares occasionally streak the sky white." }}
+      ]},
+    { name: "K2-18", type: "M2.5V Red Dwarf · JWST detected possible biosignature!", dist: 25876, angle: 1.292, z: 0.0, color: "#ff6655", size: 1.3, distFromSun_ly: 124,
+      planets: [
+        { name: "K2-18 b", type: "Sub-Neptune · DMS biosignature? Hycean world?", mass: "8.6 Earth", period_days: 32.9, color: "#3355aa",
+          sky: { starColor: "#ff4433", starSize: 2.2, desc: "Looking up through a thick hydrogen atmosphere. Red star casts everything in amber. Clouds of water vapor stretch to the horizon. Possible ocean below. The sky JWST made famous." }}
+      ]},
+    { name: "55 Cancri", type: "G8V Sun-like · 5 known planets", dist: 25959, angle: 1.299, z: 0.0, color: "#ffdd88", size: 1.2, distFromSun_ly: 41,
+      planets: [
+        { name: "55 Cancri e", type: "Super-Earth · Lava world, possible diamond planet", mass: "8.6 Earth", period_days: 0.74, color: "#ff6633",
+          sky: { starColor: "#ffdd66", starSize: 25.0, desc: "Star fills a QUARTER of the sky. Surface is molten lava, 2000°C. Sky glows orange from heat radiation. The ground itself shines. Year lasts 18 hours." }}
+      ]},
+    { name: "HD 209458", type: "F9V Sun-like · First transit detection ever", dist: 25847, angle: 1.29, z: 0.01, color: "#ffeebb", size: 1.1, distFromSun_ly: 157,
+      planets: [
+        { name: "Osiris (HD 209458 b)", type: "Hot Jupiter · First exoplanet atmosphere detected", mass: "220 Earth", period_days: 3.5, color: "#cc9955",
+          sky: { starColor: "#ffeeaa", starSize: 8.0, desc: "Immense yellow-white star dominates the sky. Atmosphere is boiling away into space — a comet-like tail streams behind the planet. Winds at 7000 km/h. The planet that proved exoplanet atmospheres are real." }}
+      ]},
+
+    // ===== ACROSS THE GALAXY — far from Sol =====
+
+    // --- Galactic Core & Inner Bulge ---
+    { name: "The Pistol Star",    type: "Blue Hypergiant · One of most luminous known · 1.6M× solar luminosity", dist: 1200, angle: 0.3, z: 0.0, color: "#99ccff", size: 2.5, distFromSun_ly: 25000 },
+    { name: "Arches Cluster",     type: "Densest star cluster in the galaxy · ~150 massive O/B stars", dist: 800, angle: 0.15, z: 0.0, color: "#aabbdd", size: 2.2, distFromSun_ly: 25400 },
+    { name: "Quintuplet Cluster", type: "Massive cluster near galactic center · Home to Pistol Star", dist: 1000, angle: 0.25, z: 0.0, color: "#bbccdd", size: 2.0, distFromSun_ly: 25000 },
+    { name: "IRS 16",             type: "Cluster of hot stars · Orbiting just 1 ly from Sgr A*", dist: 50, angle: 0.5, z: 0.0, color: "#ddeeff", size: 1.5, distFromSun_ly: 26000 },
+
+    // --- Perseus Arm (far side from us) ---
+    { name: "W49A",               type: "Giant radio nebula · Most luminous star-forming region in galaxy", dist: 38000, angle: 3.5, z: 0.0, color: "#ff8855", size: 2.5, distFromSun_ly: 36000 },
+    { name: "Westerhout 51",      type: "Massive star-forming complex · Far Perseus Arm", dist: 42000, angle: 3.8, z: 0.01, color: "#ff9966", size: 2.0, distFromSun_ly: 43000 },
+
+    // --- Scutum-Centaurus Arm ---
+    { name: "Scutum Star Cloud",  type: "Brightest patch of Milky Way · Billions of stars in a narrow corridor", dist: 14000, angle: 4.2, z: 0.0, color: "#ddcc88", size: 2.8, distFromSun_ly: 18000 },
+    { name: "Westerlund 1",       type: "Super star cluster · Most massive compact cluster known in MW", dist: 22500, angle: 4.7, z: 0.0, color: "#ccbbaa", size: 2.3, distFromSun_ly: 13000 },
+    { name: "SGR 1806-20",        type: "Magnetar · Most powerful magnetic field ever measured", dist: 11000, angle: 4.5, z: 0.0, color: "#cc66ff", size: 2.0, distFromSun_ly: 14500 },
+
+    // --- Sagittarius Arm ---
+    { name: "Eagle Nebula (M16)", type: "Star-forming nebula · Home of the Pillars of Creation", dist: 20000, angle: 0.8, z: 0.0, color: "#ff7766", size: 2.2, distFromSun_ly: 7000 },
+    { name: "Omega Nebula (M17)", type: "H II region · One of brightest star-forming regions from Earth", dist: 20500, angle: 0.85, z: 0.0, color: "#ff8877", size: 2.0, distFromSun_ly: 5500 },
+    { name: "Lagoon Nebula (M8)", type: "Giant interstellar cloud · Visible to naked eye from Earth", dist: 21500, angle: 0.75, z: 0.0, color: "#ff9988", size: 1.8, distFromSun_ly: 4100 },
+
+    // --- Norma Arm ---
+    { name: "G0.253+0.016",       type: "The Brick · Mysterious dense gas cloud that refuses to form stars", dist: 3000, angle: 5.5, z: 0.0, color: "#996633", size: 1.8, distFromSun_ly: 26000 },
+    { name: "Norma Cluster",      type: "Massive galaxy cluster visible through MW · Behind the Zone of Avoidance", dist: 16000, angle: 5.2, z: 0.0, color: "#aaaacc", size: 2.0, distFromSun_ly: 22000 },
+
+    // --- Outer Galaxy (beyond our orbit) ---
+    { name: "WR 102",             type: "Hottest known star · 210,000 K surface · Oxygen-sequence Wolf-Rayet", dist: 30000, angle: 0.6, z: 0.01, color: "#6688ff", size: 2.0, distFromSun_ly: 9800 },
+    { name: "IRAS 17163-3907",    type: "Fried Egg Nebula · Yellow Hypergiant · 500,000× solar luminosity", dist: 22000, angle: 5.0, z: 0.0, color: "#ffdd44", size: 2.3, distFromSun_ly: 13000 },
+    { name: "Swift J1745-26",     type: "X-ray nova · Black hole binary that flared in 2012", dist: 1500, angle: 0.1, z: 0.0, color: "#9955cc", size: 1.5, distFromSun_ly: 24700 },
+
+    // --- Far side of the galaxy (opposite from Sol) ---
+    { name: "RSGC1",              type: "Red Supergiant Cluster 1 · 14 red supergiants in one cluster", dist: 18000, angle: 4.0, z: 0.0, color: "#ff5533", size: 2.5, distFromSun_ly: 22000 },
+    { name: "Stephenson 2-18",    type: "Possibly largest known star · 2,150× solar radius", dist: 17000, angle: 4.1, z: 0.0, color: "#ff3311", size: 3.0, distFromSun_ly: 19000 },
+    { name: "GLIMPSE-C01",        type: "Newly discovered globular cluster · Hidden behind galactic dust for centuries", dist: 10000, angle: 3.0, z: 0.02, color: "#ccaa77", size: 1.8, distFromSun_ly: 10800 },
+
+    // --- Extreme outer disc ---
+    { name: "SDSS J1229+1122",    type: "Hypervelocity star · Ejected from galactic center at 1,600 km/s", dist: 48000, angle: 2.5, z: 0.05, color: "#aaddff", size: 1.5, distFromSun_ly: 40000 },
+    { name: "Snyder's Cloud",     type: "Tidal stream remnant · Ghost of a dwarf galaxy devoured by the Milky Way", dist: 45000, angle: 0.0, z: 0.04, color: "#778899", size: 2.0, distFromSun_ly: 50000 },
+    { name: "Galactic Anticenter", type: "Direction directly away from core · Thinnest part of our galaxy", dist: 52000, angle: Math.PI + 1.3, z: 0.0, color: "#556677", size: 1.5, distFromSun_ly: 26000 }
+  ],
+  regions: [
+    { name: "Orion Spur",         type: "Minor Arm",      distRange: [24000, 28000], angleRange: [1.1, 1.5], color: "#5577aa" },
+    { name: "Galactic Core",      type: "Bulge",          distRange: [0, 5000],      angleRange: [0, 6.28],  color: "#ccaa55" },
+    { name: "Carina-Sagittarius", type: "Spiral Arm",     distRange: [15000, 22000], angleRange: [0.8, 2.0], color: "#668899" },
+    { name: "Outer Arm",          type: "Spiral Arm",     distRange: [40000, 52000], angleRange: [0, 6.28],  color: "#445577" }
+  ],
+  zoomLevels: [
+    { id: "galaxy",   label: "Galaxy View",        minDist: 80, maxDist: 200, starsVisible: "structure" },
+    { id: "quadrant", label: "Quadrant View",       minDist: 30, maxDist: 80,  starsVisible: "arms" },
+    { id: "sector",   label: "Sector View",         minDist: 8,  maxDist: 30,  starsVisible: "clusters" },
+    { id: "local",    label: "Local Neighborhood",   minDist: 1,  maxDist: 8,   starsVisible: "individual" },
+    { id: "stellar",  label: "Stellar View",         minDist: 0.01, maxDist: 1, starsVisible: "detail" }
+  ]
+};
+
+
+// ============================================================
+//  OO ARCHITECTURE
+// ============================================================
+
+class Vec3 {
+  constructor(x=0, y=0, z=0) { this.x=x; this.y=y; this.z=z; }
+  toThree() { return new THREE.Vector3(this.x, this.y, this.z); }
+  distanceTo(v) { return Math.sqrt((this.x-v.x)**2 + (this.y-v.y)**2 + (this.z-v.z)**2); }
+  static fromPolar(dist, angle, z=0) {
+    const s = GALAXY_DATA.meta.scale;
+    return new Vec3(Math.cos(angle)*dist*s, z*s*1000, Math.sin(angle)*dist*s);
+  }
+}
+
+// ---------- Star ----------
+class Star {
+  constructor(data) {
+    this.name = data.name;
+    this.type = data.type;
+    this.color = data.color || "#ffffff";
+    this.size = data.size || 1.0;
+    this.magnitude = data.magnitude || 0;
+    this.photo = data.photo || null;
+    this.credit = data.credit || "";
+    this.planets = data.planets || null;
+    this.distFromSun_ly = data.distFromSun_ly;
+
+    if (data.x !== undefined) {
+      this.position = new Vec3(data.x, data.z || 0, data.y || 0);
+    } else {
+      this.position = Vec3.fromPolar(data.dist, data.angle, data.z || 0);
+    }
+
+    this.mesh = null;
+    this.label = null;
+  }
+
+  createMesh() {
+    const geom = new THREE.SphereGeometry(this.size * 0.022, 8, 8);
+    const mat = new THREE.MeshBasicMaterial({ color: this.color });
+    this.mesh = new THREE.Mesh(geom, mat);
+    this.mesh.position.copy(this.position.toThree());
+    this.mesh.userData = { star: this };
+
+    // glow sprite
+    const spriteMat = new THREE.SpriteMaterial({
+      map: GlowTexture.get(),
+      color: this.color,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      opacity: 0.6
+    });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(this.size * 0.12, this.size * 0.12, 1);
+    this.mesh.add(sprite);
+
+    return this.mesh;
+  }
+
+  toJSON() {
+    return { name: this.name, type: this.type, position: this.position, color: this.color };
+  }
+}
+
+// ---------- GlowTexture (shared) ----------
+class GlowTexture {
+  static _tex = null;
+  static get() {
+    if (this._tex) return this._tex;
+    const size = 128;
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    const half = size / 2;
+    // Extra-smooth falloff — fully transparent well before the edge
+    const grad = ctx.createRadialGradient(half, half, 0, half, half, half);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.1, 'rgba(255,255,255,0.7)');
+    grad.addColorStop(0.25, 'rgba(255,255,255,0.3)');
+    grad.addColorStop(0.45, 'rgba(255,255,255,0.08)');
+    grad.addColorStop(0.65, 'rgba(255,255,255,0.02)');
+    grad.addColorStop(0.8, 'rgba(255,255,255,0.003)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+    this._tex = new THREE.CanvasTexture(c);
+    return this._tex;
+  }
+}
+
+// ---------- SpiralArm ----------
+class SpiralArm {
+  constructor(armData, galaxyScale) {
+    this.id = armData.id;
+    this.name = armData.name;
+    this.color = armData.color;
+    this.angleOffset = armData.angleOffset;
+    this.spread = armData.spread;
+    this.starDensity = armData.starDensity;
+    this.scale = galaxyScale;
+    this.particles = null;
+  }
+
+  generate(count) {
+    const positions = [];
+    const colors = [];
+    const sizes = [];
+    const c = new THREE.Color(this.color);
+
+    for (let i = 0; i < count; i++) {
+      const t = Math.random();
+      const r = 3 + t * 48; // radial distance in scaled units
+      const armAngle = this.angleOffset + Math.log(r / 3) * 2.5; // log spiral
+      const scatter = (Math.random() - 0.5) * this.spread * (6 + r * 0.2);
+      const scatterZ = (Math.random() - 0.5) * 1.2 * Math.exp(-r * 0.03);
+
+      const x = Math.cos(armAngle + scatter / r) * r;
+      const z = Math.sin(armAngle + scatter / r) * r;
+      const y = scatterZ;
+
+      positions.push(x, y, z);
+
+      const brightness = 0.4 + Math.random() * 0.6;
+      colors.push(c.r * brightness, c.g * brightness, c.b * brightness);
+      sizes.push(0.08 + Math.random() * 0.15);
+    }
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geom.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+
+    const mat = new THREE.PointsMaterial({
+      size: 0.12,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+      map: GlowTexture.get()
+    });
+
+    this.particles = new THREE.Points(geom, mat);
+    return this.particles;
+  }
+
+  toJSON() {
+    return { id: this.id, name: this.name, color: this.color, angleOffset: this.angleOffset };
+  }
+}
+
+// ---------- GalacticCore ----------
+class GalacticCore {
+  constructor(barData, scale) {
+    this.barLength = barData.length_ly * scale;
+    this.barWidth = barData.width_ly * scale;
+    this.barAngle = barData.angle_rad;
+    this.group = new THREE.Group();
+  }
+
+  generate(count) {
+    const positions = [];
+    const colors = [];
+
+    // Core bulge
+    for (let i = 0; i < count; i++) {
+      const r = Math.random() ** 0.5 * 5;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = (Math.random() - 0.5) * Math.PI * 0.4;
+
+      const x = Math.cos(theta) * Math.cos(phi) * r;
+      const y = Math.sin(phi) * r * 0.3;
+      const z = Math.sin(theta) * Math.cos(phi) * r;
+
+      positions.push(x, y, z);
+
+      const warmth = 0.7 + Math.random() * 0.3;
+      colors.push(1.0 * warmth, 0.85 * warmth, 0.5 * warmth);
+    }
+
+    // Bar stars
+    for (let i = 0; i < count * 0.5; i++) {
+      const along = (Math.random() - 0.5) * this.barLength;
+      const across = (Math.random() - 0.5) * this.barWidth * 0.5;
+      const up = (Math.random() - 0.5) * 1.0;
+
+      const x = Math.cos(this.barAngle) * along - Math.sin(this.barAngle) * across;
+      const z = Math.sin(this.barAngle) * along + Math.cos(this.barAngle) * across;
+
+      positions.push(x, up, z);
+      const w = 0.6 + Math.random() * 0.4;
+      colors.push(1.0*w, 0.8*w, 0.45*w);
+    }
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+    const mat = new THREE.PointsMaterial({
+      size: 0.1,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+      map: GlowTexture.get()
+    });
+
+    const points = new THREE.Points(geom, mat);
+    this.group.add(points);
+
+    // Central glow — use multiple smaller overlapping sprites instead of one big one
+    // This avoids the visible square edge artifact
+    const glowLayers = [
+      { scale: 4, opacity: 0.25 },
+      { scale: 7, opacity: 0.12 },
+      { scale: 11, opacity: 0.05 }
+    ];
+    for (const gl of glowLayers) {
+      const glowMat = new THREE.SpriteMaterial({
+        map: GlowTexture.get(),
+        color: 0xffcc66,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        opacity: gl.opacity,
+        depthWrite: false
+      });
+      const glow = new THREE.Sprite(glowMat);
+      glow.scale.set(gl.scale, gl.scale, 1);
+      glow.userData.layerName = 'coreGlow';
+      this.group.add(glow);
+    }
+
+    return this.group;
+  }
+}
+
+// ---------- BackgroundStars ----------
+class BackgroundStars {
+  constructor(count) { this.count = count; }
+
+  generate() {
+    const positions = [];
+    const colors = [];
+    for (let i = 0; i < this.count; i++) {
+      const r = 150 + Math.random() * 350;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      positions.push(
+        r * Math.sin(phi) * Math.cos(theta),
+        r * Math.sin(phi) * Math.sin(theta),
+        r * Math.cos(phi)
+      );
+      const b = 0.3 + Math.random() * 0.7;
+      const tint = Math.random();
+      colors.push(
+        b * (0.8 + tint * 0.2),
+        b * (0.85 + tint * 0.15),
+        b
+      );
+    }
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+    return new THREE.Points(geom, new THREE.PointsMaterial({
+      size: 0.3,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.6,
+      sizeAttenuation: false
+    }));
+  }
+}
+
+// ---------- Navigator (orbital camera controller) ----------
+class Navigator {
+  constructor(camera, domElement) {
+    this.camera = camera;
+    this.dom = domElement;
+    this.yaw = 0;
+    this.pitch = -0.5;
+    this.targetYaw = this.yaw;
+    this.targetPitch = this.pitch;
+    this.distance = 90; // from look target
+    this.target = new THREE.Vector3(0, 0, 0);
+    this.minDist = 0.05;
+    this.maxDist = 180;
+    this.keys = {};
+    this.dragging = false;
+    this.lastMouse = { x: 0, y: 0 };
+    this.moveSpeed = 0.5;
+    this.orbitSpeed = 0.018; // radians per frame for arrow keys
+    this.smoothZoom = this.distance;
+
+    this._bindEvents();
+    this.update();
+  }
+
+  _bindEvents() {
+    this.dom.addEventListener('mousedown', e => {
+      this.dragging = true;
+      this.lastMouse = { x: e.clientX, y: e.clientY };
+    });
+    this.dom.addEventListener('mouseup', () => this.dragging = false);
+    this.dom.addEventListener('mousemove', e => {
+      if (!this.dragging) return;
+      const dx = e.clientX - this.lastMouse.x;
+      const dy = e.clientY - this.lastMouse.y;
+      this.targetYaw -= dx * 0.003;
+      this.targetPitch -= dy * 0.003;
+      this.targetPitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, this.targetPitch));
+      this.lastMouse = { x: e.clientX, y: e.clientY };
+    });
+    // Bind wheel on window so overlays/HUD elements can't swallow it
+    //
+    // Scroll behavior:
+    //   Plain scroll (two-finger swipe) → orbit elevation (up/down) + orbit yaw (left/right)
+    //   Pinch-to-zoom (ctrlKey on macOS)  → zoom in/out
+    //   Shift + scroll                    → zoom in/out (mouse wheel alternative)
+    //
+    window.addEventListener('wheel', e => {
+      // Don't interact if overlays are active
+      if (document.getElementById('sky-view').classList.contains('active')) return;
+      if (document.getElementById('help-overlay').classList.contains('active')) return;
+
+      e.preventDefault();
+
+      // Normalize deltas
+      let dy = e.deltaY;
+      let dx = e.deltaX || 0;
+      if (e.deltaMode === 1) { dy *= 30; dx *= 30; }
+      if (e.deltaMode === 2) { dy *= 300; dx *= 300; }
+
+      if (Math.abs(dy) < 0.01 && Math.abs(dx) < 0.01) return;
+
+      // Pinch-to-zoom (macOS sends ctrlKey:true for pinch gestures)
+      // or Shift+scroll = zoom
+      if (e.ctrlKey || e.shiftKey) {
+        const clamped = Math.max(-150, Math.min(150, dy));
+        const factor = 1 + clamped * 0.0012;
+        this.smoothZoom = Math.max(this.minDist, Math.min(this.maxDist, this.smoothZoom * factor));
+      } else {
+        // Plain scroll → orbital camera movement
+        // Vertical scroll = change elevation above/below galactic plane
+        const pitchDelta = dy * 0.0008;
+        this.targetPitch -= pitchDelta;
+        this.targetPitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, this.targetPitch));
+
+        // Horizontal scroll = orbit horizontally
+        const yawDelta = dx * 0.0008;
+        this.targetYaw -= yawDelta;
+      }
+    }, { passive: false });
+    window.addEventListener('keydown', e => {
+      this.keys[e.key] = true;
+      // Also store lowercase for WASD
+      if (e.key.length === 1) this.keys[e.key.toLowerCase()] = true;
+      // Prevent arrow keys from scrolling the page
+      if (e.key.startsWith('Arrow')) e.preventDefault();
+    });
+    window.addEventListener('keyup', e => {
+      this.keys[e.key] = false;
+      if (e.key.length === 1) this.keys[e.key.toLowerCase()] = false;
+    });
+  }
+
+  getZoomLevel() {
+    for (const zl of GALAXY_DATA.zoomLevels) {
+      if (this.distance >= zl.minDist && this.distance < zl.maxDist) return zl;
+    }
+    return GALAXY_DATA.zoomLevels[0];
+  }
+
+  /** Degrees above the galactic plane (for HUD display) */
+  get elevationDeg() {
+    return (this.pitch * 180 / Math.PI).toFixed(1);
+  }
+
+  update() {
+    // Smooth zoom
+    this.distance += (this.smoothZoom - this.distance) * 0.08;
+
+    // Arrow keys: orbital rotation (keep target centered, change viewing angle)
+    // Skip if overlays are open
+    const helpOpen = document.getElementById('help-overlay').classList.contains('active');
+    const skyOpen = document.getElementById('sky-view').classList.contains('active');
+    if (!helpOpen && !skyOpen) {
+      if (this.keys['ArrowUp']) {
+        this.targetPitch += this.orbitSpeed;
+      }
+      if (this.keys['ArrowDown']) {
+        this.targetPitch -= this.orbitSpeed;
+      }
+      if (this.keys['ArrowLeft']) {
+        this.targetYaw += this.orbitSpeed;
+      }
+      if (this.keys['ArrowRight']) {
+        this.targetYaw -= this.orbitSpeed;
+      }
+      this.targetPitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, this.targetPitch));
+    }
+
+    // Smooth orbit interpolation
+    this.yaw += (this.targetYaw - this.yaw) * 0.12;
+    this.pitch += (this.targetPitch - this.pitch) * 0.12;
+
+    // WASD movement — W/S move toward/away from what you're looking at
+    // (the vector from camera to target, which respects pitch)
+    const speed = this.moveSpeed * (this.distance * 0.02 + 0.01);
+
+    // Forward = direction from camera toward the target (includes pitch)
+    const forward = new THREE.Vector3(
+      -Math.cos(this.pitch) * Math.sin(this.yaw),
+      -Math.sin(this.pitch),
+      -Math.cos(this.pitch) * Math.cos(this.yaw)
+    ).normalize();
+
+    // Right = perpendicular to forward on the horizontal plane
+    const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
+
+    if (this.keys['w']) this.target.addScaledVector(forward, speed);
+    if (this.keys['s']) this.target.addScaledVector(forward, -speed);
+    if (this.keys['a']) this.target.addScaledVector(right, -speed);
+    if (this.keys['d']) this.target.addScaledVector(right, speed);
+    if (this.keys['q'] || this.keys['e']) {
+      this.target.y += (this.keys['q'] ? speed : -speed);
+    }
+
+    // Position camera
+    const cx = this.target.x + Math.cos(this.pitch) * Math.sin(this.yaw) * this.distance;
+    const cy = this.target.y + Math.sin(this.pitch) * this.distance;
+    const cz = this.target.z + Math.cos(this.pitch) * Math.cos(this.yaw) * this.distance;
+
+    this.camera.position.set(cx, cy, cz);
+    this.camera.lookAt(this.target);
+  }
+
+  flyTo(position, dist, pitch) {
+    this.target.copy(position);
+    this.smoothZoom = dist || 2;
+    if (pitch !== undefined) {
+      this.targetPitch = pitch;
+    }
+  }
+}
+
+// ---------- Minimap ----------
+class Minimap {
+  constructor(canvasId) {
+    this.canvas = document.getElementById(canvasId);
+    this.ctx = this.canvas.getContext('2d');
+  }
+
+  draw(cameraTarget, cameraDistance, sunPos) {
+    const ctx = this.ctx;
+    const w = 120, h = 120;
+    ctx.clearRect(0, 0, w, h);
+
+    // Galaxy disc
+    ctx.beginPath();
+    ctx.arc(60, 60, 50, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(40,50,70,0.3)';
+    ctx.fill();
+
+    // Spiral hint
+    ctx.strokeStyle = 'rgba(80,100,140,0.25)';
+    ctx.lineWidth = 3;
+    for (let arm = 0; arm < 4; arm++) {
+      ctx.beginPath();
+      for (let t = 0; t < 50; t++) {
+        const r = 2 + t;
+        const a = arm * Math.PI/2 + Math.log(r/2) * 2.5;
+        const mx = 60 + Math.cos(a) * r;
+        const my = 60 + Math.sin(a) * r;
+        t === 0 ? ctx.moveTo(mx, my) : ctx.lineTo(mx, my);
+      }
+      ctx.stroke();
+    }
+
+    // Sun
+    const scale = 50 / 55; // map radius / galaxy radius in units
+    const sx = 60 + sunPos.x * scale;
+    const sy = 60 + sunPos.z * scale;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 2, 0, Math.PI*2);
+    ctx.fillStyle = '#ffdd44';
+    ctx.fill();
+
+    // Camera target
+    const tx = 60 + cameraTarget.x * scale;
+    const ty = 60 + cameraTarget.z * scale;
+    ctx.beginPath();
+    ctx.arc(tx, ty, 3, 0, Math.PI*2);
+    ctx.strokeStyle = '#6699cc';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // FOV cone hint
+    const fovR = Math.min(cameraDistance * scale * 0.5, 48);
+    ctx.beginPath();
+    ctx.arc(tx, ty, fovR, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(100,150,200,0.15)';
+    ctx.stroke();
+  }
+}
+
+// ---------- Galaxy (top-level orchestrator) ----------
+class Galaxy {
+  constructor(data) {
+    this.data = data;
+    this.scene = new THREE.Scene();
+    this.arms = [];
+    this.stars = [];
+    this.core = null;
+    this.sunPosition = Vec3.fromPolar(data.sun.distance_from_center_ly, data.sun.angle_rad, 0);
+    this.sunMesh = null;
+    this.clickableObjects = [];
+  }
+
+  build() {
+    // Layer references for toggle panel
+    this.layers = {};
+
+    // Background stars
+    const bg = new BackgroundStars(12000);
+    const bgObj = bg.generate();
+    bgObj.userData.layerName = 'background';
+    this.layers.background = [bgObj];
+    this.scene.add(bgObj);
+
+    // Galactic core
+    this.core = new GalacticCore(this.data.bar, this.data.meta.scale);
+    const coreGroup = this.core.generate(40000);
+    coreGroup.userData.layerName = 'core';
+    this.layers.core = [coreGroup];
+    this.scene.add(coreGroup);
+
+    // Spiral arms
+    this.layers.arms = [];
+    for (const armData of this.data.arms) {
+      const arm = new SpiralArm(armData, this.data.meta.scale);
+      this.arms.push(arm);
+      const armObj = arm.generate(60000);
+      armObj.userData.layerName = 'arms';
+      this.layers.arms.push(armObj);
+      this.scene.add(armObj);
+    }
+
+    // Disk filler stars
+    this.layers.disk = [];
+    this._addDiskStars(80000);
+
+    // Notable stars
+    this.layers.notable = [];
+    for (const sd of this.data.notableStars) {
+      const star = new Star(sd);
+      this.stars.push(star);
+      const mesh = star.createMesh();
+      mesh.userData.hasPlanets = !!(sd.planets && sd.planets.length > 0);
+      mesh.userData.category = mesh.userData.hasPlanets ? 'planet-host' : 'star';
+      mesh.userData.layerName = 'notable';
+      this.layers.notable.push(mesh);
+      this.scene.add(mesh);
+      this.clickableObjects.push(mesh);
+    }
+
+    // Sector overlay
+    this.layers.sectors = [];
+    this._addSectorOverlay();
+
+    // Sun marker
+    this._addSun();
+    this.layers.sun = [this.sunMesh];
+
+    // Subtle galactic plane
+    this.layers.plane = [];
+    this._addPlaneHint();
+
+    return this.scene;
+  }
+
+  _addDiskStars(count) {
+    const positions = [];
+    const colors = [];
+    for (let i = 0; i < count; i++) {
+      const r = Math.random() ** 0.5 * 52;
+      const a = Math.random() * Math.PI * 2;
+      const y = (Math.random() - 0.5) * 1.5 * Math.exp(-r * 0.04);
+      positions.push(Math.cos(a)*r, y, Math.sin(a)*r);
+      const b = 0.15 + Math.random() * 0.35;
+      colors.push(b*0.9, b*0.92, b);
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    const diskPoints = new THREE.Points(geom, new THREE.PointsMaterial({
+      size: 0.06,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.5,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true
+    }));
+    diskPoints.userData.layerName = 'disk';
+    this.layers.disk.push(diskPoints);
+    this.scene.add(diskPoints);
+  }
+
+  _addSun() {
+    const geom = new THREE.SphereGeometry(0.038, 12, 12);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffdd44 });
+    this.sunMesh = new THREE.Mesh(geom, mat);
+    this.sunMesh.position.copy(this.sunPosition.toThree());
+    this.sunMesh.userData = {
+      star: { name: "Sol (You Are Here)", type: "G2V Main Sequence — Our Sun", color: "#ffdd44", distFromSun_ly: 0 },
+      hasPlanets: true, category: 'planet-host'
+    };
+    this.clickableObjects.push(this.sunMesh);
+
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: GlowTexture.get(), color: 0xffdd44,
+      transparent: true, blending: THREE.AdditiveBlending, opacity: 0.7
+    }));
+    glow.scale.set(0.22, 0.22, 1);
+    this.sunMesh.add(glow);
+
+    // "You Are Here" ring
+    const ringGeom = new THREE.RingGeometry(0.075, 0.085, 32);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xffdd44, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
+    const ring = new THREE.Mesh(ringGeom, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    this.sunMesh.add(ring);
+
+    this.scene.add(this.sunMesh);
+  }
+
+  _addSectorOverlay() {
+    const group = new THREE.Group();
+    group.userData.layerName = 'sectors';
+    const scale = this.data.meta.scale; // 0.001
+
+    // ========== GALACTIC COORDINATE GRID ==========
+    // Rings: numbered 0–9 from core outward (each ~5.5 kly wide)
+    // Spokes: 12 angular sectors, 30° each, named with phonetic designators
+    //
+    // Sector designation: "Ring.Spoke"  e.g. "5.Kael" = Sol's neighborhood
+    // Bridge callout: "Sector 7-Braxis, the Homgrad-Zordon parsec"
+
+    // --- 12 angular spoke names ---
+    this.sectorSpokes = [
+      { id: 0,  name: 'Aurel',   angle: 0 },
+      { id: 1,  name: 'Braxis',  angle: Math.PI/6 },
+      { id: 2,  name: 'Cyren',   angle: Math.PI/3 },
+      { id: 3,  name: 'Dorne',   angle: Math.PI/2 },
+      { id: 4,  name: 'Errai',   angle: 2*Math.PI/3 },
+      { id: 5,  name: 'Fael',    angle: 5*Math.PI/6 },
+      { id: 6,  name: 'Grynn',   angle: Math.PI },
+      { id: 7,  name: 'Halar',   angle: 7*Math.PI/6 },
+      { id: 8,  name: 'Ixen',    angle: 4*Math.PI/3 },
+      { id: 9,  name: 'Kael',    angle: 3*Math.PI/2 },
+      { id: 10, name: 'Lorath',  angle: 5*Math.PI/3 },
+      { id: 11, name: 'Maren',   angle: 11*Math.PI/6 },
+    ];
+
+    // --- 10 radial rings (0 = core, 9 = outer rim) ---
+    const ringWidth_ly = 5500;
+    this.sectorRingWidth = ringWidth_ly;
+    this.sectorRingCount = 10;
+    for (let i = 1; i <= 9; i++) {
+      const r = i * ringWidth_ly * scale;
+      const segments = 128;
+      const points = [];
+      for (let j = 0; j <= segments; j++) {
+        const a = (j / segments) * Math.PI * 2;
+        points.push(new THREE.Vector3(Math.cos(a) * r, 0.02, Math.sin(a) * r));
+      }
+      const geom = new THREE.BufferGeometry().setFromPoints(points);
+      const isSolRing = (i === 5); // ring 5 ≈ 27.5 kly, close to Sol's 26 kly
+      const line = new THREE.Line(geom, new THREE.LineBasicMaterial({
+        color: isSolRing ? 0xaa9944 : 0x3a506b,
+        transparent: true,
+        opacity: isSolRing ? 0.3 : (i % 2 === 0 ? 0.15 : 0.09),
+        depthWrite: false
+      }));
+      group.add(line);
+    }
+
+    // Draw spoke lines (core to outer rim)
+    const outerR = 9 * ringWidth_ly * scale + 2;
+    for (const spoke of this.sectorSpokes) {
+      const pts = [
+        new THREE.Vector3(0, 0.02, 0),
+        new THREE.Vector3(Math.cos(spoke.angle) * outerR, 0.02, Math.sin(spoke.angle) * outerR)
+      ];
+      const geom = new THREE.BufferGeometry().setFromPoints(pts);
+      const line = new THREE.Line(geom, new THREE.LineBasicMaterial({
+        color: 0x3a506b, transparent: true, opacity: 0.12, depthWrite: false
+      }));
+      group.add(line);
+    }
+
+    // === Text sprite helper ===
+    const makeLabel = (text, x, z, size, color, bold) => {
+      const canvas = document.createElement('canvas');
+      const lines = text.split('\n');
+      const fontSize = bold ? 48 : 38;
+      canvas.width = 512;
+      canvas.height = fontSize * lines.length + 20;
+      const ctx = canvas.getContext('2d');
+      ctx.font = `${bold ? 'bold ' : ''}${fontSize}px "Segoe UI", system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.lineWidth = 3;
+      ctx.fillStyle = color || 'rgba(130,170,220,0.45)';
+      for (let i = 0; i < lines.length; i++) {
+        const y = i * fontSize + 6;
+        ctx.strokeText(lines[i], 256, y);
+        ctx.fillText(lines[i], 256, y);
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      const mat = new THREE.SpriteMaterial({
+        map: tex, transparent: true, depthWrite: false, depthTest: false,
+        sizeAttenuation: true
+      });
+      const sprite = new THREE.Sprite(mat);
+      sprite.position.set(x, 0.2, z);
+      const aspect = canvas.width / canvas.height;
+      sprite.scale.set(size * aspect, size, 1);
+      return sprite;
+    };
+
+    // === Ring number labels along Aurel spoke ===
+    const labelAngle = this.sectorSpokes[0].angle + 0.06;
+    for (let i = 1; i <= 9; i++) {
+      const r = i * ringWidth_ly * scale;
+      const x = Math.cos(labelAngle) * (r + 0.8);
+      const z = Math.sin(labelAngle) * (r + 0.8);
+      const col = (i === 5) ? 'rgba(180,170,100,0.5)' : 'rgba(100,140,190,0.35)';
+      group.add(makeLabel(String(i), x, z, 2.5, col, false));
+    }
+
+    // === Spoke name labels at outer rim ===
+    for (const spoke of this.sectorSpokes) {
+      const r = outerR + 2.5;
+      const x = Math.cos(spoke.angle) * r;
+      const z = Math.sin(spoke.angle) * r;
+      group.add(makeLabel(spoke.name, x, z, 3.5, 'rgba(140,180,230,0.5)', true));
+    }
+
+    // === Key sector intersection labels ===
+    const labeledSectors = [
+      { ring: 0, spoke: 0,  text: 'CORE\n0.Aurel' },
+      { ring: 5, spoke: 9,  text: 'SOL\n5.Kael' },
+      { ring: 3, spoke: 3,  text: '3.Dorne' },
+      { ring: 7, spoke: 1,  text: '7.Braxis' },
+      { ring: 2, spoke: 6,  text: '2.Grynn' },
+      { ring: 6, spoke: 4,  text: '6.Errai' },
+      { ring: 8, spoke: 7,  text: '8.Halar' },
+      { ring: 4, spoke: 10, text: '4.Lorath' },
+      { ring: 9, spoke: 5,  text: '9.Fael' },
+      { ring: 7, spoke: 11, text: '7.Maren' },
+      { ring: 3, spoke: 8,  text: '3.Ixen' },
+      { ring: 6, spoke: 2,  text: '6.Cyren' },
+    ];
+
+    for (const ls of labeledSectors) {
+      const r = (ls.ring + 0.5) * ringWidth_ly * scale;
+      const a = this.sectorSpokes[ls.spoke].angle + Math.PI/12; // center of wedge
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r;
+      const isSol = ls.text.includes('SOL');
+      const col = isSol ? 'rgba(200,190,100,0.5)' : 'rgba(90,120,160,0.3)';
+      const sz = isSol ? 3.5 : 2.8;
+      group.add(makeLabel(ls.text, x, z, sz, col, isSol));
+    }
+
+    // Start hidden — user toggles on via Layers panel
+    group.visible = false;
+    this.layers.sectors.push(group);
+    this.scene.add(group);
+  }
+
+  /** Convert a 3D position to sector designation string, e.g. "5.Kael" */
+  getSectorDesignation(pos) {
+    const x = pos.x || 0, z = pos.z || 0;
+    const scale = this.data.meta.scale;
+    const dist = Math.sqrt(x*x + z*z) / scale; // in ly
+    const ring = Math.min(9, Math.floor(dist / this.sectorRingWidth));
+    let angle = Math.atan2(z, x);
+    if (angle < 0) angle += Math.PI * 2;
+    const spokeIdx = Math.floor(angle / (Math.PI / 6)) % 12;
+    const spoke = this.sectorSpokes[spokeIdx];
+    return `${ring}.${spoke.name}`;
+  }
+
+  _addPlaneHint() {
+    const planeGeom = new THREE.RingGeometry(5, 53, 64);
+    const planeMat = new THREE.MeshBasicMaterial({
+      color: 0x334466, side: THREE.DoubleSide, transparent: true, opacity: 0.03
+    });
+    const plane = new THREE.Mesh(planeGeom, planeMat);
+    plane.rotation.x = Math.PI / 2;
+    plane.userData.layerName = 'plane';
+    this.layers.plane.push(plane);
+    this.scene.add(plane);
+  }
+
+  toJSON() {
+    return {
+      meta: this.data.meta,
+      arms: this.arms.map(a => a.toJSON()),
+      stars: this.stars.map(s => s.toJSON()),
+      sunPosition: this.sunPosition
+    };
+  }
+}
+
+
+// ---------- SurfaceSkyView ----------
+class SurfaceSkyView {
+  constructor(canvasId) {
+    this.canvas = document.getElementById(canvasId);
+    this.ctx = this.canvas.getContext('2d');
+    this.panX = 0;
+    this.dragging = false;
+    this.lastX = 0;
+    this._bindDrag();
+  }
+
+  _bindDrag() {
+    this.canvas.addEventListener('mousedown', e => {
+      this.dragging = true; this.lastX = e.clientX;
+    });
+    window.addEventListener('mouseup', () => this.dragging = false);
+    window.addEventListener('mousemove', e => {
+      if (!this.dragging) return;
+      this.panX += (e.clientX - this.lastX) * 0.3;
+      this.lastX = e.clientX;
+      if (this._currentPlanet) this.render(this._currentStar, this._currentPlanet);
+    });
+  }
+
+  show(star, planet) {
+    this._currentStar = star;
+    this._currentPlanet = planet;
+    this.panX = 0;
+    document.getElementById('sky-view').classList.add('active');
+    document.getElementById('sky-title').textContent =
+      `Surface of ${planet.name} · Orbiting ${star.name}`;
+    document.getElementById('sky-sub').textContent = planet.sky.desc;
+    this.render(star, planet);
+  }
+
+  render(star, planet) {
+    const ctx = this.ctx;
+    const w = this.canvas.width, h = this.canvas.height;
+    const sky = planet.sky;
+
+    // Parse star color
+    const sc = sky.starColor;
+    const sr = parseInt(sc.slice(1,3),16), sg = parseInt(sc.slice(3,5),16), sb = parseInt(sc.slice(5,7),16);
+
+    // Sky gradient — color depends on the star
+    const horizon = h * 0.72;
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, horizon);
+    skyGrad.addColorStop(0, '#030508');
+    skyGrad.addColorStop(0.3, `rgba(${Math.floor(sr*0.06)},${Math.floor(sg*0.06)},${Math.floor(sb*0.08)},1)`);
+    skyGrad.addColorStop(0.7, `rgba(${Math.floor(sr*0.15)},${Math.floor(sg*0.12)},${Math.floor(sb*0.1)},1)`);
+    skyGrad.addColorStop(1.0, `rgba(${Math.floor(sr*0.3)},${Math.floor(sg*0.2)},${Math.floor(sb*0.15)},1)`);
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, w, horizon);
+
+    // Ground
+    const gndGrad = ctx.createLinearGradient(0, horizon, 0, h);
+    gndGrad.addColorStop(0, `rgba(${Math.floor(sr*0.1)},${Math.floor(sg*0.08)},${Math.floor(sb*0.06)},1)`);
+    gndGrad.addColorStop(1, '#080604');
+    ctx.fillStyle = gndGrad;
+    ctx.fillRect(0, horizon, w, h - horizon);
+
+    // Terrain silhouette
+    let seed = 42;
+    const rng = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    // Reset seed for consistent terrain
+    seed = 42;
+    ctx.beginPath();
+    ctx.moveTo(0, horizon);
+    for (let x = 0; x <= w; x += 4) {
+      const terrainH = Math.sin(x * 0.005 + this.panX * 0.01) * 15
+                      + Math.sin(x * 0.013 + 1.5) * 8
+                      + Math.sin(x * 0.031) * 4;
+      ctx.lineTo(x, horizon + terrainH);
+    }
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fillStyle = `rgba(${Math.floor(sr*0.05)},${Math.floor(sg*0.04)},${Math.floor(sb*0.03)},1)`;
+    ctx.fill();
+
+    // Stars in the sky (seeded)
+    seed = 12345;
+    for (let i = 0; i < 600; i++) {
+      const sx = ((rng() * w * 2) + this.panX * 2) % (w * 1.5) - w * 0.25;
+      const sy = rng() * horizon * 0.85;
+      const brightness = 0.15 + rng() * 0.7;
+      const sz = rng() > 0.93 ? 2 : (rng() > 0.7 ? 1.2 : 0.7);
+      ctx.fillStyle = `rgba(220,230,255,${brightness})`;
+      ctx.fillRect(sx, sy, sz, sz);
+    }
+
+    // Milky Way band across the sky
+    ctx.save();
+    ctx.globalAlpha = 0.08;
+    const bandY = horizon * 0.35;
+    const bandH = horizon * 0.25;
+    for (let i = 0; i < 2000; i++) {
+      const bx = ((rng() * w * 1.5) + this.panX) % (w * 1.3) - w * 0.15;
+      const by = bandY + (rng() - 0.5) * bandH + Math.sin(bx * 0.01) * 20;
+      ctx.fillStyle = `rgba(180,190,220,${0.3 + rng() * 0.5})`;
+      ctx.fillRect(bx, by, 1 + rng(), 1 + rng());
+    }
+    ctx.restore();
+
+    // The host star
+    const starX = w * 0.5 + this.panX * 3;
+    const starY = horizon * 0.55;
+    const starRadius = sky.starSize * 8;
+
+    // Star outer glow
+    const outerG = ctx.createRadialGradient(starX, starY, 0, starX, starY, starRadius * 6);
+    outerG.addColorStop(0, `rgba(${sr},${sg},${sb},0.12)`);
+    outerG.addColorStop(0.5, `rgba(${sr},${sg},${sb},0.03)`);
+    outerG.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = outerG;
+    ctx.fillRect(0, 0, w, h);
+
+    // Star disc
+    const discG = ctx.createRadialGradient(starX, starY, 0, starX, starY, starRadius);
+    discG.addColorStop(0, '#ffffee');
+    discG.addColorStop(0.3, `rgb(${Math.min(255,sr+60)},${Math.min(255,sg+60)},${Math.min(255,sb+40)})`);
+    discG.addColorStop(0.8, `rgb(${sr},${sg},${sb})`);
+    discG.addColorStop(1, `rgba(${sr},${sg},${sb},0.2)`);
+    ctx.fillStyle = discG;
+    ctx.beginPath();
+    ctx.arc(starX, starY, starRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Inner glow
+    const innerG = ctx.createRadialGradient(starX, starY, 0, starX, starY, starRadius * 2.5);
+    innerG.addColorStop(0, `rgba(${sr},${sg},${sb},0.15)`);
+    innerG.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = innerG;
+    ctx.beginPath();
+    ctx.arc(starX, starY, starRadius * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // If TRAPPIST-1 system, draw sibling planets as visible discs
+    if (star.planets && star.planets.length > 2) {
+      const siblingPlanets = star.planets.filter(p => p.name !== planet.name);
+      siblingPlanets.forEach((sib, i) => {
+        const px = starX + (i + 1) * 120 - 60;
+        const py = starY - 40 + i * 30;
+        const pr = 3 + Math.random() * 2;
+        ctx.fillStyle = sib.color || '#667788';
+        ctx.beginPath();
+        ctx.arc(px, py, pr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(200,210,230,0.4)';
+        ctx.font = '9px sans-serif';
+        ctx.fillText(sib.name.split(' ').pop(), px + pr + 4, py + 3);
+      });
+    }
+
+    // Atmospheric haze at horizon
+    const hazeG = ctx.createLinearGradient(0, horizon - 40, 0, horizon + 10);
+    hazeG.addColorStop(0, 'rgba(0,0,0,0)');
+    hazeG.addColorStop(0.5, `rgba(${Math.floor(sr*0.2)},${Math.floor(sg*0.15)},${Math.floor(sb*0.1)},0.15)`);
+    hazeG.addColorStop(1, `rgba(${Math.floor(sr*0.15)},${Math.floor(sg*0.1)},${Math.floor(sb*0.08)},0.1)`);
+    ctx.fillStyle = hazeG;
+    ctx.fillRect(0, horizon - 40, w, 50);
+  }
+}
+
+
+// ---------- Tour ----------
+class Tour {
+  constructor(app) {
+    this.app = app;
+    this.running = false;
+    this.currentStop = -1;
+    this.autoTimer = null;
+
+    this.stops = [
+      {
+        name: "Welcome — Our Sun",
+        narration: "You're standing at Sol, our home star. A G2V yellow dwarf, 26,000 light-years from the galactic center in the Orion Spur — a minor arm between Perseus and Sagittarius.",
+        target: () => this.app.galaxy.sunPosition.toThree(),
+        distance: 8, pitch: -0.2, duration: 7000
+      },
+      {
+        name: "The Galactic Center",
+        narration: "Sagittarius A* — a supermassive black hole of 4 million solar masses. Everything orbits this. The dense central bulge is packed with ancient stars, many older than our Sun.",
+        target: () => new THREE.Vector3(0, 0, 0),
+        distance: 12, pitch: -0.15, duration: 7000
+      },
+      {
+        name: "Rising Above the Plane",
+        narration: "From above, the spiral structure reveals itself. Four major arms — Perseus, Sagittarius, Scutum-Centaurus, and Norma — wind outward from the central bar. Our galaxy is 105,000 light-years across.",
+        target: () => new THREE.Vector3(0, 0, 0),
+        distance: 80, pitch: -1.2, duration: 8000
+      },
+      {
+        name: "The Perseus Arm",
+        narration: "The Perseus Arm is one of two major arms, rich with young blue stars and active star-forming regions. It sweeps past our neighborhood on the far side.",
+        target: () => new THREE.Vector3(-30, 0, 15),
+        distance: 25, pitch: -0.4, duration: 7000
+      },
+      {
+        name: "Proxima Centauri — Our Nearest Neighbor",
+        narration: "Just 4.24 light-years away — the closest star to our Sun. It hosts Proxima b, a rocky world in the habitable zone. Tidally locked, with a permanent red sunset on the terminator. Click the planet button to see its sky!",
+        target: () => this._findStar("Proxima Centauri"),
+        distance: 3, pitch: -0.1, duration: 8000,
+        selectStar: "Proxima Centauri"
+      },
+      {
+        name: "TRAPPIST-1 — Seven Worlds",
+        narration: "39 light-years away. An ultra-cool red dwarf with SEVEN Earth-sized planets, three in the habitable zone. From TRAPPIST-1e, sister planets are visible as bright discs in a salmon-pink sky.",
+        target: () => this._findStar("TRAPPIST-1"),
+        distance: 3, pitch: -0.1, duration: 8000,
+        selectStar: "TRAPPIST-1"
+      },
+      {
+        name: "K2-18 b — A Possible Biosignature",
+        narration: "In 2023, the James Webb Space Telescope detected dimethyl sulfide — a possible biosignature — in this sub-Neptune's atmosphere. A 'Hycean' world: hydrogen atmosphere over a global ocean. The most exciting exoplanet alive.",
+        target: () => this._findStar("K2-18"),
+        distance: 3, pitch: -0.1, duration: 8000,
+        selectStar: "K2-18"
+      },
+      {
+        name: "55 Cancri e — The Lava World",
+        narration: "A super-Earth so close to its star that the year lasts 18 hours. Surface temperature: 2,000°C. The star fills a quarter of the sky. The ground itself glows. Possibly made partly of diamond.",
+        target: () => this._findStar("55 Cancri"),
+        distance: 3, pitch: -0.1, duration: 7000,
+        selectStar: "55 Cancri"
+      },
+      {
+        name: "Betelgeuse — The Shoulder of Orion",
+        narration: "A red supergiant 700 light-years away, 700 times the radius of our Sun. It will explode as a supernova within the next 100,000 years. When it does, it'll be visible in daylight for weeks.",
+        target: () => this._findStar("Betelgeuse"),
+        distance: 4, pitch: -0.1, duration: 7000,
+        selectStar: "Betelgeuse"
+      },
+      {
+        name: "Eta Carinae — Ticking Time Bomb",
+        narration: "One of the most massive and luminous stars known. 7,500 light-years away. It's unstable and could go hypernova at any time — producing a gamma-ray burst. Fortunately, it's not pointed at us.",
+        target: () => this._findStar("Eta Carinae"),
+        distance: 5, pitch: -0.15, duration: 7000,
+        selectStar: "Eta Carinae"
+      },
+      {
+        name: "The Pistol Star — Near the Heart",
+        narration: "Deep in the galactic center, just 100 light-years from the supermassive black hole. One of the most luminous stars known — 1.6 million times our Sun. It ejected a nebula 4 light-years wide in a single eruption 6,000 years ago.",
+        target: () => this._findStar("The Pistol Star"),
+        distance: 6, pitch: -0.2, duration: 7000,
+        selectStar: "The Pistol Star"
+      },
+      {
+        name: "Pillars of Creation — Eagle Nebula",
+        narration: "20,000 light-years away in the Sagittarius Arm. Columns of gas and dust where new stars are being born right now. The Hubble photo of these pillars is one of the most iconic images in astronomy.",
+        target: () => this._findStar("Eagle Nebula (M16)"),
+        distance: 6, pitch: -0.15, duration: 7000,
+        selectStar: "Eagle Nebula (M16)"
+      },
+      {
+        name: "Stephenson 2-18 — The Monster",
+        narration: "On the far side of the galaxy in the Scutum-Centaurus Arm. Possibly the largest known star — 2,150 times the Sun's radius. If placed at the center of our solar system, its surface would reach past the orbit of Saturn.",
+        target: () => this._findStar("Stephenson 2-18"),
+        distance: 6, pitch: -0.15, duration: 8000,
+        selectStar: "Stephenson 2-18"
+      },
+      {
+        name: "SGR 1806-20 — The Magnetar",
+        narration: "A neutron star with the most powerful magnetic field ever measured. In 2004 it released a gamma-ray flare so powerful it briefly ionized Earth's upper atmosphere — from 50,000 light-years away. The most energetic event ever observed in our galaxy.",
+        target: () => this._findStar("SGR 1806-20"),
+        distance: 6, pitch: -0.15, duration: 8000,
+        selectStar: "SGR 1806-20"
+      },
+      {
+        name: "The Far Side — W49A",
+        narration: "36,000 light-years from Sol, on the opposite side of the galaxy. The most luminous star-forming region in the entire Milky Way. We can only see it in radio waves — visible light is completely blocked by dust.",
+        target: () => this._findStar("W49A"),
+        distance: 8, pitch: -0.2, duration: 7000,
+        selectStar: "W49A"
+      },
+      {
+        name: "The Full Galaxy",
+        narration: "100–400 billion stars. At least as many planets. Thousands of confirmed exoplanets so far, with billions more waiting. This is just one galaxy among two trillion in the observable universe. And here we are.",
+        target: () => new THREE.Vector3(0, 0, 0),
+        distance: 100, pitch: -0.8, duration: 9000
+      },
+      {
+        name: "Home",
+        narration: "Back to Sol. A small yellow star in a quiet arm. Eight planets. One with liquid water, an atmosphere, and seven billion curious souls building things like this to help them understand where they are.",
+        target: () => this.app.galaxy.sunPosition.toThree(),
+        distance: 6, pitch: -0.25, duration: 8000
+      }
+    ];
+  }
+
+  _findStar(name) {
+    const star = this.app.galaxy.stars.find(s => s.name === name);
+    return star ? star.position.toThree() : new THREE.Vector3(0,0,0);
+  }
+
+  _findStarObj(name) {
+    return this.app.galaxy.stars.find(s => s.name === name) || null;
+  }
+
+  start() {
+    this.running = true;
+    this.currentStop = -1;
+    document.getElementById('tour-start-btn').classList.add('hidden');
+    document.getElementById('tour-bar').classList.add('active');
+    document.getElementById('tour-progress').classList.add('active');
+    this.next();
+  }
+
+  stop() {
+    this.running = false;
+    clearTimeout(this.autoTimer);
+    document.getElementById('tour-bar').classList.remove('active');
+    document.getElementById('tour-progress').classList.remove('active');
+    document.getElementById('tour-start-btn').classList.remove('hidden');
+  }
+
+  next() {
+    if (!this.running) return;
+    this.currentStop++;
+    if (this.currentStop >= this.stops.length) {
+      this.stop();
+      return;
+    }
+    this._goToStop(this.currentStop);
+  }
+
+  prev() {
+    if (!this.running) return;
+    this.currentStop = Math.max(0, this.currentStop - 1);
+    this._goToStop(this.currentStop);
+  }
+
+  _goToStop(idx) {
+    clearTimeout(this.autoTimer);
+    const stop = this.stops[idx];
+
+    // Fly camera
+    const pos = stop.target();
+    this.app.nav.flyTo(pos, stop.distance, stop.pitch);
+
+    // Update narration
+    const el = document.getElementById('tour-narration');
+    el.innerHTML = `<span class="tour-stop-name">${stop.name}</span>${stop.narration}`;
+
+    // Progress bar
+    const pct = ((idx + 1) / this.stops.length) * 100;
+    document.getElementById('tour-progress-fill').style.width = pct + '%';
+
+    // If this stop highlights a star, show its info panel
+    if (stop.selectStar) {
+      const starObj = this._findStarObj(stop.selectStar);
+      if (starObj) {
+        this.app._showStarInfo(starObj);
+      }
+    }
+
+    // Auto-advance
+    this.autoTimer = setTimeout(() => this.next(), stop.duration);
+  }
+}
+
+
+// ============================================================
+//  APP — Wire everything together
+// ============================================================
+
+class App {
+  constructor() {
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(this.renderer.domElement);
+
+    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 600);
+    this.galaxy = new Galaxy(GALAXY_DATA);
+    this.scene = this.galaxy.build();
+
+    // Start at Sun's position, looking toward center
+    this.nav = new Navigator(this.camera, this.renderer.domElement);
+    const sunP = this.galaxy.sunPosition.toThree();
+    this.nav.target.copy(sunP);
+    this.nav.distance = 60;
+    this.nav.smoothZoom = 60;
+    this.nav.yaw = Math.atan2(-sunP.x, -sunP.z);
+    this.nav.targetYaw = this.nav.yaw;
+    this.nav.pitch = -0.35;
+    this.nav.targetPitch = this.nav.pitch;
+
+    this.minimap = new Minimap('minimap-canvas');
+    this.skyView = new SurfaceSkyView('sky-canvas');
+    this.tour = new Tour(this);
+    this.raycaster = new THREE.Raycaster();
+    this.raycaster.params.Points = { threshold: 0.5 };
+    this.mouse = new THREE.Vector2();
+    this.hoveredStar = null;
+    this._selectedStar = null;
+
+    // Expose globally for planet button clicks
+    window._app = this;
+
+    this._bindEvents();
+    this._animate();
+  }
+
+  _bindEvents() {
+    window.addEventListener('resize', () => {
+      this.camera.aspect = window.innerWidth / window.innerHeight;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Track drag distance so we don't re-center on drag-release
+    let mouseDownPos = { x: 0, y: 0 };
+    this.renderer.domElement.addEventListener('mousedown', e => {
+      mouseDownPos = { x: e.clientX, y: e.clientY };
+    });
+
+    this.renderer.domElement.addEventListener('click', e => {
+      // Ignore if this was a drag (moved more than 5px)
+      const dx = e.clientX - mouseDownPos.x;
+      const dy = e.clientY - mouseDownPos.y;
+      if (Math.sqrt(dx*dx + dy*dy) > 5) return;
+
+      this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+
+      // First: check if we hit a notable star
+      const hits = this.raycaster.intersectObjects(this.galaxy.clickableObjects);
+      if (hits.length > 0) {
+        const star = hits[0].object.userData.star;
+        if (star) {
+          this._showStarInfo(star);
+          return; // just show info, don't fly
+        }
+      }
+
+      // Second: CTRL+click on empty space → raycast to galactic plane (y=0) to re-center
+      if (!e.ctrlKey && !e.metaKey) return; // require ctrl (or cmd on Mac)
+      const ray = this.raycaster.ray;
+      // Intersect with y=0 plane
+      if (Math.abs(ray.direction.y) > 0.0001) {
+        const t = -ray.origin.y / ray.direction.y;
+        if (t > 0) {
+          const hitPoint = ray.origin.clone().addScaledVector(ray.direction, t);
+          // Clamp to galaxy bounds (radius ~55 units)
+          const r = Math.sqrt(hitPoint.x * hitPoint.x + hitPoint.z * hitPoint.z);
+          if (r < 60) {
+            this.nav.flyTo(hitPoint, this.nav.distance);
+            // Brief HUD flash with sector designation
+            const el = document.getElementById('star-info');
+            const sectorName = this.galaxy.getSectorDesignation(hitPoint);
+            document.getElementById('si-name').textContent = `Sector ${sectorName}`;
+            const galX = (hitPoint.x / GALAXY_DATA.meta.scale).toFixed(0);
+            const galZ = (hitPoint.z / GALAXY_DATA.meta.scale).toFixed(0);
+            document.getElementById('si-detail').textContent = `Recentered · ${galX}, ${galZ} ly`;
+            el.classList.add('visible');
+            clearTimeout(this._infoTimer);
+            this._infoTimer = setTimeout(() => el.classList.remove('visible'), 2000);
+          }
+        }
+      }
+    });
+
+    // Hover detection
+    const hoverMouse = new THREE.Vector2();
+    const hoverRaycaster = new THREE.Raycaster();
+    hoverRaycaster.params.Points = { threshold: 0.5 };
+    const hoverTip = document.getElementById('hover-tip');
+
+    this.renderer.domElement.addEventListener('mousemove', e => {
+      hoverMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      hoverMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      hoverRaycaster.setFromCamera(hoverMouse, this.camera);
+      const hits = hoverRaycaster.intersectObjects(this.galaxy.clickableObjects);
+      if (hits.length > 0 && hits[0].object.userData.star && hits[0].object.visible) {
+        const star = hits[0].object.userData.star;
+        document.getElementById('ht-name').textContent = star.name;
+        document.getElementById('ht-type').textContent = star.type ? star.type.split('·')[0].trim() : '';
+        hoverTip.style.left = (e.clientX + 14) + 'px';
+        hoverTip.style.top = (e.clientY - 10) + 'px';
+        hoverTip.classList.add('visible');
+        this.renderer.domElement.style.cursor = 'pointer';
+        this.hoveredStar = star;
+      } else {
+        hoverTip.classList.remove('visible');
+        this.renderer.domElement.style.cursor = 'default';
+        this.hoveredStar = null;
+      }
+    });
+
+    // Filter mode
+    this._filterMode = 'all'; // 'all' | 'planets' | 'stars'
+
+    // Mode switcher buttons
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this._setFilterMode(btn.dataset.mode);
+      });
+    });
+
+    // Layer toggle panel
+    document.getElementById('layer-toggle-btn').addEventListener('click', () => {
+      const panel = document.getElementById('layer-panel');
+      const btn = document.getElementById('layer-toggle-btn');
+      panel.classList.toggle('active');
+      btn.classList.toggle('hidden', panel.classList.contains('active'));
+    });
+
+    // Layer checkboxes
+    document.querySelectorAll('#layer-panel input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const layerName = cb.dataset.layer;
+        const visible = cb.checked;
+        const objs = this.galaxy.layers[layerName] || [];
+        for (const obj of objs) {
+          obj.visible = visible;
+          // For groups, also toggle children
+          if (obj.isGroup) {
+            obj.traverse(child => { child.visible = visible; });
+          }
+        }
+      });
+    });
+
+    // Close layer panel when clicking outside
+    window.addEventListener('click', e => {
+      const panel = document.getElementById('layer-panel');
+      const btn = document.getElementById('layer-toggle-btn');
+      if (panel.classList.contains('active') &&
+          !panel.contains(e.target) && e.target !== btn) {
+        panel.classList.remove('active');
+        btn.classList.remove('hidden');
+      }
+    });
+
+    // Help overlay
+    document.getElementById('help-close').addEventListener('click', () => {
+      document.getElementById('help-overlay').classList.remove('active');
+    });
+    document.getElementById('help-overlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('help-overlay')) {
+        document.getElementById('help-overlay').classList.remove('active');
+      }
+    });
+
+    // Glowing help button
+    const helpBtn = document.getElementById('help-btn');
+    helpBtn.addEventListener('click', () => {
+      document.getElementById('help-overlay').classList.toggle('active');
+    });
+    // Stop pulsing animation after it finishes (10 iterations × 1.2s = 12s)
+    helpBtn.addEventListener('animationend', () => {
+      helpBtn.classList.remove('pulsing');
+    });
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        document.getElementById('sky-view').classList.remove('active');
+        document.getElementById('help-overlay').classList.remove('active');
+        if (this.tour.running) this.tour.stop();
+        return;
+      }
+
+      // ? key — help
+      if (e.key === '?') {
+        const help = document.getElementById('help-overlay');
+        help.classList.toggle('active');
+        return;
+      }
+
+      // Don't process galaxy shortcuts while overlays are open
+      if (document.getElementById('sky-view').classList.contains('active')) return;
+      if (document.getElementById('help-overlay').classList.contains('active')) return;
+
+      const k = e.key.toLowerCase();
+      if (k === 'h') this.nav.flyTo(this.galaxy.sunPosition.toThree(), 5);
+      if (k === 'g') this.nav.flyTo(new THREE.Vector3(0,0,0), 80);
+      if (k === 'l') {
+        const panel = document.getElementById('layer-panel');
+        const btn = document.getElementById('layer-toggle-btn');
+        panel.classList.toggle('active');
+        btn.classList.toggle('hidden', panel.classList.contains('active'));
+      }
+      if (k === 't') {
+        if (this.tour.running) this.tour.stop();
+        else this.tour.start();
+      }
+
+      // Mode shortcuts: 1=all, 2=planets, 3=stars
+      if (e.key === '1') this._setFilterMode('all');
+      if (e.key === '2') this._setFilterMode('planets');
+      if (e.key === '3') this._setFilterMode('stars');
+    });
+  }
+
+  _showStarInfo(star) {
+    const el = document.getElementById('star-info');
+    document.getElementById('si-name').textContent = star.name;
+    document.getElementById('si-detail').textContent = star.type;
+    el.classList.add('visible');
+    clearTimeout(this._infoTimer);
+    this._infoTimer = setTimeout(() => el.classList.remove('visible'), 4000);
+
+    // Star portrait via canvas
+    const pv = document.getElementById('photo-viewer');
+    const cvs = document.getElementById('pv-canvas');
+    this._drawStarPortrait(cvs, star);
+    document.getElementById('pv-name').textContent = star.name;
+    document.getElementById('pv-type').textContent = star.type;
+    // distance info
+    const distEl = document.getElementById('pv-dist');
+    if (star.distFromSun_ly !== undefined) {
+      distEl.textContent = star.distFromSun_ly.toLocaleString() + ' ly from Sol';
+    } else {
+      distEl.textContent = '';
+    }
+    // planet buttons
+    const existingPlanets = pv.querySelector('.pv-planets');
+    if (existingPlanets) existingPlanets.remove();
+    if (star.planets && star.planets.length > 0) {
+      this._selectedStar = star;
+      const div = document.createElement('div');
+      div.className = 'pv-planets';
+      star.planets.forEach((p, i) => {
+        const btn = document.createElement('span');
+        btn.className = 'pv-planet-btn';
+        btn.textContent = '\u{1F30D} ' + p.name;
+        btn.onclick = () => window._app.skyView.show(star, p);
+        div.appendChild(btn);
+      });
+      pv.querySelector('.pv-info').appendChild(div);
+    }
+    pv.classList.add('visible');
+    clearTimeout(this._photoTimer);
+    this._photoTimer = setTimeout(() => pv.classList.remove('visible'), 20000);
+  }
+
+  _drawStarPortrait(canvas, star) {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Deep space background
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+    bgGrad.addColorStop(0, '#050810');
+    bgGrad.addColorStop(1, '#0a0f1e');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Background stars (seeded by name for consistency)
+    let seed = 0;
+    for (let i = 0; i < star.name.length; i++) seed += star.name.charCodeAt(i);
+    const rng = () => { seed = (seed * 16807 + 0) % 2147483647; return seed / 2147483647; };
+    for (let i = 0; i < 120; i++) {
+      const sx = rng() * w, sy = rng() * h;
+      const sb = 0.2 + rng() * 0.6;
+      ctx.fillStyle = `rgba(200,210,230,${sb})`;
+      ctx.fillRect(sx, sy, rng() > 0.8 ? 1.5 : 0.8, rng() > 0.8 ? 1.5 : 0.8);
+    }
+
+    // Parse the star color
+    const c = star.color || '#ffffff';
+    const r = parseInt(c.slice(1,3),16), g = parseInt(c.slice(3,5),16), b = parseInt(c.slice(5,7),16);
+
+    // Main star glow
+    const cx = w * 0.5, cy = h * 0.45;
+    const baseR = (star.size || 1) * 18;
+
+    // Outer glow
+    const outerGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseR * 4);
+    outerGlow.addColorStop(0, `rgba(${r},${g},${b},0.15)`);
+    outerGlow.addColorStop(0.5, `rgba(${r},${g},${b},0.04)`);
+    outerGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = outerGlow;
+    ctx.fillRect(0, 0, w, h);
+
+    // Mid glow
+    const midGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseR * 2);
+    midGlow.addColorStop(0, `rgba(${Math.min(255,r+60)},${Math.min(255,g+60)},${Math.min(255,b+60)},0.6)`);
+    midGlow.addColorStop(0.4, `rgba(${r},${g},${b},0.2)`);
+    midGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = midGlow;
+    ctx.beginPath();
+    ctx.arc(cx, cy, baseR * 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Core
+    const coreGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseR);
+    coreGlow.addColorStop(0, '#ffffff');
+    coreGlow.addColorStop(0.3, `rgba(${Math.min(255,r+80)},${Math.min(255,g+80)},${Math.min(255,b+80)},0.95)`);
+    coreGlow.addColorStop(0.7, `rgba(${r},${g},${b},0.5)`);
+    coreGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = coreGlow;
+    ctx.beginPath();
+    ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Diffraction spikes for bright stars
+    if ((star.size || 1) > 1.2) {
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.15)`;
+      ctx.lineWidth = 1;
+      const spikeLen = baseR * 3;
+      for (let angle = 0; angle < 4; angle++) {
+        const a = angle * Math.PI / 2 + 0.4;
+        ctx.beginPath();
+        ctx.moveTo(cx - Math.cos(a)*spikeLen, cy - Math.sin(a)*spikeLen);
+        ctx.lineTo(cx + Math.cos(a)*spikeLen, cy + Math.sin(a)*spikeLen);
+        ctx.stroke();
+      }
+    }
+
+    // Black hole special: accretion disk
+    if (star.type && star.type.toLowerCase().includes('black hole')) {
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, baseR * 2.5, baseR * 0.6, 0.3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.15)`;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, baseR * 3.2, baseR * 0.8, 0.3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // If star has planets, draw a tiny planet
+    if (star.planets && star.planets.length > 0) {
+      const p = star.planets[0];
+      const px = cx + baseR * 2.5, py = cy + 5;
+      ctx.fillStyle = p.color || '#667788';
+      ctx.beginPath();
+      ctx.arc(px, py, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(200,210,230,0.5)';
+      ctx.font = '9px sans-serif';
+      ctx.fillText(p.name, px + 7, py + 3);
+    }
+  }
+
+  _setFilterMode(mode) {
+    this._filterMode = mode;
+
+    // Update button UI
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    // Toggle visibility of notable star meshes
+    this.galaxy.clickableObjects.forEach(mesh => {
+      const cat = mesh.userData.category;
+      if (!cat) return; // skip non-categorized objects
+      if (mode === 'all') {
+        mesh.visible = true;
+      } else if (mode === 'planets') {
+        mesh.visible = mesh.userData.hasPlanets === true;
+      } else if (mode === 'stars') {
+        mesh.visible = mesh.userData.hasPlanets !== true;
+      }
+    });
+
+    // Update HUD mode indicator
+    const modeLabel = { all: 'All', planets: 'Planets', stars: 'Stars' };
+    document.getElementById('mode-label').textContent = modeLabel[mode] || 'All';
+  }
+
+  _updateHUD() {
+    const zl = this.nav.getZoomLevel();
+    document.getElementById('zoom-label').textContent = zl.label;
+
+    const dist = this.nav.distance;
+    const lyDist = dist / GALAXY_DATA.meta.scale;
+    let distStr;
+    if (lyDist > 1000) distStr = (lyDist/1000).toFixed(1) + 'k ly from target';
+    else distStr = lyDist.toFixed(0) + ' ly from target';
+    document.getElementById('distance-label').textContent = distStr;
+
+    const t = this.nav.target;
+    const galX = (t.x / GALAXY_DATA.meta.scale).toFixed(0);
+    const galZ = (t.z / GALAXY_DATA.meta.scale).toFixed(0);
+    const elev = this.nav.elevationDeg;
+    const sector = this.galaxy.getSectorDesignation(t);
+    document.getElementById('coords').textContent = `Sector ${sector} · ${galX}, ${galZ} ly · Elev: ${elev}°`;
+
+    // Zoom bar
+    const pct = (Math.log(dist) - Math.log(this.nav.minDist)) / (Math.log(this.nav.maxDist) - Math.log(this.nav.minDist));
+    document.getElementById('zoom-indicator').style.top = (pct * 190) + 'px';
+  }
+
+  _animate() {
+    requestAnimationFrame(() => this._animate());
+    this.nav.update();
+    this._updateHUD();
+    this.minimap.draw(this.nav.target, this.nav.distance, this.galaxy.sunPosition.toThree());
+
+    // Adjust point sizes based on zoom
+    const sizeFactor = Math.max(0.03, Math.min(1, this.nav.distance * 0.01));
+    this.scene.traverse(obj => {
+      if (obj.isPoints && obj.material) {
+        obj.material.size = 0.06 + sizeFactor * 0.12;
+      }
+    });
+
+    // Pulse the Sun ring
+    if (this.galaxy.sunMesh && this.galaxy.sunMesh.children.length > 1) {
+      const ring = this.galaxy.sunMesh.children[1];
+      if (ring && ring.material) {
+        ring.material.opacity = 0.2 + Math.sin(Date.now() * 0.003) * 0.15;
+      }
+    }
+
+    this.renderer.render(this.scene, this.camera);
+  }
+}
+
+// Boot
+const app = new App();
+
+// Export data model to console for inspection
+console.log("Galaxy JSON model:", JSON.stringify(app.galaxy.toJSON(), null, 2).substring(0, 500) + "...");
+</script>
+</body>
+</html>
