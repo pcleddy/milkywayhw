@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Galaxy Explorer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #050510; overflow: hidden; cursor: grab; font-family: monospace; color: #ccd; }
+body.dragging { cursor: grabbing; }
+canvas { display: block; }
+#hud {
+    position: fixed; top: 12px; left: 12px; color: #889; font-size: 12px;
+    pointer-events: none; line-height: 1.6;
+}
+#controls {
+    position: fixed; top: 12px; right: 12px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;
+}
+#controls button {
+    background: rgba(20,20,50,0.8); border: 1px solid #335; color: #8af;
+    padding: 6px 12px; font-family: monospace; font-size: 11px; cursor: pointer;
+    border-radius: 3px; white-space: nowrap;
+}
+#controls button:hover { background: rgba(40,40,80,0.9); border-color: #66f; }
+#controls button.active { background: rgba(50,50,120,0.9); border-color: #88f; color: #bdf; }
+#info-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 0; overflow: hidden;
+    background: rgba(8,8,25,0.95); border-top: 1px solid #223;
+    transition: height 0.3s ease; padding: 0 20px;
+}
+#info-bar.open { height: 180px; padding: 16px 20px; }
+#info-bar.tall { height: 260px; padding: 16px 20px; }
+#info-bar h2 { color: #8af; font-size: 15px; margin-bottom: 8px; font-weight: normal; }
+#info-bar .row { display: flex; gap: 24px; font-size: 12px; line-height: 1.8; }
+#info-bar .row .col { min-width: 140px; }
+#info-bar .label { color: #557; }
+#info-bar .close {
+    position: absolute; top: 10px; right: 16px; background: none; border: none;
+    color: #557; font-size: 16px; cursor: pointer; font-family: monospace;
+}
+#info-bar .close:hover { color: #aaf; }
+#info-bar .enter-btn {
+    display: inline-block; margin-top: 8px; padding: 4px 10px; background: rgba(40,40,100,0.8);
+    border: 1px solid #448; color: #8af; cursor: pointer; border-radius: 3px; font-family: monospace; font-size: 11px;
+}
+#info-bar .enter-btn:hover { background: rgba(60,60,140,0.9); border-color: #66f; }
+#portrait { position: absolute; top: 16px; right: 50px; }
+#portrait-img { position: absolute; top: 16px; right: 50px; width: 120px; height: 120px;
+    object-fit: cover; border-radius: 4px; display: none; }
+#hover-tip {
+    position: fixed; z-index: 25; pointer-events: none;
+    background: rgba(10,10,30,0.9); border: 1px solid rgba(80,100,200,0.3);
+    border-radius: 5px; padding: 4px 10px; font-size: 11px; color: #aaccff;
+    opacity: 0; transition: opacity 0.12s; white-space: nowrap;
+}
+#hover-tip.visible { opacity: 1; }
+#hint {
+    position: fixed; bottom: 12px; left: 12px; color: #445; font-size: 11px;
+    pointer-events: none; transition: opacity 0.3s;
+}
+.lifeform { color: #6b8; font-style: italic; margin-top: 4px; }
+#solar-canvas {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    display: none; z-index: 1;
+}
+#solar-canvas.active { display: block; }
+</style>
+</head>
+<body>
+
+<div id="hud"></div>
+<div id="controls"></div>
+<div id="hover-tip"></div>
+<div id="info-bar">
+    <button class="close" onclick="closeInfo()">&times;</button>
+    <canvas id="portrait" width="120" height="120"></canvas>
+    <img id="portrait-img" />
+    <h2 id="info-name"></h2>
+    <div class="row" id="info-body"></div>
+</div>
+<div id="hint">scroll to zoom · drag to orbit · click a galaxy</div>
+<canvas id="solar-canvas"></canvas>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// =====================================================
+// GALAXY DATA
+// =====================================================
+const galaxies = [
+{name:"Milky Way",ra:17.76,dec:-29,dist:0,mag:null,type:"SBbc barred spiral",size:"100,000 ly",notes:"Our home galaxy, ~200 billion stars",group:"Local Group"},
+{name:"Andromeda (M31)",ra:0.71,dec:41.27,dist:2.537,mag:3.4,type:"SA(s)b spiral",size:"220,000 ly",notes:"Largest in Local Group, approaching at ~110 km/s",group:"Local Group"},
+{name:"Triangulum (M33)",ra:1.56,dec:30.66,dist:2.73,mag:5.7,type:"SA(s)cd spiral",size:"60,000 ly",notes:"Third-largest in Local Group",group:"Local Group"},
+{name:"Large Magellanic Cloud",ra:5.39,dec:-69.76,dist:0.163,mag:0.9,type:"SB(s)m irregular",size:"14,000 ly",notes:"Visible naked eye from southern hemisphere",group:"Local Group"},
+{name:"Small Magellanic Cloud",ra:0.88,dec:-72.8,dist:0.197,mag:2.7,type:"SB(s)m pec irregular",size:"7,000 ly",notes:"Tidally interacting with LMC",group:"Local Group"},
+{name:"Bode's Galaxy (M81)",ra:9.93,dec:69.07,dist:11.8,mag:6.9,type:"SA(s)ab spiral",size:"90,000 ly",notes:"One of the brightest galaxies in the sky",group:"M81 Group"},
+{name:"Cigar Galaxy (M82)",ra:9.93,dec:69.68,dist:11.5,mag:8.4,type:"I0 starburst",size:"37,000 ly",notes:"Intense starburst from M81 interaction",group:"M81 Group"},
+{name:"Whirlpool (M51)",ra:13.50,dec:47.2,dist:23.2,mag:8.4,type:"SA(s)bc pec spiral",size:"76,000 ly",notes:"Classic face-on spiral with companion NGC 5195",group:"M51 Group"},
+{name:"Pinwheel (M101)",ra:14.05,dec:54.35,dist:20.9,mag:7.9,type:"SAB(rs)cd spiral",size:"170,000 ly",notes:"Large face-on, asymmetric disk",group:"M101 Group"},
+{name:"Sombrero (M104)",ra:12.67,dec:-11.62,dist:29.3,mag:8.0,type:"SA(s)a spiral",size:"49,000 ly",notes:"Iconic dust lane and bright nucleus",group:"Virgo Southern Ext."},
+{name:"Sunflower (M63)",ra:13.26,dec:42.03,dist:29.3,mag:8.6,type:"SA(rs)bc spiral",size:"98,000 ly",notes:"Flocculent spiral with patchy arms",group:"M51 Group"},
+{name:"Black Eye (M64)",ra:12.95,dec:21.68,dist:17.3,mag:8.5,type:"(R)SA(rs)ab spiral",size:"54,000 ly",notes:"Dark dust band, counter-rotating gas",group:"Coma I Group"},
+{name:"M65",ra:11.32,dec:13.09,dist:35.0,mag:9.3,type:"SAB(rs)a spiral",size:"90,000 ly",notes:"Part of the Leo Triplet",group:"Leo Triplet"},
+{name:"M66",ra:11.34,dec:12.99,dist:36.0,mag:8.9,type:"SAB(s)b spiral",size:"95,000 ly",notes:"Asymmetric arms from interaction",group:"Leo Triplet"},
+{name:"NGC 3628",ra:11.34,dec:13.59,dist:35.0,mag:9.5,type:"Sb pec edge-on",size:"100,000 ly",notes:"Hamburger Galaxy, edge-on with tidal tail",group:"Leo Triplet"},
+{name:"M74",ra:1.61,dec:15.78,dist:30.0,mag:9.4,type:"SA(s)c spiral",size:"95,000 ly",notes:"Grand-design spiral, hard to observe",group:"M74 Group"},
+{name:"M77",ra:2.71,dec:-0.01,dist:47.0,mag:8.9,type:"(R)SA(rs)b Seyfert",size:"170,000 ly",notes:"Active Seyfert II nucleus",group:"Field"},
+{name:"M83 (Southern Pinwheel)",ra:13.62,dec:-29.87,dist:14.7,mag:7.5,type:"SAB(s)c spiral",size:"55,000 ly",notes:"6 observed supernovae",group:"Centaurus A/M83"},
+{name:"M87 (Virgo A)",ra:12.51,dec:12.39,dist:53.5,mag:8.6,type:"E+0-1 pec elliptical",size:"240,000 ly",notes:"Supergiant elliptical, first imaged black hole (2019)",group:"Virgo Cluster"},
+{name:"M49",ra:12.50,dec:8.0,dist:55.9,mag:8.4,type:"E2 elliptical",size:"157,000 ly",notes:"Brightest galaxy in Virgo Cluster",group:"Virgo Cluster"},
+{name:"M86",ra:12.44,dec:12.95,dist:52.0,mag:8.9,type:"E3/S0 elliptical",size:"135,000 ly",notes:"Blueshifted, moving toward us in Virgo",group:"Virgo Cluster"},
+{name:"M84",ra:12.42,dec:12.89,dist:57.0,mag:9.1,type:"E1 elliptical",size:"110,000 ly",notes:"Radio galaxy with relativistic jets",group:"Virgo Cluster"},
+{name:"M94",ra:12.85,dec:41.12,dist:16.0,mag:8.2,type:"(R)SA(r)ab spiral",size:"33,000 ly",notes:"Starburst ring galaxy",group:"Canes Venatici I"},
+{name:"M100",ra:12.38,dec:15.82,dist:55.0,mag:9.3,type:"SAB(s)bc spiral",size:"107,000 ly",notes:"Grand-design, Cepheid distance calibrator",group:"Virgo Cluster"},
+{name:"M106",ra:12.32,dec:47.30,dist:23.7,mag:8.4,type:"SAB(s)bc Seyfert",size:"133,000 ly",notes:"Active nucleus with water megamaser",group:"Canes Venatici II"},
+{name:"M108",ra:11.19,dec:55.67,dist:45.0,mag:10.0,type:"SB(s)cd edge-on",size:"110,000 ly",notes:"Edge-on, no prominent bulge",group:"Ursa Major Cluster"},
+{name:"M109",ra:11.96,dec:53.37,dist:67.2,mag:9.8,type:"SB(rs)bc barred spiral",size:"135,000 ly",notes:"Farthest Messier galaxy in some lists",group:"Ursa Major Cluster"},
+{name:"M110",ra:0.67,dec:41.69,dist:2.69,mag:8.5,type:"E5 pec dwarf elliptical",size:"17,000 ly",notes:"Andromeda satellite, has dust lanes",group:"Local Group"},
+{name:"NGC 253 (Sculptor)",ra:0.79,dec:-25.29,dist:11.4,mag:7.2,type:"SAB(s)c starburst",size:"90,000 ly",notes:"Bright spiral, intense starburst core",group:"Sculptor Group"},
+{name:"NGC 891",ra:2.38,dec:42.35,dist:27.3,mag:9.9,type:"SA(s)b edge-on",size:"110,000 ly",notes:"Often compared to Milky Way's profile",group:"NGC 1023 Group"},
+{name:"NGC 1300",ra:3.33,dec:-19.41,dist:61.3,mag:10.4,type:"SB(rs)bc barred spiral",size:"110,000 ly",notes:"Prototypical barred spiral",group:"Eridanus Cluster"},
+{name:"NGC 2403",ra:7.62,dec:65.6,dist:8.0,mag:8.5,type:"SAB(s)cd spiral",size:"50,000 ly",notes:"Bright spiral similar to M33",group:"M81 Group"},
+{name:"NGC 4565 (Needle)",ra:12.60,dec:25.99,dist:42.7,mag:9.6,type:"SA(s)b edge-on",size:"100,000 ly",notes:"Stunning edge-on, very thin disk",group:"Coma I Group"},
+{name:"NGC 4631 (Whale)",ra:12.70,dec:32.54,dist:25.0,mag:9.2,type:"SB(s)d edge-on",size:"140,000 ly",notes:"Distorted edge-on with companion",group:"NGC 4631 Group"},
+{name:"NGC 5128 (Centaurus A)",ra:13.42,dec:-43.02,dist:12.4,mag:6.8,type:"S0 pec elliptical",size:"97,000 ly",notes:"Nearest giant radio galaxy, dramatic dust lane",group:"Centaurus A/M83"},
+{name:"NGC 6822 (Barnard's)",ra:19.75,dec:-14.79,dist:1.63,mag:8.8,type:"IB(s)m irregular",size:"7,000 ly",notes:"Local Group dwarf, similar to SMC",group:"Local Group"},
+{name:"NGC 6946 (Fireworks)",ra:20.58,dec:60.15,dist:25.2,mag:8.8,type:"SAB(rs)cd spiral",size:"75,000 ly",notes:"10 supernovae observed — most of any galaxy",group:"NGC 6946 Group"},
+{name:"NGC 7331",ra:22.62,dec:34.42,dist:40.0,mag:9.5,type:"SA(s)b spiral",size:"120,000 ly",notes:"Often called Milky Way's twin",group:"NGC 7331 Group"},
+{name:"IC 342",ra:3.78,dec:68.1,dist:10.7,mag:9.1,type:"SAB(rs)cd spiral",size:"75,000 ly",notes:"Hidden in Zone of Avoidance",group:"IC 342/Maffei Group"},
+{name:"IC 10",ra:0.34,dec:59.29,dist:2.2,mag:10.4,type:"dIrr irregular",size:"5,000 ly",notes:"Nearest starburst galaxy",group:"Local Group"},
+{name:"NGC 1316 (Fornax A)",ra:3.38,dec:-37.21,dist:62.0,mag:8.4,type:"SAB(s)0 pec lenticular",size:"200,000 ly",notes:"Merger remnant, brightest radio source in Fornax",group:"Fornax Cluster"},
+{name:"NGC 1365",ra:3.56,dec:-36.14,dist:56.0,mag:9.6,type:"SBb(s) barred spiral",size:"200,000 ly",notes:"Great Barred Spiral of Fornax",group:"Fornax Cluster"},
+{name:"NGC 55",ra:0.25,dec:-39.2,dist:6.5,mag:7.9,type:"SB(s)m edge-on",size:"70,000 ly",notes:"Large edge-on irregular in Sculptor",group:"Sculptor Group"},
+{name:"NGC 300",ra:0.92,dec:-37.68,dist:6.1,mag:8.1,type:"SA(s)d spiral",size:"44,000 ly",notes:"Well-studied face-on, Sculptor Group",group:"Sculptor Group"},
+{name:"NGC 2903",ra:9.54,dec:21.50,dist:30.0,mag:9.0,type:"SB(s)d spiral",size:"80,000 ly",notes:"Bright barred spiral Messier missed",group:"Field"},
+{name:"NGC 4038/39 (Antennae)",ra:12.03,dec:-18.87,dist:45.0,mag:10.3,type:"Merging pair",size:"120,000 ly",notes:"Most famous colliding galaxy pair",group:"NGC 4038 Group"},
+{name:"NGC 1275 (Perseus A)",ra:3.33,dec:41.51,dist:237.0,mag:11.6,type:"cD pec Seyfert",size:"200,000 ly",notes:"Center of Perseus Cluster, powerful radio source",group:"Perseus Cluster"},
+{name:"NGC 4889",ra:13.00,dec:27.98,dist:308.0,mag:11.5,type:"cD elliptical",size:"240,000 ly",notes:"21-billion-solar-mass black hole",group:"Coma Cluster"},
+{name:"Maffei 1",ra:2.61,dec:59.65,dist:9.8,mag:11.4,type:"E3 elliptical",size:"75,000 ly",notes:"Nearest giant elliptical, in Zone of Avoidance",group:"IC 342/Maffei Group"},
+{name:"Cartwheel Galaxy",ra:0.63,dec:-33.72,dist:489.0,mag:14.2,type:"Ring galaxy",size:"150,000 ly",notes:"Ring from head-on collision",group:"Field"},
+{name:"M85",ra:12.42,dec:18.19,dist:60.0,mag:9.1,type:"SA(s)0+ lenticular",size:"125,000 ly",notes:"Lenticular with recent minor merger",group:"Virgo Cluster"},
+{name:"M58",ra:12.63,dec:11.82,dist:62.0,mag:9.7,type:"SAB(rs)b spiral",size:"100,000 ly",notes:"Barred spiral in Virgo",group:"Virgo Cluster"},
+{name:"M60",ra:12.73,dec:11.55,dist:54.0,mag:8.8,type:"E2 elliptical",size:"120,000 ly",notes:"Giant elliptical with ultracompact dwarf",group:"Virgo Cluster"},
+{name:"M88",ra:12.53,dec:14.42,dist:47.0,mag:9.6,type:"SA(rs)b spiral",size:"105,000 ly",notes:"Multi-arm spiral in Virgo",group:"Virgo Cluster"},
+{name:"M90",ra:12.61,dec:13.16,dist:58.7,mag:9.5,type:"SAB(rs)ab spiral",size:"130,000 ly",notes:"Blueshifted, moving through Virgo toward us",group:"Virgo Cluster"},
+{name:"M95",ra:10.73,dec:11.70,dist:32.6,mag:9.7,type:"SB(r)b barred spiral",size:"46,000 ly",notes:"Ring-barred spiral in Leo",group:"M96 Group"},
+{name:"M96",ra:10.78,dec:11.82,dist:31.0,mag:9.2,type:"SAB(rs)ab spiral",size:"66,000 ly",notes:"Slightly asymmetric spiral",group:"M96 Group"},
+{name:"M105",ra:10.80,dec:12.58,dist:32.0,mag:9.3,type:"E1 elliptical",size:"54,000 ly",notes:"Confirmed supermassive black hole",group:"M96 Group"},
+{name:"NGC 4449",ra:12.47,dec:44.09,dist:12.7,mag:9.6,type:"IBm irregular",size:"20,000 ly",notes:"Starburst dwarf, resembles LMC",group:"Canes Venatici I"},
+{name:"NGC 5866 (M102?)",ra:15.11,dec:55.76,dist:50.0,mag:9.9,type:"S0 lenticular",size:"60,000 ly",notes:"Edge-on lenticular with sharp dust lane",group:"NGC 5866 Group"},
+{name:"NGC 1399",ra:3.64,dec:-35.45,dist:65.0,mag:9.6,type:"E1 pec elliptical",size:"135,000 ly",notes:"Central dominant galaxy of Fornax Cluster",group:"Fornax Cluster"},
+];
+
+const seen = new Set();
+const uniqueGalaxies = galaxies.filter(g => { if (seen.has(g.name)) return false; seen.add(g.name); return true; });
+
+// =====================================================
+// CONVERT RA/DEC/DIST → 3D POSITIONS
+// =====================================================
+// Use log-compressed distance so Local Group isn't crushed against origin
+// and distant galaxies (Cartwheel 489 Mly) aren't infinitely far
+const DIST_SCALE = 12; // scene units spread
+function distToScene(mly) {
+    if (mly <= 0) return 0;
+    return Math.log10(mly + 1) * DIST_SCALE;
+}
+function sceneToDist(s) { return Math.pow(10, s / DIST_SCALE) - 1; }
+
+uniqueGalaxies.forEach(g => {
+    const raDeg = g.ra * 15; // hours → degrees
+    const raRad = raDeg * Math.PI / 180;
+    const decRad = g.dec * Math.PI / 180;
+    const r = distToScene(g.dist);
+    // Standard spherical → cartesian (astronomical convention)
+    g.pos = new THREE.Vector3(
+        r * Math.cos(decRad) * Math.cos(raRad),
+        r * Math.sin(decRad),
+        r * Math.cos(decRad) * Math.sin(raRad)
+    );
+    g.sceneRadius = Math.max(0.15, Math.min(1.2, 1.0 / (0.5 + Math.log10(Math.max(0.1, g.dist) + 1))));
+});
+
+const milkyWay = uniqueGalaxies.find(g => g.name === "Milky Way");
+
+// =====================================================
+// COLOR HELPERS
+// =====================================================
+function galaxyColor(g) {
+    const t = g.type.toLowerCase();
+    if (t.includes('elliptical') || t.includes('e0') || t.includes('e1') || t.includes('e2') || t.includes('e3') || t.includes('e5') || t.includes('cd')) return '#ffcc88';
+    if (t.includes('lenticular') || t.includes('s0')) return '#ddbb99';
+    if (t.includes('irregular') || t.includes('irr')) return '#88ccff';
+    if (t.includes('starburst')) return '#ff8888';
+    if (t.includes('seyfert')) return '#cc88ff';
+    if (t.includes('merg') || t.includes('interact') || t.includes('ring')) return '#ff88cc';
+    return '#aaccff';
+}
+function lightenColor(hex, amt) {
+    let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    r = Math.min(255, r + amt); g = Math.min(255, g + amt); b = Math.min(255, b + amt);
+    return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
+}
+
+// =====================================================
+// GLOW TEXTURE
+// =====================================================
+function makeGlowTexture() {
+    const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.15, 'rgba(255,255,255,0.6)');
+    g.addColorStop(0.4, 'rgba(255,255,255,0.15)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+}
+
+// =====================================================
+// SOLAR SYSTEM DATA (unchanged)
+// =====================================================
+const planets = [
+    {name:"Sun",dist:0,radius:20,color:"#ffdd44",rings:false,
+     facts:"G2V main-sequence star, 4.6 billion years old, surface temp ~5,500°C, contains 99.86% of solar system mass",
+     lifeform:"The Lumivores — sentient plasma filaments that surf magnetic field lines. They communicate via coronal mass ejections and consider sunspots to be sacred meditation retreats. Extremely extroverted."},
+    {name:"Mercury",dist:60,radius:5,color:"#aaa088",rings:false,
+     facts:"Smallest planet, no atmosphere, extreme temps -180°C to 430°C, 88-day year, heavily cratered",
+     lifeform:"The Thermoclines — flat crystalline beings that live in the terminator zone between day and night sides. They slide along the shadow's edge at 3.6 km/h to stay at exactly 22°C. Absolutely hate surprises."},
+    {name:"Venus",dist:110,radius:9,color:"#e8c56d",rings:false,
+     facts:"Hottest planet (462°C), dense CO2 atmosphere, retrograde rotation, 243-day day longer than 225-day year",
+     lifeform:"The Acidonauts — balloon-shaped organisms floating at 50km altitude where it's actually pleasant. They photosynthesize sulfuric acid and sneeze lightning. Their poetry is famously depressing."},
+    {name:"Earth",dist:170,radius:9.5,color:"#4488cc",rings:false,
+     facts:"Only known planet with life, 71% water surface, 1 moon, magnetic field protects atmosphere, 4.54 billion years old",
+     lifeform:"Humans — a peculiar species that builds telescopes to look at other planets while arguing about whether their own planet is getting too warm. Invented pizza, which may be their greatest achievement."},
+    {name:"Mars",dist:240,radius:7,color:"#cc6644",rings:false,
+     facts:"Red from iron oxide, largest volcano (Olympus Mons 21km), deepest canyon (Valles Marineris 7km), thin CO2 atmosphere",
+     lifeform:"The Dustwalkers — tall, spindly beings made of electrostatically bonded regolith. They reproduce by dust devil and find Earth's humidity absolutely revolting. Very into minimalist interior design."},
+    {name:"Jupiter",dist:370,radius:18,color:"#d4a574",rings:false,
+     facts:"Largest planet (1,321 Earths), Great Red Spot storm 350+ years old, 95 known moons, strong magnetic field",
+     lifeform:"The Bandfolk — enormous gaseous colonial organisms, each spanning an entire latitude band. They think in weather patterns. The Great Red Spot is actually Gary, who's been having an argument since 1665."},
+    {name:"Saturn",dist:480,radius:15,color:"#e8d5a0",rings:true,
+     facts:"Least dense planet (would float in water), spectacular ring system, 146 known moons including Titan with atmosphere",
+     lifeform:"The Ringherds — tiny crystalline shepherds that maintain the ring gaps. Each one manages about 10 billion ice particles. They invented bureaucracy 3 billion years ago and haven't improved it since."},
+    {name:"Uranus",dist:570,radius:12,color:"#88bbcc",rings:false,
+     facts:"Rotates on its side (98° tilt), ice giant, -224°C, 27 known moons, faint ring system, discovered 1781",
+     lifeform:"The Tiltwise — beings who evolved sideways and find 'upright' civilizations deeply unsettling. They communicate by subtle changes in methane coloring and consider themselves the universe's art critics."},
+    {name:"Neptune",dist:650,radius:11.5,color:"#4466bb",rings:false,
+     facts:"Windiest planet (2,100 km/h), ice giant, 14 known moons, Triton orbits retrograde, discovered by math (1846)",
+     lifeform:"The Howlers — wind-beings that exist only above 1,800 km/h. They sing in frequencies that shatter diamond. Extremely fast-paced culture. Their version of 'patience' translates to about 0.3 seconds."},
+];
+
+// =====================================================
+// VIEW MODE STATE
+// =====================================================
+let viewMode = 'galaxies';
+let showLabels = true, showRADecGrid = false, showMpcGrid = false;
+let selectedObj = null;
+
+// =====================================================
+// 3D GALAXY VIEW (Three.js)
+// =====================================================
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 800);
+const scene = new THREE.Scene();
+
+// Navigator state
+const nav = {
+    target: new THREE.Vector3(0, 0, 0),
+    distance: 30, smoothZoom: 30,
+    yaw: -0.3, pitch: -0.3,
+    targetYaw: -0.3, targetPitch: -0.3,
+    _flyTarget: null, _flyDist: null, _flyPitch: null,
+    minDist: 0.5, maxDist: 120,
+
+    flyTo(pos, dist, pitch) {
+        this._flyTarget = pos.clone();
+        this._flyDist = dist;
+        this.smoothZoom = dist;
+        if (pitch !== undefined) this._flyPitch = pitch;
+    },
+    update() {
+        if (this._flyTarget) {
+            this.target.lerp(this._flyTarget, 0.06);
+            if (this.target.distanceTo(this._flyTarget) < 0.01) this._flyTarget = null;
+        }
+        if (this._flyPitch !== null) {
+            this.targetPitch += (this._flyPitch - this.targetPitch) * 0.06;
+            if (Math.abs(this.targetPitch - this._flyPitch) < 0.001) this._flyPitch = null;
+        }
+        this.distance += (this.smoothZoom - this.distance) * 0.08;
+        this.targetPitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, this.targetPitch));
+        this.yaw += (this.targetYaw - this.yaw) * 0.12;
+        this.pitch += (this.targetPitch - this.pitch) * 0.12;
+        const cx = this.target.x + Math.cos(this.pitch) * Math.sin(this.yaw) * this.distance;
+        const cy = this.target.y + Math.sin(this.pitch) * this.distance;
+        const cz = this.target.z + Math.cos(this.pitch) * Math.cos(this.yaw) * this.distance;
+        camera.position.set(cx, cy, cz);
+        camera.lookAt(this.target);
+    }
+};
+
+// Background stars
+(function() {
+    const count = 6000;
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+        const th = Math.random() * Math.PI * 2;
+        const ph = Math.acos(2 * Math.random() - 1);
+        const r = 200 + Math.random() * 400;
+        pos[i*3] = r * Math.sin(ph) * Math.cos(th);
+        pos[i*3+1] = r * Math.sin(ph) * Math.sin(th);
+        pos[i*3+2] = r * Math.cos(ph);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    scene.add(new THREE.Points(geo, new THREE.PointsMaterial({
+        size: 0.8, color: 0x888899, sizeAttenuation: false, transparent: true, opacity: 0.5
+    })));
+})();
+
+// Galaxy objects
+const glowTex = makeGlowTexture();
+const galaxyMeshes = [];
+const clickableObjects = [];
+
+uniqueGalaxies.forEach(g => {
+    const group = new THREE.Group();
+    group.position.copy(g.pos);
+    group.userData.galaxy = g;
+
+    const col = new THREE.Color(galaxyColor(g));
+    const isMW = g.name === 'Milky Way';
+
+    // Core sphere
+    const r = g.sceneRadius;
+    const geo = new THREE.SphereGeometry(r * 0.3, 12, 12);
+    const mat = new THREE.MeshBasicMaterial({ color: isMW ? 0xffee88 : col });
+    const mesh = new THREE.Mesh(geo, mat);
+    group.add(mesh);
+    clickableObjects.push(mesh);
+
+    // Glow sprite
+    const spMat = new THREE.SpriteMaterial({
+        map: glowTex, color: col, transparent: true, opacity: 0.4,
+        blending: THREE.AdditiveBlending, depthWrite: false
+    });
+    const sp = new THREE.Sprite(spMat);
+    sp.scale.set(r * 3, r * 3, 1);
+    group.add(sp);
+
+    // MW pulsing ring
+    if (isMW) {
+        const ringGeo = new THREE.RingGeometry(r * 0.8, r * 0.9, 32);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color: 0xffee44, transparent: true, opacity: 0.3,
+            side: THREE.DoubleSide, depthWrite: false
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.lookAt(camera.position);
+        group.add(ring);
+        group.userData.ring = ring;
+    }
+
+    // Label sprite
+    const lc = document.createElement('canvas');
+    lc.width = 256; lc.height = 48;
+    const lctx = lc.getContext('2d');
+    lctx.font = 'bold 22px monospace';
+    lctx.fillStyle = isMW ? '#ffee88' : galaxyColor(g);
+    lctx.textAlign = 'center';
+    lctx.fillText(g.name.length > 20 ? g.name.slice(0, 20) + '…' : g.name, 128, 30);
+    const labelTex = new THREE.CanvasTexture(lc);
+    const labelMat = new THREE.SpriteMaterial({ map: labelTex, transparent: true, depthWrite: false });
+    const label = new THREE.Sprite(labelMat);
+    label.scale.set(1.2, 0.25, 1);
+    label.position.y = r * 0.6;
+    label.userData.isLabel = true;
+    group.add(label);
+
+    scene.add(group);
+    galaxyMeshes.push(group);
+});
+
+// RA/Dec grid (3D wireframe sphere)
+const raDecGridGroup = new THREE.Group();
+raDecGridGroup.visible = false;
+// Dec circles (every 30°)
+for (let dec = -60; dec <= 60; dec += 30) {
+    const decRad = dec * Math.PI / 180;
+    const r = 100;
+    const circR = r * Math.cos(decRad);
+    const circY = r * Math.sin(decRad);
+    const pts = [];
+    for (let i = 0; i <= 64; i++) {
+        const a = (i / 64) * Math.PI * 2;
+        pts.push(new THREE.Vector3(circR * Math.cos(a), circY, circR * Math.sin(a)));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const line = new THREE.Line(geo, new THREE.LineBasicMaterial({
+        color: 0xffffff, transparent: true, opacity: 0.2
+    }));
+    raDecGridGroup.add(line);
+
+    // Dec label
+    const lc = document.createElement('canvas'); lc.width = 64; lc.height = 24;
+    const ctx = lc.getContext('2d');
+    ctx.font = '16px monospace'; ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillText((dec > 0 ? '+' : '') + dec + '°', 4, 18);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lc), transparent: true }));
+    sp.scale.set(1, 0.4, 1); sp.position.set(circR + 0.8, circY, 0);
+    raDecGridGroup.add(sp);
+}
+// RA lines (every 2 hours = 30°)
+for (let h = 0; h < 24; h += 2) {
+    const raRad = h * 15 * Math.PI / 180;
+    const pts = [];
+    for (let d = -90; d <= 90; d += 3) {
+        const dRad = d * Math.PI / 180;
+        const r = 100;
+        pts.push(new THREE.Vector3(
+            r * Math.cos(dRad) * Math.cos(raRad),
+            r * Math.sin(dRad),
+            r * Math.cos(dRad) * Math.sin(raRad)
+        ));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    raDecGridGroup.add(new THREE.Line(geo, new THREE.LineBasicMaterial({
+        color: 0xffffff, transparent: true, opacity: 0.15
+    })));
+
+    // RA label
+    const lc = document.createElement('canvas'); lc.width = 48; lc.height = 24;
+    const ctx = lc.getContext('2d');
+    ctx.font = '16px monospace'; ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillText(h + 'h', 4, 18);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lc), transparent: true }));
+    sp.scale.set(0.8, 0.35, 1);
+    sp.position.set(102 * Math.cos(raRad), 0, 102 * Math.sin(raRad));
+    raDecGridGroup.add(sp);
+}
+scene.add(raDecGridGroup);
+
+// Mpc distance grid (concentric spheres from origin)
+const mpcGridGroup = new THREE.Group();
+mpcGridGroup.visible = false;
+const mpcDistances = [1, 5, 10, 20, 50, 100];
+mpcDistances.forEach(mpc => {
+    const mly = mpc * 3.2616;
+    const r = distToScene(mly);
+    if (r < 0.5 || r > 180) return;
+    // Wireframe sphere
+    const pts = [];
+    // Equator
+    for (let i = 0; i <= 64; i++) {
+        const a = (i / 64) * Math.PI * 2;
+        pts.push(new THREE.Vector3(r * Math.cos(a), 0, r * Math.sin(a)));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    mpcGridGroup.add(new THREE.Line(geo, new THREE.LineBasicMaterial({
+        color: 0xffffff, transparent: true, opacity: 0.25
+    })));
+    // Meridian
+    const pts2 = [];
+    for (let i = 0; i <= 64; i++) {
+        const a = (i / 64) * Math.PI * 2;
+        pts2.push(new THREE.Vector3(r * Math.cos(a), r * Math.sin(a), 0));
+    }
+    mpcGridGroup.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts2),
+        new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 })
+    ));
+    // Second meridian
+    const pts3 = [];
+    for (let i = 0; i <= 64; i++) {
+        const a = (i / 64) * Math.PI * 2;
+        pts3.push(new THREE.Vector3(0, r * Math.sin(a), r * Math.cos(a)));
+    }
+    mpcGridGroup.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts3),
+        new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 })
+    ));
+    // Label
+    const lc = document.createElement('canvas'); lc.width = 192; lc.height = 32;
+    const ctx = lc.getContext('2d');
+    ctx.font = 'bold 18px monospace'; ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillText(mpc + ' Mpc (' + mly.toFixed(mpc < 5 ? 1 : 0) + ' Mly)', 4, 22);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lc), transparent: true }));
+    sp.scale.set(2, 0.4, 1); sp.position.set(r + 0.5, 0.3, 0);
+    mpcGridGroup.add(sp);
+});
+scene.add(mpcGridGroup);
+
+// Mouse interaction
+const raycaster = new THREE.Raycaster();
+raycaster.params.Points = { threshold: 0.5 };
+const mouse = new THREE.Vector2();
+let dragging3d = false, dragStart3d = {x:0, y:0}, dragMoved3d = false;
+
+renderer.domElement.addEventListener('mousedown', e => {
+    dragging3d = true; dragMoved3d = false;
+    dragStart3d = {x: e.clientX, y: e.clientY};
+    document.body.classList.add('dragging');
+});
+window.addEventListener('mousemove', e => {
+    if (dragging3d) {
+        const dx = e.clientX - dragStart3d.x, dy = e.clientY - dragStart3d.y;
+        if (Math.abs(dx) + Math.abs(dy) > 3) dragMoved3d = true;
+        nav.targetYaw -= dx * 0.004;
+        nav.targetPitch += dy * 0.004;
+        dragStart3d = {x: e.clientX, y: e.clientY};
+    }
+});
+window.addEventListener('mouseup', () => { dragging3d = false; document.body.classList.remove('dragging'); });
+
+renderer.domElement.addEventListener('wheel', e => {
+    e.preventDefault();
+    const dy = Math.max(-100, Math.min(100, e.deltaY));
+    // Horizontal scroll = strafe
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) + 2) {
+        const right = new THREE.Vector3(Math.cos(nav.yaw), 0, -Math.sin(nav.yaw));
+        nav.target.addScaledVector(right, e.deltaX * 0.002 * (nav.distance * 0.03 + 0.1));
+        return;
+    }
+    const factor = 1 + dy * 0.0012;
+    nav.smoothZoom = Math.max(nav.minDist, Math.min(nav.maxDist, nav.smoothZoom * factor));
+}, {passive: false});
+
+// Touch
+let touchDist0 = 0, touchZoom0 = 0;
+renderer.domElement.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+        dragging3d = true; dragMoved3d = false;
+        dragStart3d = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+    } else if (e.touches.length === 2) {
+        dragging3d = false;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        touchDist0 = Math.sqrt(dx*dx + dy*dy);
+        touchZoom0 = nav.smoothZoom;
+    }
+});
+renderer.domElement.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 1 && dragging3d) {
+        const dx = e.touches[0].clientX - dragStart3d.x, dy = e.touches[0].clientY - dragStart3d.y;
+        if (Math.abs(dx) + Math.abs(dy) > 3) dragMoved3d = true;
+        nav.targetYaw -= dx * 0.005;
+        nav.targetPitch += dy * 0.005;
+        dragStart3d = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+    } else if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        nav.smoothZoom = Math.max(nav.minDist, Math.min(nav.maxDist, touchZoom0 * (touchDist0 / Math.max(d, 1))));
+    }
+}, {passive: false});
+renderer.domElement.addEventListener('touchend', () => { dragging3d = false; });
+
+// Click
+let clickTimer3d = null;
+renderer.domElement.addEventListener('click', e => {
+    if (dragMoved3d) return;
+    if (clickTimer3d) clearTimeout(clickTimer3d);
+    const ex = e.clientX, ey = e.clientY;
+    clickTimer3d = setTimeout(() => {
+        mouse.x = (ex / window.innerWidth) * 2 - 1;
+        mouse.y = -(ey / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObjects(clickableObjects, false);
+        if (hits.length > 0) {
+            let obj = hits[0].object;
+            while (obj && !obj.userData.galaxy) obj = obj.parent;
+            if (obj && obj.userData.galaxy) {
+                const g = obj.userData.galaxy;
+                if (g.name === 'Milky Way') {
+                    initSolarView();
+                    return;
+                }
+                selectedObj = g;
+                showInfo(g);
+                nav.flyTo(g.pos, Math.max(2, nav.distance * 0.6));
+            }
+        } else {
+            closeInfo();
+        }
+    }, 250);
+});
+renderer.domElement.addEventListener('dblclick', e => {
+    if (clickTimer3d) { clearTimeout(clickTimer3d); clickTimer3d = null; }
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const pt = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(plane, pt)) {
+        nav.flyTo(pt, nav.distance);
+    }
+});
+
+// Hover
+renderer.domElement.addEventListener('mousemove', e => {
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    const tip = document.getElementById('hover-tip');
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(clickableObjects, false);
+    if (hits.length > 0) {
+        let obj = hits[0].object;
+        while (obj && !obj.userData.galaxy) obj = obj.parent;
+        if (obj && obj.userData.galaxy) {
+            const g = obj.userData.galaxy;
+            tip.textContent = g.name + (g.dist > 0 ? ' · ' + g.dist + ' Mly' : ' (here)');
+            tip.style.left = (e.clientX + 14) + 'px';
+            tip.style.top = (e.clientY - 8) + 'px';
+            tip.classList.add('visible');
+            renderer.domElement.style.cursor = 'pointer';
+            return;
+        }
+    }
+    tip.classList.remove('visible');
+    if (!dragging3d) renderer.domElement.style.cursor = 'grab';
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// =====================================================
+// SOLAR SYSTEM 2D VIEW (canvas, unchanged)
+// =====================================================
+const solarCanvas = document.getElementById('solar-canvas');
+const sctx = solarCanvas.getContext('2d');
+let sW, sH, sCamX = 350, sCamY = 0, sZoom = 0.9;
+let sTargetX = 350, sTargetY = 0, sTargetZoom = 0.9;
+let sDragging = false, sDragStart = {x:0,y:0}, sDragMoved = false;
+let sMouseX = 0, sMouseY = 0, sHovered = null;
+
+function sResize() { sW = solarCanvas.width = innerWidth; sH = solarCanvas.height = innerHeight; }
+
+solarCanvas.addEventListener('mousedown', e => {
+    sDragging = true; sDragMoved = false;
+    sDragStart = {x: e.clientX, y: e.clientY};
+    document.body.classList.add('dragging');
+});
+window.addEventListener('mousemove', e => {
+    sMouseX = e.clientX; sMouseY = e.clientY;
+    if (viewMode === 'solar' && sDragging) {
+        const dx = e.clientX - sDragStart.x, dy = e.clientY - sDragStart.y;
+        if (Math.abs(dx) + Math.abs(dy) > 3) sDragMoved = true;
+        sCamX -= dx / sZoom; sCamY -= dy / sZoom;
+        sTargetX = sCamX; sTargetY = sCamY;
+        sDragStart = {x: e.clientX, y: e.clientY};
+    }
+});
+window.addEventListener('mouseup', () => { sDragging = false; document.body.classList.remove('dragging'); });
+solarCanvas.addEventListener('click', e => {
+    if (sDragMoved) return;
+    if (sHovered) { selectedObj = sHovered; showInfo(sHovered); }
+    else { closeInfo(); }
+});
+solarCanvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+    const wx = sCamX + (sMouseX - sW/2) / sZoom;
+    const wy = sCamY + (sMouseY - sH/2) / sZoom;
+    sTargetZoom = Math.max(0.08, Math.min(8, sZoom * factor));
+    sTargetX = wx - (sMouseX - sW/2) / sTargetZoom;
+    sTargetY = wy - (sMouseY - sH/2) / sTargetZoom;
+}, {passive: false});
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function drawSolarSystem() {
+    sCamX = lerp(sCamX, sTargetX, 0.12);
+    sCamY = lerp(sCamY, sTargetY, 0.12);
+    sZoom = lerp(sZoom, sTargetZoom, 0.12);
+
+    sctx.fillStyle = '#050510'; sctx.fillRect(0, 0, sW, sH);
+
+    const centerX = 0, centerY = 0;
+    // Orbit lines
+    for (const p of planets) {
+        if (p.dist === 0) continue;
+        const sx = (centerX - sCamX) * sZoom + sW/2;
+        const sy = (centerY - sCamY) * sZoom + sH/2;
+        sctx.beginPath(); sctx.arc(sx, sy, p.dist * sZoom, 0, Math.PI * 2);
+        sctx.strokeStyle = 'rgba(40,50,80,0.3)'; sctx.lineWidth = 0.5; sctx.stroke();
+    }
+
+    sHovered = null;
+    let closest = Infinity;
+    const time = Date.now() * 0.0001;
+
+    for (const p of planets) {
+        let px, py;
+        if (p.dist === 0) { px = centerX; py = centerY; }
+        else {
+            const speed = 1 / Math.sqrt(p.dist);
+            const angle = time * speed + p.dist;
+            px = centerX + Math.cos(angle) * p.dist;
+            py = centerY + Math.sin(angle) * p.dist;
+        }
+        const sx = (px - sCamX) * sZoom + sW/2;
+        const sy = (py - sCamY) * sZoom + sH/2;
+        const r = Math.max(3, p.radius * sZoom * 0.15);
+        const isSel = p === selectedObj;
+
+        if (p.name === 'Sun') {
+            const glow = sctx.createRadialGradient(sx, sy, 0, sx, sy, r * 3);
+            glow.addColorStop(0, '#ffdd4466'); glow.addColorStop(0.5, '#ff880022'); glow.addColorStop(1, 'transparent');
+            sctx.fillStyle = glow; sctx.fillRect(sx - r*3, sy - r*3, r*6, r*6);
+        }
+        if (p.rings) {
+            sctx.beginPath(); sctx.ellipse(sx, sy, r*2, r*0.5, 0.3, 0, Math.PI*2);
+            sctx.strokeStyle = '#e8d5a044'; sctx.lineWidth = Math.max(1, r*0.3); sctx.stroke();
+        }
+        const grad = sctx.createRadialGradient(sx - r*0.3, sy - r*0.3, 0, sx, sy, r);
+        grad.addColorStop(0, lightenColor(p.color, 30)); grad.addColorStop(1, p.color);
+        sctx.beginPath(); sctx.arc(sx, sy, r, 0, Math.PI*2);
+        sctx.fillStyle = isSel ? '#fff' : grad; sctx.fill();
+        if (isSel) {
+            sctx.beginPath(); sctx.arc(sx, sy, r+5, 0, Math.PI*2);
+            sctx.strokeStyle = p.color + '88'; sctx.lineWidth = 1.5; sctx.stroke();
+        }
+        if (showLabels && sZoom > 0.3) {
+            sctx.fillStyle = '#8899aa'; sctx.font = `${Math.min(12, 10*sZoom)}px monospace`;
+            sctx.fillText(p.name, sx + r + 5, sy + 3);
+        }
+        const dx = sMouseX - sx, dy = sMouseY - sy;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < Math.max(r+5, 15) && d < closest) { closest = d; sHovered = p; }
+    }
+    if (sHovered && !sDragging) solarCanvas.style.cursor = 'pointer';
+    else if (!sDragging) solarCanvas.style.cursor = 'grab';
+    document.getElementById('hud').innerHTML = `Solar System · zoom ${sZoom.toFixed(2)}x`;
+}
+
+// =====================================================
+// PORTRAITS (from original)
+// =====================================================
+const portrait = document.getElementById('portrait');
+const pctx = portrait.getContext('2d');
+const portraitImg = document.getElementById('portrait-img');
+
+// Galaxy photo URLs — add entries here as images are uploaded
+const GALAXY_IMAGES = {
+    'Andromeda (M31)': 'https://www.cloudautomat.net/images/galaxies/andromeda.png',
+    // 'Whirlpool Galaxy': 'https://www.cloudautomat.net/images/galaxies/whirlpool.png',
+    // 'Triangulum Galaxy': 'https://www.cloudautomat.net/images/galaxies/triangulum.png',
+};
+
+const imageCache = {};
+
+function showGalaxyPhoto(g, fallback) {
+    const url = GALAXY_IMAGES[g.name];
+    if (!url) { fallback(); return; }
+
+    if (imageCache[url] === 'failed') { fallback(); return; }
+    if (imageCache[url] === 'loaded') {
+        portrait.style.display = 'none';
+        portraitImg.src = url;
+        portraitImg.style.display = 'block';
+        return;
+    }
+
+    // Try loading
+    const img = new Image();
+    // No crossOrigin needed — display only, no canvas pixel access
+    img.onload = () => {
+        imageCache[url] = 'loaded';
+        portrait.style.display = 'none';
+        portraitImg.src = url;
+        portraitImg.style.display = 'block';
+    };
+    img.onerror = () => {
+        imageCache[url] = 'failed';
+        fallback();
+    };
+    img.src = url;
+    // Show procedural while loading
+    fallback();
+}
+
+function drawGalaxyPortrait(g) {
+    const w = 120, h = 120;
+    pctx.clearRect(0, 0, w, h);
+    const cx = w/2, cy = h/2;
+    const t = g.type.toLowerCase();
+    const color = galaxyColor(g);
+    let seed = 0;
+    for (let i = 0; i < g.name.length; i++) seed = ((seed << 5) - seed + g.name.charCodeAt(i)) | 0;
+    const rng = () => { seed = (seed * 16807 + 0) % 2147483647; return (seed & 0x7fffffff) / 2147483647; };
+
+    if (t.includes('spiral') || t.includes('sb') || t.includes('sa')) {
+        const arms = 2 + Math.floor(rng() * 2);
+        const barred = t.includes('bar') || t.includes('sb');
+        const cg = pctx.createRadialGradient(cx, cy, 0, cx, cy, 15);
+        cg.addColorStop(0, '#ffe8cc'); cg.addColorStop(0.5, color + '88'); cg.addColorStop(1, 'transparent');
+        pctx.fillStyle = cg; pctx.fillRect(0, 0, w, h);
+        if (barred) {
+            pctx.save(); pctx.translate(cx, cy); pctx.rotate(rng()*Math.PI);
+            pctx.fillStyle = color + '44'; pctx.fillRect(-20, -3, 40, 6); pctx.restore();
+        }
+        for (let a = 0; a < arms; a++) {
+            const startAngle = (a / arms) * Math.PI * 2;
+            pctx.beginPath();
+            for (let t2 = 0; t2 < 6; t2 += 0.1) {
+                const angle = startAngle + t2 * 0.8;
+                const r2 = 5 + t2 * 7;
+                const j = rng() * 2 - 1;
+                const x = cx + Math.cos(angle)*r2 + j, y = cy + Math.sin(angle)*r2*0.6 + j;
+                if (t2 === 0) pctx.moveTo(x, y); else pctx.lineTo(x, y);
+            }
+            pctx.strokeStyle = color + '66'; pctx.lineWidth = 3 + rng()*2; pctx.stroke();
+        }
+        for (let i = 0; i < 60; i++) {
+            const a = rng()*Math.PI*2, r2 = rng()*45;
+            pctx.fillStyle = color + (Math.floor(rng()*80+20)).toString(16);
+            pctx.fillRect(cx+Math.cos(a)*r2, cy+Math.sin(a)*r2*0.6, 1, 1);
+        }
+    } else if (t.includes('elliptical') || t.includes('e0') || t.includes('cd')) {
+        const stretch = 0.6 + rng()*0.4;
+        for (let r2 = 40; r2 > 0; r2 -= 2) {
+            const alpha = (0.02 + (40-r2)/40*0.15).toFixed(2);
+            pctx.beginPath(); pctx.ellipse(cx, cy, r2, r2*stretch, rng()*0.3, 0, Math.PI*2);
+            pctx.fillStyle = color + Math.floor(parseFloat(alpha)*255).toString(16).padStart(2,'0');
+            pctx.fill();
+        }
+    } else if (t.includes('lenticular') || t.includes('s0')) {
+        const cg = pctx.createRadialGradient(cx, cy, 0, cx, cy, 35);
+        cg.addColorStop(0, '#ffe8cc88'); cg.addColorStop(0.4, color+'44'); cg.addColorStop(1, 'transparent');
+        pctx.fillStyle = cg; pctx.fillRect(0, 0, w, h);
+        pctx.beginPath(); pctx.ellipse(cx, cy, 40, 8, rng()*0.5, 0, Math.PI*2);
+        pctx.fillStyle = color+'33'; pctx.fill();
+    } else if (t.includes('irregular') || t.includes('irr')) {
+        for (let i = 0; i < 120; i++) {
+            const x = cx+(rng()-0.5)*60, y = cy+(rng()-0.5)*50, s = 1+rng()*3;
+            pctx.fillStyle = [color, '#88ccff', '#ff8888', '#aaddff'][Math.floor(rng()*4)] + '55';
+            pctx.fillRect(x, y, s, s);
+        }
+    } else if (t.includes('merg') || t.includes('ring')) {
+        if (t.includes('ring')) {
+            pctx.beginPath(); pctx.arc(cx, cy, 30, 0, Math.PI*2);
+            pctx.strokeStyle = color+'66'; pctx.lineWidth = 6; pctx.stroke();
+        } else {
+            for (const off of [[-15,-8],[15,8]]) {
+                const cg = pctx.createRadialGradient(cx+off[0], cy+off[1], 0, cx+off[0], cy+off[1], 20);
+                cg.addColorStop(0, '#ffe8cc66'); cg.addColorStop(1, 'transparent');
+                pctx.fillStyle = cg; pctx.fillRect(cx+off[0]-20, cy+off[1]-20, 40, 40);
+            }
+        }
+    } else {
+        const cg = pctx.createRadialGradient(cx, cy, 0, cx, cy, 30);
+        cg.addColorStop(0, '#ff888866'); cg.addColorStop(0.5, color+'33'); cg.addColorStop(1, 'transparent');
+        pctx.fillStyle = cg; pctx.fillRect(0, 0, w, h);
+    }
+}
+
+function drawPlanetPortrait(p) {
+    const w = 120, h = 120;
+    pctx.clearRect(0, 0, w, h);
+    const cx = w/2, cy = h/2, r = Math.min(40, p.radius * 3);
+    if (p.name === 'Sun') {
+        const g = pctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        g.addColorStop(0, '#fff8e0'); g.addColorStop(0.4, '#ffdd44'); g.addColorStop(0.8, '#ff8800'); g.addColorStop(1, 'transparent');
+        pctx.fillStyle = g; pctx.fillRect(0, 0, w, h);
+        return;
+    }
+    const g = pctx.createRadialGradient(cx-r*0.3, cy-r*0.3, 0, cx, cy, r);
+    g.addColorStop(0, lightenColor(p.color, 40)); g.addColorStop(1, p.color);
+    pctx.beginPath(); pctx.arc(cx, cy, r, 0, Math.PI*2); pctx.fillStyle = g; pctx.fill();
+    if (['Jupiter','Saturn','Uranus','Neptune'].includes(p.name)) {
+        for (let i = -3; i <= 3; i++) {
+            pctx.beginPath();
+            const by = cy + i * r * 0.22;
+            pctx.moveTo(cx-r, by); pctx.quadraticCurveTo(cx, by + (i%2 ? 2 : -2), cx+r, by);
+            pctx.strokeStyle = (i%2 ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.1)');
+            pctx.lineWidth = r * 0.12; pctx.stroke();
+        }
+    }
+    if (p.rings) {
+        pctx.beginPath(); pctx.ellipse(cx, cy, r*1.8, r*0.4, 0, 0, Math.PI*2);
+        pctx.strokeStyle = '#e8d5a066'; pctx.lineWidth = 5; pctx.stroke();
+    }
+}
+
+// =====================================================
+// INFO PANEL
+// =====================================================
+function showInfo(obj) {
+    const bar = document.getElementById('info-bar');
+    if (viewMode === 'galaxies') {
+        const mpc = (obj.dist / 3.2616).toFixed(obj.dist < 10 ? 2 : 1);
+        document.getElementById('info-name').textContent = obj.name;
+        document.getElementById('info-body').innerHTML = `
+            <div class="col"><span class="label">type:</span> ${obj.type}<br>
+            <span class="label">distance:</span> ${obj.dist === 0 ? 'here' : obj.dist + ' Mly (' + mpc + ' Mpc)'}<br>
+            <span class="label">app. mag:</span> ${obj.mag || 'n/a'}</div>
+            <div class="col"><span class="label">size:</span> ${obj.size}<br>
+            <span class="label">group:</span> ${obj.group}</div>
+            <div class="col" style="max-width:280px"><span class="label">notes:</span> ${obj.notes}
+            ${obj.name === 'Milky Way' ? '<br><button class="enter-btn" onclick="initSolarView()">enter solar system &rarr;</button>' : ''}</div>`;
+        bar.className = 'open';
+        portraitImg.style.display = 'none';
+        portrait.style.display = 'block';
+        showGalaxyPhoto(obj, () => drawGalaxyPortrait(obj));
+    } else {
+        document.getElementById('info-name').textContent = obj.name;
+        const distAU = obj.dist > 0 ? (obj.dist / 60 * 0.387).toFixed(2) : '—';
+        document.getElementById('info-body').innerHTML = `
+            <div class="col"><span class="label">dist from Sun:</span> ${obj.dist === 0 ? 'center' : distAU + ' AU (approx)'}<br>
+            <span class="label">facts:</span> ${obj.facts}</div>
+            <div class="col" style="max-width:350px"><div class="lifeform"><span class="label" style="color:#557">native lifeform (totally real):</span><br>${obj.lifeform}</div></div>`;
+        bar.className = 'open tall';
+        portraitImg.style.display = 'none';
+        portrait.style.display = 'block';
+        drawPlanetPortrait(obj);
+    }
+    document.getElementById('hint').style.opacity = '0';
+    portrait.style.display = 'block';
+}
+
+function closeInfo() {
+    document.getElementById('info-bar').className = '';
+    selectedObj = null;
+    portrait.style.display = 'none';
+    portraitImg.style.display = 'none';
+}
+
+// =====================================================
+// VIEW SWITCHING
+// =====================================================
+function initGalaxyView() {
+    viewMode = 'galaxies';
+    solarCanvas.classList.remove('active');
+    renderer.domElement.style.display = 'block';
+    nav.flyTo(new THREE.Vector3(0, 0, 0), 30, -0.3);
+    selectedObj = null; closeInfo();
+    document.getElementById('hint').textContent = 'scroll to zoom · drag to orbit · click a galaxy · click Milky Way to enter';
+    document.getElementById('hint').style.opacity = '1';
+    updateControls();
+}
+
+function initSolarView() {
+    viewMode = 'solar';
+    solarCanvas.classList.add('active');
+    renderer.domElement.style.display = 'none';
+    sResize();
+    sTargetX = sCamX = 350; sTargetY = sCamY = 0; sTargetZoom = sZoom = 0.9;
+    selectedObj = null; closeInfo();
+    document.getElementById('hint').textContent = 'scroll to zoom · drag to pan · click a planet';
+    document.getElementById('hint').style.opacity = '1';
+    updateControls();
+}
+
+function updateControls() {
+    const c = document.getElementById('controls');
+    if (viewMode === 'galaxies') {
+        c.innerHTML = `
+            <button onclick="nav.flyTo(new THREE.Vector3(0,0,0), 30, -0.3)">recenter</button>
+            <button onclick="toggleLabels()" id="btn-labels">labels</button>
+            <button onclick="toggleRADec()" id="btn-radec">RA/Dec grid</button>
+            <button onclick="toggleMpc()" id="btn-mpc">Mpc grid</button>`;
+    } else {
+        c.innerHTML = `
+            <button onclick="initGalaxyView()">back to galaxies</button>
+            <button onclick="sTargetX=350;sTargetY=0;sTargetZoom=0.9">recenter</button>
+            <button onclick="toggleLabels()" id="btn-labels">labels</button>`;
+    }
+    if (showLabels) document.getElementById('btn-labels')?.classList.add('active');
+    if (showRADecGrid) document.getElementById('btn-radec')?.classList.add('active');
+    if (showMpcGrid) document.getElementById('btn-mpc')?.classList.add('active');
+}
+
+function toggleLabels() {
+    showLabels = !showLabels;
+    galaxyMeshes.forEach(gm => {
+        gm.children.forEach(c => { if (c.userData.isLabel) c.visible = showLabels; });
+    });
+    updateControls();
+}
+function toggleRADec() { showRADecGrid = !showRADecGrid; raDecGridGroup.visible = showRADecGrid; updateControls(); }
+function toggleMpc() { showMpcGrid = !showMpcGrid; mpcGridGroup.visible = showMpcGrid; updateControls(); }
+
+// Escape
+window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeInfo();
+});
+
+// =====================================================
+// MAIN LOOP
+// =====================================================
+function animate() {
+    requestAnimationFrame(animate);
+
+    if (viewMode === 'galaxies') {
+        nav.update();
+
+        // Billboard MW ring
+        galaxyMeshes.forEach(gm => {
+            if (gm.userData.ring) {
+                gm.userData.ring.lookAt(camera.position);
+                gm.userData.ring.material.opacity = 0.2 + Math.sin(Date.now() * 0.003) * 0.1;
+            }
+            // Scale labels to stay readable
+            gm.children.forEach(c => {
+                if (c.userData.isLabel) {
+                    const d = camera.position.distanceTo(gm.position);
+                    const s = Math.max(0.3, Math.min(1.5, d * 0.04));
+                    c.scale.set(s * 2.5, s * 0.5, 1);
+                }
+            });
+        });
+
+        // HUD
+        const dist = nav.target.length();
+        const mly = sceneToDist(dist);
+        document.getElementById('hud').innerHTML =
+            `${uniqueGalaxies.length} galaxies · ` +
+            (mly < 1 ? `${(mly*1000).toFixed(0)} kly from home` : `${mly.toFixed(1)} Mly from home`) +
+            ` · zoom ${nav.distance.toFixed(1)}`;
+
+        renderer.render(scene, camera);
+    } else {
+        drawSolarSystem();
+    }
+}
+
+// =====================================================
+// INIT
+// =====================================================
+initGalaxyView();
+animate();
+</script>
+</body>
+</html>
