@@ -13,10 +13,10 @@
     position: fixed; top: 20px; left: 20px; z-index: 10;
     pointer-events: none; user-select: none;
   }
-  #hud h1 { font-size: 14px; color: #7799cc; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
-  #zoom-label { font-size: 22px; color: #fff; font-weight: 300; margin-bottom: 4px; }
-  #distance-label { font-size: 12px; color: #668; }
-  #coords { font-size: 11px; color: #556; margin-top: 4px; font-family: monospace; }
+  #hud h1 { font-size: 17px; color: #7799cc; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+  #zoom-label { font-size: 26px; color: #fff; font-weight: 300; margin-bottom: 4px; }
+  #distance-label { font-size: 15px; color: #668; }
+  #coords { font-size: 14px; color: #556; margin-top: 4px; font-family: monospace; }
 
   #star-info {
     position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
@@ -27,12 +27,12 @@
     backdrop-filter: blur(8px);
   }
   #star-info.visible { opacity: 1; }
-  #star-info .name { font-size: 18px; color: #aaccff; margin-bottom: 4px; }
-  #star-info .detail { font-size: 12px; color: #889; }
+  #star-info .name { font-size: 22px; color: #aaccff; margin-bottom: 4px; }
+  #star-info .detail { font-size: 15px; color: #889; }
 
   #controls {
     position: fixed; bottom: 20px; right: 20px; z-index: 10;
-    font-size: 11px; color: #445; pointer-events: none;
+    font-size: 14px; color: #445; pointer-events: none;
   }
   #controls div { margin-bottom: 2px; }
 
@@ -97,12 +97,12 @@
   #photo-viewer .pv-info {
     padding: 10px 12px;
   }
-  #photo-viewer .pv-name { font-size: 14px; color: #aaccff; margin-bottom: 4px; font-weight: 500; }
-  #photo-viewer .pv-type { font-size: 11px; color: #778; line-height: 1.4; }
-  #photo-viewer .pv-dist { font-size: 10px; color: #556; margin-top: 4px; font-family: monospace; }
+  #photo-viewer .pv-name { font-size: 18px; color: #aaccff; margin-bottom: 4px; font-weight: 500; }
+  #photo-viewer .pv-type { font-size: 14px; color: #778; line-height: 1.4; }
+  #photo-viewer .pv-dist { font-size: 13px; color: #556; margin-top: 4px; font-family: monospace; }
   #photo-viewer .pv-close {
     position: absolute; top: 6px; right: 8px; cursor: pointer;
-    color: #667; font-size: 16px; pointer-events: auto;
+    color: #667; font-size: 20px; pointer-events: auto;
     background: rgba(0,0,0,0.6); border-radius: 50%;
     width: 22px; height: 22px; display: flex; align-items: center;
     justify-content: center; line-height: 1;
@@ -112,7 +112,7 @@
   #photo-viewer .pv-planet-btn {
     display: inline-block; padding: 3px 8px; margin: 2px 3px 2px 0;
     background: rgba(60,80,120,0.4); border: 1px solid rgba(80,110,160,0.4);
-    border-radius: 4px; color: #8899bb; font-size: 10px; cursor: pointer;
+    border-radius: 4px; color: #8899bb; font-size: 13px; cursor: pointer;
     pointer-events: auto; transition: background 0.2s;
   }
   #photo-viewer .pv-planet-btn:hover { background: rgba(80,110,160,0.5); color: #bbccee; }
@@ -131,7 +131,7 @@
   #tour-narration .tour-stop-name { color: #aaccff; font-weight: 500; font-size: 32px; display: block; margin-bottom: 6px; }
   #tour-controls { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
   .tour-btn {
-    padding: 6px 14px; font-size: 12px; background: rgba(60,80,120,0.4);
+    padding: 6px 14px; font-size: 15px; background: rgba(60,80,120,0.4);
     border: 1px solid rgba(80,110,160,0.4); border-radius: 5px;
     color: #8899bb; cursor: pointer; font-family: inherit; transition: all 0.2s;
   }
@@ -156,7 +156,7 @@
   }
   #tour-start-btn {
     position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
-    z-index: 15; padding: 8px 20px; font-size: 12px;
+    z-index: 15; padding: 8px 20px; font-size: 15px;
     background: rgba(50,70,110,0.5); border: 1px solid rgba(80,120,180,0.3);
     border-radius: 6px; color: #7799bb; cursor: pointer;
     font-family: inherit; backdrop-filter: blur(8px); transition: all 0.3s;
@@ -169,12 +169,12 @@
   #hover-tip {
     position: fixed; z-index: 25; pointer-events: none;
     background: rgba(8,12,25,0.9); border: 1px solid rgba(80,120,180,0.3);
-    border-radius: 5px; padding: 5px 10px; font-size: 12px; color: #aaccff;
+    border-radius: 5px; padding: 5px 10px; font-size: 15px; color: #aaccff;
     white-space: nowrap; opacity: 0; transition: opacity 0.15s;
     backdrop-filter: blur(6px);
   }
   #hover-tip.visible { opacity: 1; }
-  #hover-tip .ht-type { font-size: 10px; color: #667; display: block; margin-top: 1px; }
+  #hover-tip .ht-type { font-size: 13px; color: #667; display: block; margin-top: 1px; }
 
   /* Help overlay */
   #help-overlay {
@@ -189,23 +189,23 @@
     border-radius: 12px; padding: 32px 40px; max-width: 520px; width: 90%;
     position: relative;
   }
-  #help-box h2 { font-size: 18px; color: #aaccff; margin-bottom: 16px; font-weight: 400; letter-spacing: 1px; }
+  #help-box h2 { font-size: 22px; color: #aaccff; margin-bottom: 16px; font-weight: 400; letter-spacing: 1px; }
   .help-section { margin-bottom: 14px; }
-  .help-section h3 { font-size: 11px; color: #556; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+  .help-section h3 { font-size: 14px; color: #556; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
   .help-row { display: flex; align-items: center; margin-bottom: 4px; }
   .help-key {
     display: inline-block; min-width: 28px; padding: 2px 8px;
     background: rgba(60,80,120,0.35); border: 1px solid rgba(80,110,160,0.4);
-    border-radius: 4px; color: #8899bb; font-size: 12px; font-family: monospace;
+    border-radius: 4px; color: #8899bb; font-size: 15px; font-family: monospace;
     text-align: center; margin-right: 12px;
   }
-  .help-desc { font-size: 13px; color: #889; }
+  .help-desc { font-size: 16px; color: #889; }
   #help-close {
     position: absolute; top: 12px; right: 16px; cursor: pointer;
     color: #556; font-size: 22px;
   }
   #help-close:hover { color: #ccc; }
-  .help-footer { margin-top: 16px; font-size: 10px; color: #334; text-align: center; }
+  .help-footer { margin-top: 16px; font-size: 13px; color: #334; text-align: center; }
 
   /* Layer toggle panel */
   #layer-panel {
@@ -216,7 +216,7 @@
   }
   #layer-panel.active { display: block; }
   #layer-panel h3 {
-    font-size: 10px; color: #556; text-transform: uppercase;
+    font-size: 13px; color: #556; text-transform: uppercase;
     letter-spacing: 1.5px; margin-bottom: 8px;
   }
   .layer-row {
@@ -226,12 +226,12 @@
     margin-right: 8px; accent-color: #6688bb; cursor: pointer;
   }
   .layer-row label {
-    font-size: 12px; color: #8899aa; cursor: pointer; user-select: none;
+    font-size: 15px; color: #8899aa; cursor: pointer; user-select: none;
   }
   .layer-row:hover label { color: #aaccee; }
   #layer-toggle-btn {
     position: fixed; top: 160px; right: 20px; z-index: 14;
-    padding: 5px 10px; font-size: 11px; color: #556;
+    padding: 5px 10px; font-size: 14px; color: #556;
     background: rgba(10,15,28,0.7); border: 1px solid rgba(60,80,120,0.3);
     border-radius: 5px; cursor: pointer; font-family: inherit;
     transition: all 0.2s; backdrop-filter: blur(6px);
@@ -247,7 +247,7 @@
     border-radius: 6px; padding: 2px; backdrop-filter: blur(8px);
   }
   .mode-btn {
-    padding: 5px 14px; font-size: 11px; color: #556;
+    padding: 5px 14px; font-size: 14px; color: #556;
     background: transparent; border: none; border-radius: 4px;
     cursor: pointer; transition: all 0.2s; font-family: inherit;
     letter-spacing: 0.5px;
@@ -263,7 +263,7 @@
   <div id="zoom-label">Galaxy View</div>
   <div id="distance-label"></div>
   <div id="coords"></div>
-  <div id="mode-label" style="font-size:10px; color:#446688; margin-top:4px; text-transform:uppercase; letter-spacing:1px;">All</div>
+  <div id="mode-label" style="font-size:13px; color:#446688; margin-top:4px; text-transform:uppercase; letter-spacing:1px;">All</div>
 </div>
 
 <div id="star-info">
@@ -308,7 +308,10 @@
 </div>
 
 <div id="help-btn" class="pulsing" title="Help &amp; Controls (?)">?</div>
-<a href="solarsystem.html" style="position:fixed;bottom:20px;left:70px;z-index:15;background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">☀️ Solar System</a>
+<div style="position:fixed;bottom:20px;left:70px;z-index:15;display:flex;gap:6px;">
+<a href="galaxy-explorer.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">🌐 Galaxies</a>
+<a href="solarsystem.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">☀️ Solar System</a>
+</div>
 
 <div id="controls">
   <div>Double-Click : Recenter</div>

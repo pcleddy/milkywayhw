@@ -8,7 +8,7 @@ body { background: #050510; overflow: hidden; cursor: grab; font-family: monospa
 body.dragging { cursor: grabbing; }
 canvas { display: block; }
 #hud {
-    position: fixed; top: 12px; left: 12px; color: #889; font-size: 12px;
+    position: fixed; top: 12px; left: 12px; color: #889; font-size: 15px;
     pointer-events: none; line-height: 1.6;
 }
 #controls {
@@ -16,7 +16,7 @@ canvas { display: block; }
 }
 #controls button {
     background: rgba(20,20,50,0.8); border: 1px solid #335; color: #8af;
-    padding: 6px 12px; font-family: monospace; font-size: 11px; cursor: pointer;
+    padding: 6px 12px; font-family: monospace; font-size: 14px; cursor: pointer;
     border-radius: 3px; white-space: nowrap;
 }
 #controls button:hover { background: rgba(40,40,80,0.9); border-color: #66f; }
@@ -26,35 +26,35 @@ canvas { display: block; }
     background: rgba(8,8,25,0.95); border-top: 1px solid #223;
     transition: height 0.3s ease; padding: 0 20px;
 }
-#info-bar.open { height: 180px; padding: 16px 20px; }
-#info-bar.tall { height: 260px; padding: 16px 20px; }
-#info-bar h2 { color: #8af; font-size: 15px; margin-bottom: 8px; font-weight: normal; }
-#info-bar .row { display: flex; gap: 24px; font-size: 12px; line-height: 1.8; }
+#info-bar.open { height: 210px; padding: 16px 20px; }
+#info-bar.tall { height: 290px; padding: 16px 20px; }
+#info-bar h2 { color: #8af; font-size: 19px; margin-bottom: 8px; font-weight: normal; }
+#info-bar .row { display: flex; gap: 24px; font-size: 15px; line-height: 1.8; }
 #info-bar .row .col { min-width: 140px; }
 #info-bar .label { color: #557; }
 #info-bar .close {
     position: absolute; top: 10px; right: 16px; background: none; border: none;
-    color: #557; font-size: 16px; cursor: pointer; font-family: monospace;
+    color: #557; font-size: 20px; cursor: pointer; font-family: monospace;
 }
 #info-bar .close:hover { color: #aaf; }
 #info-bar .enter-btn {
     display: inline-block; margin-top: 8px; padding: 4px 10px; background: rgba(40,40,100,0.8);
-    border: 1px solid #448; color: #8af; cursor: pointer; border-radius: 3px; font-family: monospace; font-size: 11px;
+    border: 1px solid #448; color: #8af; cursor: pointer; border-radius: 3px; font-family: monospace; font-size: 14px;
 }
 #info-bar .enter-btn:hover { background: rgba(60,60,140,0.9); border-color: #66f; }
 #portrait { position: absolute; top: 16px; right: 50px; }
-#portrait-img { position: absolute; top: 16px; right: 50px; width: 120px; height: 120px;
+#portrait-img { position: absolute; top: 16px; right: 50px; width: 140px; height: 140px;
     object-fit: cover; border-radius: 4px; display: none; }
 #hover-tip {
     position: fixed; z-index: 25; pointer-events: none;
     background: rgba(10,10,30,0.9); border: 1px solid rgba(80,100,200,0.3);
-    border-radius: 5px; padding: 4px 10px; font-size: 11px; color: #aaccff;
+    border-radius: 5px; padding: 5px 12px; font-size: 14px; color: #aaccff;
     opacity: 0; transition: opacity 0.12s; white-space: nowrap;
 }
 #hover-tip.visible { opacity: 1; }
 #hint {
-    position: fixed; bottom: 12px; left: 12px; color: #445; font-size: 11px;
-    pointer-events: none; transition: opacity 0.3s;
+    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); color: #445; font-size: 14px;
+    pointer-events: none; transition: opacity 0.3s; text-align: center;
 }
 .lifeform { color: #6b8; font-style: italic; margin-top: 4px; }
 #solar-canvas {
@@ -77,6 +77,10 @@ canvas { display: block; }
     <div class="row" id="info-body"></div>
 </div>
 <div id="hint">scroll to zoom · drag to orbit · click a galaxy</div>
+<div style="position:fixed;bottom:20px;left:12px;z-index:15;display:flex;gap:6px;">
+<a href="milkyway.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">🌌 Milky Way</a>
+<a href="solarsystem.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">☀️ Solar System</a>
+</div>
 <canvas id="solar-canvas"></canvas>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
