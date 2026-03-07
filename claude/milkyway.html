@@ -2471,6 +2471,7 @@ class App {
     const galZ = (t.z / GALAXY_DATA.meta.scale).toFixed(0);
     const elev = this.nav.elevationDeg;
     const sector = this.galaxy.getSectorDesignation(t);
+
     document.getElementById('coords').textContent = `Sector ${sector} · ${galX}, ${galZ} ly · Elev: ${elev}°`;
 
     // Zoom bar
