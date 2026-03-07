@@ -202,6 +202,7 @@ canvas { display: block; }
 <body>
 
 <div id="hud">
+  <div><span class="label">Date</span> <span class="value" id="hud-date" style="color:#aabb88">—</span></div>
   <div><span class="label">Zoom</span> <span class="value" id="hud-zoom">Solar System Overview</span></div>
   <div><span class="label">Distance</span> <span class="value" id="hud-dist">—</span></div>
   <div><span class="label">Zone</span> <span class="zone" id="hud-zone">Inner System</span></div>
@@ -223,6 +224,7 @@ canvas { display: block; }
   <button class="mode-btn" data-mode="planets" onclick="window._app && window._app.setFilter('planets')">Planets</button>
   <button class="mode-btn" data-mode="moons" onclick="window._app && window._app.setFilter('moons')">Moons</button>
   <button class="mode-btn" data-mode="dwarf" onclick="window._app && window._app.setFilter('dwarf')">Dwarf</button>
+  <button class="mode-btn" data-mode="comets" onclick="window._app && window._app.setFilter('comets')">Comets</button>
 </div>
 
 <button id="layer-toggle-btn" onclick="document.getElementById('layer-panel').classList.toggle('visible')">Layers</button>
@@ -230,18 +232,20 @@ canvas { display: block; }
   <label><input type="checkbox" data-layer="orbits" checked> Orbits</label>
   <label><input type="checkbox" data-layer="moons" checked> Moons</label>
   <label><input type="checkbox" data-layer="belts" checked> Belts</label>
+  <label><input type="checkbox" data-layer="comets" checked> Comets</label>
   <label><input type="checkbox" data-layer="labels" checked> Labels</label>
   <label><input type="checkbox" data-layer="habzone"> Habitable Zone</label>
   <label><input type="checkbox" data-layer="grid"> Distance Grid</label>
 </div>
 
 <div id="photo-viewer">
-  <button id="pv-close" onclick="document.getElementById('photo-viewer').classList.remove('visible')">×</button>
+  <button id="pv-close" onclick="document.getElementById('photo-viewer').classList.remove('visible'); if(window._app) window._app._selectedBodyData=null;">×</button>
   <canvas id="pv-canvas" width="680" height="400"></canvas>
   <div class="pv-info">
     <div class="pv-name" id="pv-name"></div>
     <div class="pv-type" id="pv-type"></div>
     <div class="pv-dist" id="pv-dist"></div>
+    <div class="pv-coords" id="pv-coords" style="font-size:12px;color:#88aa77;font-family:monospace;margin-top:4px;"></div>
     <div class="pv-highlights" id="pv-highlights"></div>
   </div>
 </div>
@@ -255,6 +259,7 @@ canvas { display: block; }
     <div class="help-row"><span class="help-key">Click + Drag</span><span class="help-desc">Orbit view</span></div>
     <div class="help-row"><span class="help-key">Double-Click</span><span class="help-desc">Recenter on point</span></div>
     <div class="help-row"><span class="help-key">Click a Planet</span><span class="help-desc">See info card</span></div>
+    <div class="help-row"><span class="help-key">← →</span><span class="help-desc">Cycle through planets, dwarfs &amp; comets</span></div>
     <div class="help-row"><span class="help-key">Pinch</span><span class="help-desc">Zoom (touch devices)</span></div>
     <div class="help-row"><span class="help-key">Esc</span><span class="help-desc">Close overlays / stop tour</span></div>
   </div>
@@ -438,6 +443,43 @@ const SOLAR_SYSTEM_DATA = {
         { id: "dysnomia", name: "Dysnomia", orbitAU: 0.000248, period_days: 15.774, radius: 0.003, color: "#777", info: "Eris's only known moon. Named after the daughter of Eris in Greek mythology." }
       ],
       info: { discovery: "Brown et al. 2005. Its discovery triggered Pluto's reclassification.", highlights: "Most massive known dwarf planet — 27% more massive than Pluto, which is exactly why Pluto got demoted. If Pluto's a planet, Eris has to be too. Currently ~96 AU from the Sun (three times farther than Neptune). Takes 558 years to orbit once. Named after the Greek goddess of discord and strife — fitting, since its discovery caused absolute chaos among astronomers. Its surface is blindingly white, covered in frozen nitrogen that likely snows down from a temporary atmosphere when it's closer to the Sun. Appropriately named: the planet that started a fight." }
+    },
+    // ============ COMETS ============
+    {
+      id: "halley", name: "Halley's Comet", type: "comet",
+      au: 17.83, ecc: 0.967, inc: 162.3, argPeri: 111.3, meanAnomaly: 38.4,
+      period_days: 27510, radius: 0.005, color: "#88ccff", isComet: true,
+      info: { discovery: "Observed since 240 BC. Edmond Halley predicted its return in 1705 — first comet proven to orbit the Sun.", highlights: "The most famous comet in history. Nucleus is a dark, potato-shaped chunk of ice and dust about 15×8 km. Returns every 75-79 years — last visit was 1986, next is 2061. Giotto spacecraft flew within 596 km of its nucleus. Mark Twain was born during its 1835 visit and died during its 1910 return — he predicted this. The Eta Aquariid and Orionid meteor showers come from its debris trail. Its orbit is retrograde — it goes around the Sun backwards compared to the planets. Probably the only comet with a booking agent." }
+    },
+    {
+      id: "hale-bopp", name: "Hale-Bopp", type: "comet",
+      au: 186, ecc: 0.995, inc: 89.4, argPeri: 130.6, meanAnomaly: 4.0,
+      period_days: 912500, radius: 0.006, color: "#aaddff", isComet: true,
+      info: { discovery: "Hale & Bopp, July 23, 1995 — independently discovered the same night.", highlights: "The 'Great Comet of 1997.' Visible to the naked eye for a record 18 months. Nucleus is huge — about 40 km across (most comets are under 10 km). Had two distinct tails: a blue ion tail and a white dust tail, both stretching millions of km. Orbital period of ~2,500 years, so it won't be back until roughly 4385. At perihelion it was 0.91 AU from the Sun, just inside Earth's orbit. One of the most widely observed comets in history — if you were alive in 1997 and looked up, you probably saw it." }
+    },
+    {
+      id: "neowise", name: "NEOWISE (C/2020 F3)", type: "comet",
+      au: 364, ecc: 0.999, inc: 128.9, argPeri: 37.3, meanAnomaly: 2.0,
+      period_days: 2467000, radius: 0.004, color: "#99bbdd", isComet: true,
+      info: { discovery: "Discovered March 27, 2020 by the NEOWISE space telescope.", highlights: "The unexpected gift of a terrible year. Discovered during the pandemic lockdowns of 2020, it became the brightest comet visible from the Northern Hemisphere since Hale-Bopp. Nucleus about 5 km across. Perihelion on July 3, 2020 at just 0.29 AU from the Sun — closer than Mercury. Orbital period of ~6,800 years. Millions of people stuck at home during COVID saw it in their backyards — possibly the most photographed comet ever. The universe's way of saying 'sorry about 2020, here's something nice.'" }
+    },
+    {
+      id: "churyumov", name: "67P/Churyumov-Gerasimenko", type: "comet",
+      au: 3.46, ecc: 0.641, inc: 7.04, argPeri: 12.8, meanAnomaly: 303.7,
+      period_days: 2356, radius: 0.004, color: "#7799aa", isComet: true,
+      info: { discovery: "Klim Churyumov, September 1969, on a photograph taken by Svetlana Gerasimenko.", highlights: "The rubber duck comet. ESA's Rosetta mission orbited it for 2 years (2014-2016) and landed the Philae probe on its surface — the first ever comet landing. The nucleus is 4.3×4.1 km and shaped like a rubber duck (two lobes joined by a narrow neck). Surface gravity is so weak you could jump off it easily. It outgasses jets of water and CO₂ as it nears the Sun, creating its coma and tail. Philae bounced twice before settling in a shadowed ditch, but still returned groundbreaking data including amino acids. The comet smells terrible — hydrogen sulfide, ammonia, and formaldehyde. A cosmic dumpster, but our cosmic dumpster." }
+    },
+    {
+      id: "hyakutake", name: "Hyakutake", type: "comet",
+      au: 1108, ecc: 0.9999, inc: 124.9, argPeri: 130.2, meanAnomaly: 0.5,
+      period_days: 25550000, radius: 0.004, color: "#66aacc", isComet: true,
+      info: { discovery: "Yuji Hyakutake, January 30, 1996 — using binoculars.", highlights: "The 'Great Comet of 1996.' Passed just 0.1 AU from Earth — incredibly close for a comet. This produced the longest measured comet tail: 570 million km (3.8 AU), stretching from the Sun past Mars. Its nucleus was only 4.2 km across but its tail was absurdly long relative to its size. X-ray emissions were detected from a comet for the first time with Hyakutake. Orbital period estimated at ~70,000 years, so this was likely the first time anyone on Earth ever saw it, and no human alive today will see it again. A one-time-only cosmic visitor." }
+    },
+    {
+      id: "tsuchinshan", name: "Tsuchinshan-ATLAS (C/2023 A3)", type: "comet",
+      au: 510, ecc: 0.9998, inc: 139.1, argPeri: 308.5, meanAnomaly: 1.0,
+      period_days: 16200000, radius: 0.004, color: "#bbddee", isComet: true,
+      info: { discovery: "Purple Mountain Observatory (Jan 2023) and ATLAS (Feb 2023).", highlights: "The most spectacular comet of 2024. Perihelion on September 27, 2024 at just 0.39 AU from the Sun. Produced an extraordinary anti-tail (forward spike) visible to the naked eye as Earth passed through its orbital plane. Peak brightness around magnitude -4 (bright as Venus). Its dust tail displayed stunning striae — parallel streaks caused by synchronized dust particle ejection. Forward-scattering of sunlight through its dust gave it an almost supernatural glow at closest approach to Earth (0.47 AU on October 12). Orbital period so long it may never return. The comet that dominated social media feeds for weeks." }
     }
   ]
 };
@@ -448,6 +490,72 @@ const SOLAR_SYSTEM_DATA = {
 const SCALE = SOLAR_SYSTEM_DATA.meta.scaleFactor;
 function auToScene(au) { return Math.log10(au + 1) * SCALE; }
 function sceneToAU(s)  { return Math.pow(10, s / SCALE) - 1; }
+
+// ============================================================
+//  KEPLER SOLVER — Real-time orbital positions
+// ============================================================
+const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0); // J2000.0 epoch in ms
+
+function solveKepler(M, e, iters = 12) {
+  // Solve Kepler's equation: E - e*sin(E) = M
+  // M = mean anomaly (radians), e = eccentricity
+  // Returns eccentric anomaly E
+  let E = M;
+  for (let i = 0; i < iters; i++) {
+    E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+  }
+  return E;
+}
+
+function trueAnomaly(E, e) {
+  // Eccentric anomaly → true anomaly
+  return 2 * Math.atan2(
+    Math.sqrt(1 + e) * Math.sin(E / 2),
+    Math.sqrt(1 - e) * Math.cos(E / 2)
+  );
+}
+
+function getOrbitalPosition(bodyData, dateMs) {
+  // Returns { angle (true anomaly + argPeri), r (AU), x, z, y } for given date
+  if (!bodyData.au || !bodyData.period_days) return null;
+
+  const daysSinceJ2000 = (dateMs - J2000) / 86400000;
+  const n = 360 / bodyData.period_days; // mean motion deg/day
+  const M0 = (bodyData.meanAnomaly || 0); // mean anomaly at J2000
+  const M = ((M0 + n * daysSinceJ2000) % 360 + 360) % 360; // current mean anomaly
+  const Mrad = M * Math.PI / 180;
+  const e = bodyData.ecc || 0;
+
+  const E = solveKepler(Mrad, e);
+  const nu = trueAnomaly(E, e); // true anomaly
+  const r = bodyData.au * (1 - e * e) / (1 + e * Math.cos(nu)); // heliocentric distance AU
+
+  // Position in orbital plane, then rotate by argPeri and inclination
+  const argPeri = (bodyData.argPeri || 0) * Math.PI / 180;
+  const totalAngle = nu + argPeri;
+  const inc = (bodyData.inc || 0) * Math.PI / 180;
+
+  return {
+    trueAnomaly: nu,
+    meanAnomaly: M,
+    r: r, // AU from Sun
+    angle: totalAngle,
+    x: Math.cos(totalAngle) * r,
+    z: Math.sin(totalAngle) * r,
+    y: Math.sin(inc) * Math.sin(totalAngle) * r * 0.3
+  };
+}
+
+function positionToScene(orb) {
+  // Convert orbital position (AU coords) to scene coords (log scale)
+  const sceneDist = auToScene(orb.r);
+  // Preserve the angle but apply log-scale to the radius
+  return new THREE.Vector3(
+    Math.cos(orb.angle) * sceneDist,
+    orb.y !== undefined ? auToScene(Math.abs(orb.y)) * Math.sign(orb.y) : 0,
+    Math.sin(orb.angle) * sceneDist
+  );
+}
 
 // ============================================================
 //  GLOW TEXTURE (shared)
@@ -479,14 +587,15 @@ class SunObject {
     this.group.userData.bodyId = 'sun';
     this.group.userData.bodyData = data;
 
-    // Sun sphere
-    const geo = new THREE.SphereGeometry(data.radius, 32, 32);
+    // Sun sphere — small clickable core so nearby planets are reachable
+    const clickR = 0.08;
+    const geo = new THREE.SphereGeometry(clickR, 32, 32);
     const col = new THREE.Color(data.color);
     const mat = new THREE.MeshBasicMaterial({ color: col });
     this.mesh = new THREE.Mesh(geo, mat);
     this.group.add(this.mesh);
 
-    // Glow layers
+    // Glow layers — full visual size
     const tex = GlowTexture.get();
     const glowScales = [1.5, 2.5, 4.0];
     const glowOpacities = [0.35, 0.15, 0.06];
@@ -511,18 +620,27 @@ class CelestialBody {
     this.group = new THREE.Group();
     this.group.userData.bodyId = bodyData.id;
     this.group.userData.bodyData = bodyData;
-    this.group.userData.layerName = bodyData.type === 'dwarf' ? 'dwarf' :
+    this.group.userData.layerName = bodyData.type === 'comet' ? 'comets' :
+                                    bodyData.type === 'dwarf' ? 'dwarf' :
                                     (parentPos ? 'moons' : 'planets');
 
-    // Compute position from orbital elements
+    // Compute position from orbital elements using Kepler solver
+    this._hasOrbit = bodyData.au !== undefined && bodyData.period_days !== undefined;
     if (bodyData.au !== undefined) {
-      const sceneDist = auToScene(bodyData.au);
-      const angle = (bodyData.meanAnomaly || 0) * Math.PI / 180;
-      const inc = (bodyData.inc || 0) * Math.PI / 180;
-      const x = sceneDist * Math.cos(angle);
-      const z = sceneDist * Math.sin(angle);
-      const y = sceneDist * Math.sin(inc) * 0.3; // flatten inclination for visibility
-      this.scenePos = new THREE.Vector3(x, y, z);
+      const orb = this._hasOrbit ? getOrbitalPosition(bodyData, Date.now()) : null;
+      if (orb) {
+        this.currentOrbit = orb;
+        this.scenePos = positionToScene(orb);
+      } else {
+        const sceneDist = auToScene(bodyData.au);
+        const angle = (bodyData.meanAnomaly || 0) * Math.PI / 180;
+        const inc = (bodyData.inc || 0) * Math.PI / 180;
+        this.scenePos = new THREE.Vector3(
+          sceneDist * Math.cos(angle),
+          sceneDist * Math.sin(inc) * 0.3,
+          sceneDist * Math.sin(angle)
+        );
+      }
     } else if (bodyData.orbitAU !== undefined && parentPos) {
       // Moon — position relative to parent, tightly clustered
       // Use parent radius as base unit: moons orbit at 2-6× parent radius
@@ -575,6 +693,42 @@ class CelestialBody {
       this.group.add(ring);
     }
 
+    // Comet tail
+    if (bodyData.isComet) {
+      const tailLen = r * 12;
+      // Dust tail (yellowish, curved slightly)
+      const dustGeo = new THREE.ConeGeometry(r * 1.5, tailLen, 6, 1, true);
+      const dustMat = new THREE.MeshBasicMaterial({
+        color: 0xddcc88, transparent: true, opacity: 0.25,
+        side: THREE.DoubleSide, depthWrite: false
+      });
+      const dustTail = new THREE.Mesh(dustGeo, dustMat);
+      dustTail.rotation.x = Math.PI / 2;
+      dustTail.position.z = tailLen * 0.5;
+      this.group.add(dustTail);
+
+      // Ion tail (blue, straighter)
+      const ionGeo = new THREE.ConeGeometry(r * 0.6, tailLen * 1.5, 4, 1, true);
+      const ionMat = new THREE.MeshBasicMaterial({
+        color: 0x4488ff, transparent: true, opacity: 0.2,
+        side: THREE.DoubleSide, depthWrite: false
+      });
+      const ionTail = new THREE.Mesh(ionGeo, ionMat);
+      ionTail.rotation.x = Math.PI / 2;
+      ionTail.position.z = tailLen * 0.75;
+      this.group.add(ionTail);
+
+      // Extra glow for coma
+      const comaSp = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: GlowTexture.get(), color: 0x88ccff, transparent: true,
+        opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false
+      }));
+      comaSp.scale.set(r * 6, r * 6, 1);
+      this.group.add(comaSp);
+
+      this.group.userData.isComet = true;
+    }
+
     // Label sprite
     this.label = this._makeLabel(bodyData.name);
     this.label.position.set(0, r * 2.5 + 0.02, 0);
@@ -612,6 +766,15 @@ class CelestialBody {
     const aspect = c.width / c.height;
     sp.scale.set(0.15 * aspect, 0.15, 1);
     return sp;
+  }
+
+  updatePosition(dateMs) {
+    if (!this._hasOrbit) return;
+    const orb = getOrbitalPosition(this.data, dateMs);
+    if (!orb) return;
+    this.currentOrbit = orb;
+    this.scenePos = positionToScene(orb);
+    this.group.position.copy(this.scenePos);
   }
 }
 
@@ -1288,8 +1451,9 @@ class App {
     show('planets', mode === 'all' || mode === 'planets');
     show('moons', mode === 'all' || mode === 'moons');
     show('dwarf', mode === 'all' || mode === 'dwarf');
+    show('comets', mode === 'all' || mode === 'comets');
     show('belts', mode === 'all');
-    show('orbits', mode === 'all' || mode === 'planets');
+    show('orbits', mode === 'all' || mode === 'planets' || mode === 'comets');
     show('labels', true);
   }
 
@@ -1370,7 +1534,12 @@ class App {
       this.renderer.domElement.style.cursor = 'grab';
     });
 
-    // Minimal keyboard — just Escape and ? for overlays
+    // Build selectable body list (planets, dwarfs, comets — skip belts)
+    this._selectableBodies = this.allBodies.filter(b =>
+      b.data.type === 'planet' || b.data.type === 'dwarf' || b.data.type === 'comet'
+    );
+    this._selectedIdx = -1;
+
     window.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         document.getElementById('help-overlay').classList.remove('active');
@@ -1380,6 +1549,22 @@ class App {
       if (e.key === '?') {
         document.getElementById('help-overlay').classList.toggle('active');
         return;
+      }
+      // Arrow left/right to cycle through bodies
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const list = this._selectableBodies;
+        if (list.length === 0) return;
+        if (e.key === 'ArrowRight') {
+          this._selectedIdx = (this._selectedIdx + 1) % list.length;
+        } else {
+          this._selectedIdx = (this._selectedIdx - 1 + list.length) % list.length;
+        }
+        const body = list[this._selectedIdx];
+        if (body.scenePos) {
+          this.nav.flyTo(body.scenePos.clone(), Math.max(0.15, (body.data.radius || 0.01) * 15));
+        }
+        this.showBodyInfo(body.data);
       }
     });
 
@@ -1413,15 +1598,27 @@ class App {
   }
 
   showBodyInfo(bodyData) {
+    this._selectedBodyData = bodyData;
     const pv = document.getElementById('photo-viewer');
     document.getElementById('pv-name').textContent = bodyData.name;
     document.getElementById('pv-type').textContent = bodyData.type === 'planet' ? 'Planet' :
-      bodyData.type === 'dwarf' ? 'Dwarf Planet' : bodyData.type === 'belt' ? 'Structure' : 'Body';
-    if (bodyData.au) {
+      bodyData.type === 'dwarf' ? 'Dwarf Planet' : bodyData.type === 'comet' ? 'Comet' :
+      bodyData.type === 'belt' ? 'Structure' : 'Body';
+
+    // Show live orbital distance if body has Kepler data
+    const body = this.allBodies.find(b => b.data.id === bodyData.id);
+    if (body && body.currentOrbit) {
+      const r = body.currentOrbit.r;
+      document.getElementById('pv-dist').textContent =
+        r.toFixed(3) + ' AU from Sun now (' + Math.round(r * 149.598) + 'M km)';
+    } else if (bodyData.au) {
       document.getElementById('pv-dist').textContent = bodyData.au + ' AU from the Sun (' + Math.round(bodyData.au * 149.598) + ' million km)';
     } else {
       document.getElementById('pv-dist').textContent = '';
     }
+
+    // Live coords line
+    this._updateLiveCoords();
     // Planets have info as {discovery, highlights} object; moons/belts have info as plain string
     const infoText = typeof bodyData.info === 'string' ? bodyData.info
       : (bodyData.info ? bodyData.info.highlights : '');
@@ -1565,6 +1762,12 @@ class App {
     const zl = this.nav.getZoomLevel();
     document.getElementById('hud-zoom').textContent = zl.label;
 
+    // Date clock
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10) + ' ' +
+      now.toTimeString().slice(0, 5) + ' UTC';
+    document.getElementById('hud-date').textContent = dateStr;
+
     // Distance from Sun
     const d = this.nav.target.length();
     const au = sceneToAU(d);
@@ -1590,10 +1793,35 @@ class App {
     document.getElementById('zoom-indicator').style.top = (1 - pct) * 188 + 'px';
   }
 
+  _updateLiveCoords() {
+    const el = document.getElementById('pv-coords');
+    if (!el) return;
+    const bd = this._selectedBodyData;
+    if (!bd) { el.textContent = ''; return; }
+    const body = this.allBodies.find(b => b.data.id === bd.id);
+    if (!body || !body.currentOrbit) { el.textContent = ''; return; }
+    const orb = body.currentOrbit;
+    const angleDeg = ((orb.angle * 180 / Math.PI) % 360 + 360) % 360;
+    // Also update distance line with live value
+    document.getElementById('pv-dist').textContent =
+      orb.r.toFixed(3) + ' AU from Sun (' + Math.round(orb.r * 149.598) + 'M km)';
+    el.textContent = `lon ${angleDeg.toFixed(1)}° · M ${orb.meanAnomaly.toFixed(1)}° · r ${orb.r.toFixed(3)} AU`;
+  }
+
   _animate() {
     requestAnimationFrame(() => this._animate());
     this.nav.update();
     this._updateHUD();
+
+    // Update orbital positions every ~60 frames (~1 second at 60fps)
+    if (!this._orbitFrame) this._orbitFrame = 0;
+    this._orbitFrame++;
+    if (this._orbitFrame % 60 === 0) {
+      const now = Date.now();
+      this.allBodies.forEach(b => b.updatePosition(now));
+      this._updateLiveCoords();
+    }
+
     this.minimap.draw(this.allBodies, this.nav.target, new THREE.Vector3(0, 0, 0));
 
     // Scale labels by distance
@@ -1613,6 +1841,14 @@ class App {
           child.scale.set(glowScale, glowScale, 1);
         }
       });
+    });
+
+    // Point comet tails away from Sun (origin)
+    this.allBodies.forEach(body => {
+      if (body.group.userData.isComet && body.scenePos) {
+        const dir = body.scenePos.clone().normalize();
+        body.group.lookAt(body.scenePos.clone().add(dir));
+      }
     });
 
     // Sun pulse

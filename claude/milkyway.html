@@ -100,6 +100,7 @@
   #photo-viewer .pv-name { font-size: 18px; color: #aaccff; margin-bottom: 4px; font-weight: 500; }
   #photo-viewer .pv-type { font-size: 14px; color: #778; line-height: 1.4; }
   #photo-viewer .pv-dist { font-size: 13px; color: #556; margin-top: 4px; font-family: monospace; }
+  #photo-viewer .pv-desc { font-size: 13px; color: #99aabb; margin-top: 8px; line-height: 1.5; }
   #photo-viewer .pv-close {
     position: absolute; top: 6px; right: 8px; cursor: pointer;
     color: #667; font-size: 20px; pointer-events: auto;
@@ -155,14 +156,15 @@
     transition: width 0.5s;
   }
   #tour-start-btn {
-    position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
-    z-index: 15; padding: 8px 20px; font-size: 15px;
-    background: rgba(50,70,110,0.5); border: 1px solid rgba(80,120,180,0.3);
-    border-radius: 6px; color: #7799bb; cursor: pointer;
+    position: fixed; bottom: 20px; left: 340px;
+    z-index: 15; padding: 6px 14px; font-size: 12px;
+    background: rgba(20,30,45,0.8); backdrop-filter: blur(8px);
+    border: 1px solid rgba(80,100,140,0.3);
+    border-radius: 8px; color: #8899bb; cursor: pointer;
     font-family: inherit; backdrop-filter: blur(8px); transition: all 0.3s;
     letter-spacing: 0.5px;
   }
-  #tour-start-btn:hover { background: rgba(70,100,150,0.6); color: #aaccee; }
+  #tour-start-btn:hover { background: rgba(70,100,150,0.6); color: #aabbdd; }
   #tour-start-btn.hidden { display: none; }
 
   /* Hover tooltip */
@@ -282,6 +284,7 @@
     <div class="pv-name" id="pv-name"></div>
     <div class="pv-type" id="pv-type"></div>
     <div class="pv-dist" id="pv-dist"></div>
+    <div class="pv-desc" id="pv-desc"></div>
   </div>
 </div>
 
@@ -424,26 +427,26 @@ const GALAXY_DATA = {
   },
   notableStars: [
     // --- Galactic landmarks ---
-    { name: "Sagittarius A*", type: "Supermassive Black Hole · 4M solar masses · Event horizon 24M km across · Stars orbit it at 3% light speed · Won 2020 Nobel Prize", x: 0, y: 0, z: 0, magnitude: -1, color: "#ffcc44", size: 3.5, distFromSun_ly: 26000 },
-    { name: "Betelgeuse",     type: "Red Supergiant · 700× solar radius · If placed at the Sun, it would swallow Mars · 'Great Dimming' of 2020 was just a dust sneeze · Will go supernova eventually — not today though",  dist: 26700, angle: 1.34, z: 0.02, color: "#ff6633", size: 2.2, distFromSun_ly: 700 },
+    { name: "Sagittarius A*", type: "Supermassive Black Hole · 4M solar masses", x: 0, y: 0, z: 0, magnitude: -1, color: "#ffcc44", size: 3.5, distFromSun_ly: 26000, desc: "The monster at the center of our galaxy. 4 million solar masses crammed into a region smaller than Mercury's orbit. Event horizon 24 million km across. Stars orbit it at 3% light speed. The Event Horizon Telescope imaged its shadow in 2022. Won the 2020 Nobel Prize for the team that proved it exists. It's currently quiet — but it wasn't always." },
+    { name: "Betelgeuse",     type: "Red Supergiant · 700× solar radius",  dist: 26700, angle: 1.34, z: 0.02, color: "#ff6633", size: 2.2, distFromSun_ly: 700, desc: "Orion's red shoulder. 700× the Sun's radius — if placed at the Sun, it would swallow Mars. The 'Great Dimming' of 2020 made headlines (supernova?!) but turned out to be just a giant dust sneeze. It will go supernova eventually — could be tomorrow, could be 100,000 years. When it does, it'll be visible in daylight for weeks. Only 10 million years old but already dying. Stars this massive live fast and die spectacular." },
     { name: "Sirius",         type: "A1V Binary · Brightest star in night sky · Only 8.6 ly away · Its white dwarf companion Sirius B is the size of Earth but weighs as much as the Sun · Ancient Egyptians based their calendar on it",   dist: 25991, angle: 1.29, z: 0.0, color: "#aaccff", size: 2.0, distFromSun_ly: 8.6 },
     { name: "Rigel",          type: "B8Ia Blue Supergiant · 120,000× solar luminosity · Orion's brightest star · If it replaced the Sun you'd need SPF infinity · Only 8M years old but already dying", dist: 25130, angle: 1.32, z: -0.01, color: "#99bbff", size: 2.0, distFromSun_ly: 860 },
     { name: "Deneb",          type: "A2Ia Supergiant · 200,000× solar luminosity · 2,600 ly away yet still one of brightest in our sky · Tail of Cygnus the Swan · If it were as close as Sirius it would cast shadows at night",   dist: 23500, angle: 1.25, z: 0.02, color: "#ddeeff", size: 1.8, distFromSun_ly: 2600 },
-    { name: "Eta Carinae",    type: "LBV Hypergiant · 5 million × solar luminosity · May go supernova any century now · The Great Eruption of 1843 made it the 2nd brightest star briefly · A ticking cosmic bomb",   dist: 18500, angle: 1.10, z: -0.01, color: "#ffaa55", size: 2.5, distFromSun_ly: 7500 },
-    { name: "Cygnus X-1",    type: "Stellar Black Hole · 21 solar masses · First widely accepted black hole candidate · Settled a famous bet between Hawking and Thorne (Hawking lost) · Companion star is being slowly devoured",        dist: 19900, angle: 1.20, z: 0.01, color: "#8866cc", size: 2.0, distFromSun_ly: 6100 },
+    { name: "Eta Carinae",    type: "LBV Hypergiant · 5 million × solar luminosity",   dist: 18500, angle: 1.10, z: -0.01, color: "#ffaa55", size: 2.5, distFromSun_ly: 7500, desc: "A ticking cosmic bomb. 5 million times the Sun's luminosity, 100+ solar masses, and deeply unstable. The Great Eruption of 1843 briefly made it the 2nd brightest star in the sky — it ejected 10 solar masses of gas that now forms the Homunculus Nebula around it. It's a binary system where both stars are massive enough to go supernova. When it finally blows (could be any century now), it may produce a hypernova or even a gamma-ray burst. Fortunately we're not in the firing line." },
+    { name: "Cygnus X-1",    type: "Stellar Black Hole · 21 solar masses",        dist: 19900, angle: 1.20, z: 0.01, color: "#8866cc", size: 2.0, distFromSun_ly: 6100, desc: "The first widely accepted black hole. 21 solar masses of collapsed star, invisible except for the X-rays screaming off the accretion disk as it devours its companion star HDE 226868. Settled a famous bet between Stephen Hawking and Kip Thorne — Hawking bet against it being a black hole (he lost, and paid up with a magazine subscription). Discovered in 1964, confirmed over the following decades. The companion star is a blue supergiant being slowly stripped of its outer layers. A cosmic crime scene in real time." },
     { name: "UY Scuti",      type: "Red Supergiant · 1,700× solar radius · If placed at the Sun it would extend past Jupiter's orbit · Light takes 5 hours to travel around it · Basically a very diffuse, very confused gas cloud", dist: 20700, angle: 0.95, z: 0.0, color: "#ff4422", size: 2.8, distFromSun_ly: 5100 },
     { name: "Polaris",        type: "F7Ib Cepheid · The North Star · Only 0.7° from celestial pole · Actually a triple star system · Pulsates every 4 days · Won't always be the pole star — precession is slowly aiming us at Vega instead",              dist: 25567, angle: 1.31, z: 0.04, color: "#ffeedd", size: 1.6, distFromSun_ly: 433 },
-    { name: "Tabby's Star",  type: "F3V · Dims by up to 22% at irregular intervals · Alien megastructure hypothesis got everyone excited · Probably just dust clouds but honestly we still don't fully know · The star that launched a thousand papers", dist: 24540, angle: 1.24, z: 0.01, color: "#ddcc88", size: 1.4, distFromSun_ly: 1470 },
+    { name: "Tabby's Star",  type: "F3V · Mysterious irregular dimming", dist: 24540, angle: 1.24, z: 0.01, color: "#ddcc88", size: 1.4, distFromSun_ly: 1470, desc: "The most mysterious star in the galaxy. Dims by up to 22% at irregular, unpredictable intervals — way too much for a transiting planet. When Tabetha Boyajian's team published the data in 2015, the internet went wild: alien megastructure? Dyson sphere? The reality is probably dust clouds orbiting the star, but honestly we still don't fully know. Citizen scientists on Planet Hunters discovered the anomaly. It launched a thousand papers and proved that crowdsourced science can find things professionals miss." },
 
     // --- Exoplanet hosts astronomers can't stop talking about ---
-    { name: "Proxima Centauri", type: "M5.5Ve Red Dwarf · Nearest star to Sol",   dist: 25996, angle: 1.300, z: 0.0, color: "#ff8866", size: 1.2, distFromSun_ly: 4.24,
+    { name: "Proxima Centauri", type: "M5.5Ve Red Dwarf · Nearest star to Sol",   dist: 25996, angle: 1.300, z: 0.0, color: "#ff8866", size: 1.2, distFromSun_ly: 4.24, desc: "The closest star to our Sun at just 4.24 light-years. A tiny red dwarf only 12% the Sun's mass — you couldn't see it without a telescope despite being our nearest neighbor. Part of the Alpha Centauri triple system. Hosts Proxima b, a rocky planet in the habitable zone, but violent flares may strip any atmosphere. If we ever send a probe to another star, this is almost certainly the first stop.",
       planets: [
         { name: "Proxima b", type: "Rocky · Habitable zone", mass: "1.07 Earth", period_days: 11.2, color: "#6688aa",
           sky: { starColor: "#ff4422", starSize: 3.2, desc: "Huge dim red sun dominates sky. Tidally locked — permanent sunset on terminator. Frequent violent flares light the sky electric blue." }},
         { name: "Proxima d", type: "Sub-Earth · Very close orbit", mass: "0.26 Earth", period_days: 5.1, color: "#887766",
           sky: { starColor: "#ff4422", starSize: 5.0, desc: "Star fills much of the sky, blazing red. Surface baked by radiation. Sky a permanent deep crimson." }}
       ]},
-    { name: "TRAPPIST-1", type: "M8V Ultra-cool Red Dwarf · 7 Earth-sized planets!", dist: 25961, angle: 1.298, z: 0.0, color: "#ff6644", size: 1.4, distFromSun_ly: 39,
+    { name: "TRAPPIST-1", type: "M8V Ultra-cool Red Dwarf · 7 Earth-sized planets!", dist: 25961, angle: 1.298, z: 0.0, color: "#ff6644", size: 1.4, distFromSun_ly: 39, desc: "An ultra-cool red dwarf 39 light-years away with SEVEN Earth-sized planets — three in the habitable zone. The planets are so tightly packed that from one, you could see geological features on the others with the naked eye. The star is barely larger than Jupiter. JWST is actively studying the atmospheres of these worlds right now. This system is our best shot at finding habitable conditions around a nearby star.",
       planets: [
         { name: "TRAPPIST-1e", type: "Rocky · Best habitable zone candidate", mass: "0.69 Earth", period_days: 6.1, color: "#5577aa",
           sky: { starColor: "#ff3311", starSize: 4.0, desc: "Salmon-pink sky. Star appears 3× wider than our Sun but dimmer. Sister planets visible as bright discs — closer than our Moon. Perpetual sunset colors." }},
@@ -469,12 +472,12 @@ const GALAXY_DATA = {
         { name: "Kepler-186f", type: "Earth-sized · Historic first HZ Earth-size find", mass: "~1.4 Earth", period_days: 129.9, color: "#557755",
           sky: { starColor: "#ff5522", starSize: 1.2, desc: "Dim copper sky. Noon looks like Earth's sunset. Photography here would always be golden hour. Red dwarf flares occasionally streak the sky white." }}
       ]},
-    { name: "K2-18", type: "M2.5V Red Dwarf · JWST detected possible biosignature!", dist: 25876, angle: 1.292, z: 0.0, color: "#ff6655", size: 1.3, distFromSun_ly: 124,
+    { name: "K2-18", type: "M2.5V Red Dwarf · JWST detected possible biosignature!", dist: 25876, angle: 1.292, z: 0.0, color: "#ff6655", size: 1.3, distFromSun_ly: 124, desc: "The most exciting star in exoplanet science right now. 124 light-years away in Leo. JWST detected carbon dioxide and methane in the atmosphere of its planet K2-18 b — exactly the combination you'd expect from a world with a liquid water ocean. Even more tantalizing: a hint of dimethyl sulfide (DMS), which on Earth is only produced by living organisms (marine phytoplankton). K2-18 b is a 'Hycean world' — a sub-Neptune with a thick hydrogen atmosphere over a global ocean. If the DMS signal holds up, this could be the first detection of a biosignature on another planet. We're right at the edge of answering the biggest question in science.",
       planets: [
         { name: "K2-18 b", type: "Sub-Neptune · DMS biosignature? Hycean world?", mass: "8.6 Earth", period_days: 32.9, color: "#3355aa",
           sky: { starColor: "#ff4433", starSize: 2.2, desc: "Looking up through a thick hydrogen atmosphere. Red star casts everything in amber. Clouds of water vapor stretch to the horizon. Possible ocean below. The sky JWST made famous." }}
       ]},
-    { name: "55 Cancri", type: "G8V Sun-like · 5 known planets", dist: 25959, angle: 1.299, z: 0.0, color: "#ffdd88", size: 1.2, distFromSun_ly: 41,
+    { name: "55 Cancri", type: "G8V Sun-like · 5 known planets", dist: 25959, angle: 1.299, z: 0.0, color: "#ffdd88", size: 1.2, distFromSun_ly: 41, desc: "A Sun-like star just 41 light-years away with 5 known planets — one of the first multi-planet systems discovered. 55 Cancri e is the showstopper: a super-Earth so close to its star that its year lasts 18 hours. Surface temperature around 2000°C. JWST detected an atmosphere on it — the first rocky exoplanet confirmed to have one. Early models suggested it could be made partly of diamond. The star is visible to the naked eye in Cancer.",
       planets: [
         { name: "55 Cancri e", type: "Super-Earth · Lava world, possible diamond planet", mass: "8.6 Earth", period_days: 0.74, color: "#ff6633",
           sky: { starColor: "#ffdd66", starSize: 25.0, desc: "Star fills a QUARTER of the sky. Surface is molten lava, 2000°C. Sky glows orange from heat radiation. The ground itself shines. Year lasts 18 hours." }}
@@ -500,7 +503,7 @@ const GALAXY_DATA = {
     // --- Scutum-Centaurus Arm ---
     { name: "Scutum Star Cloud",  type: "Brightest visible patch of the Milky Way · Billions of stars in a narrow corridor where our line of sight goes straight down the arm · Nature's own floodlight", dist: 14000, angle: 4.2, z: 0.0, color: "#ddcc88", size: 2.8, distFromSun_ly: 18000 },
     { name: "Westerlund 1",       type: "Most massive compact star cluster in the Milky Way · Contains 24 Wolf-Rayet stars, several hypergiants, and a magnetar · A stellar all-star team", dist: 22500, angle: 4.7, z: 0.0, color: "#ccbbaa", size: 2.3, distFromSun_ly: 13000 },
-    { name: "SGR 1806-20",        type: "Magnetar · Magnetic field 10¹⁵× Earth's · 2004 flare was the brightest event ever observed — it ionized part of our atmosphere from 50,000 ly away · Don't get close", dist: 11000, angle: 4.5, z: 0.0, color: "#cc66ff", size: 2.0, distFromSun_ly: 14500 },
+    { name: "SGR 1806-20",        type: "Magnetar · Magnetic field 10¹⁵× Earth's", dist: 11000, angle: 4.5, z: 0.0, color: "#cc66ff", size: 2.0, distFromSun_ly: 14500, desc: "The most magnetically powerful object known. A magnetar — a neutron star with a magnetic field 10¹⁵ times Earth's. On December 27, 2004, it released a gamma-ray flare so powerful it was the brightest event ever observed from outside our solar system. From 50,000 light-years away, it ionized part of our upper atmosphere and saturated every gamma-ray detector in orbit. The burst released more energy in a tenth of a second than the Sun emits in 250,000 years. If it were 10 light-years away, it would have sterilized Earth. Don't get close." },
 
     // --- Sagittarius Arm ---
     { name: "Eagle Nebula (M16)", type: "Star-forming nebula · Home of the Pillars of Creation (made famous by Hubble) · The pillars may already be destroyed by a nearby supernova — we won't see it for 1,000 years", dist: 20000, angle: 0.8, z: 0.0, color: "#ff7766", size: 2.2, distFromSun_ly: 7000 },
@@ -598,6 +601,19 @@ class Star {
     const sprite = new THREE.Sprite(spriteMat);
     sprite.scale.set(this.size * 0.2, this.size * 0.2, 1);
     this.mesh.add(sprite);
+
+    // Pulsing ring for stars with mapped planets
+    if (this.planets && this.planets.length > 0) {
+      const ringR = this.size * 0.06;
+      const ringGeo = new THREE.RingGeometry(ringR * 0.75, ringR, 24);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x44ccaa, transparent: true, opacity: 0.0,
+        side: THREE.DoubleSide, depthWrite: false
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.userData.planetRing = true;
+      this.mesh.add(ring);
+    }
 
     return this.mesh;
   }
@@ -1156,7 +1172,7 @@ class Galaxy {
     this.sunMesh = new THREE.Mesh(geom, mat);
     this.sunMesh.position.copy(this.sunPosition.toThree());
     this.sunMesh.userData = {
-      star: { name: "Sol (You Are Here)", type: "G2V Main Sequence — Our Sun", color: "#ffdd44", distFromSun_ly: 0 },
+      star: { name: "Sol (You Are Here)", type: "G2V Main Sequence — Our Sun", color: "#ffdd44", distFromSun_ly: 0, dist: 26000, desc: "Our home star. A thoroughly average G2V yellow dwarf — middle-aged, middle-sized, middle-of-the-road in every way. Which turns out to be exactly the kind of star you want if you're into things like 'stable orbits' and 'not being sterilized by radiation.' 4.6 billion years old with another 5 billion to go. Located in the Orion Spur, a minor arm between Perseus and Sagittarius. 8 planets, 5 dwarf planets, hundreds of moons, and one species that won't stop arguing about whether Pluto counts." },
       hasPlanets: true, category: 'planet-host'
     };
     this.clickableObjects.push(this.sunMesh);
@@ -1174,6 +1190,13 @@ class Galaxy {
     const ring = new THREE.Mesh(ringGeom, ringMat);
     ring.rotation.x = Math.PI / 2;
     this.sunMesh.add(ring);
+
+    // Planet ring (same teal as other planet-hosting stars)
+    const pRingGeo = new THREE.RingGeometry(0.05, 0.065, 24);
+    const pRingMat = new THREE.MeshBasicMaterial({ color: 0x44ccaa, transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });
+    const pRing = new THREE.Mesh(pRingGeo, pRingMat);
+    pRing.userData.planetRing = true;
+    this.sunMesh.add(pRing);
 
     this.scene.add(this.sunMesh);
   }
@@ -1862,6 +1885,7 @@ class App {
       if (hits.length > 0) {
         const star = hits[0].object.userData.star;
         if (star) {
+          star._meshPos = hits[0].object.position;
           this._showStarInfo(star);
           return; // just show info, don't fly
         }
@@ -2044,7 +2068,7 @@ class App {
       if (document.getElementById('help-overlay').classList.contains('active')) return;
 
       const k = e.key.toLowerCase();
-      if (k === 'h') this.nav.flyTo(this.galaxy.sunPosition.toThree(), 5);
+      if (k === 'h') { this.nav.flyTo(this.galaxy.sunPosition.toThree(), 7); this.nav.targetYaw = 0.8; this.nav.targetPitch = -0.25; }
       if (k === 'g') this.nav.flyTo(new THREE.Vector3(0, 0, 0), 45); // 50% galaxy, keep current pitch
       if (k === 'x') {
         // Toggle coordinate grid
@@ -2100,13 +2124,21 @@ class App {
     this._drawStarPortrait(cvs, star);
     document.getElementById('pv-name').textContent = star.name;
     document.getElementById('pv-type').textContent = star.type;
-    // distance info
+    // distance + galactic address
     const distEl = document.getElementById('pv-dist');
-    if (star.distFromSun_ly !== undefined) {
-      distEl.textContent = star.distFromSun_ly.toLocaleString() + ' ly from Sol';
-    } else {
-      distEl.textContent = '';
-    }
+    const pos3 = star.position ? star.position.toThree() : (star.mesh ? star.mesh.position : (star._meshPos || null));
+    const sector = pos3 ? this.galaxy.getSectorDesignation(pos3) : null;
+    const gcDist = star.dist || (star.distFromSun_ly === 0 ? 26000 : null);
+    let addrParts = [];
+    if (star.distFromSun_ly !== undefined) addrParts.push(star.distFromSun_ly.toLocaleString() + ' ly from Sol');
+    if (gcDist) addrParts.push(Math.round(gcDist).toLocaleString() + ' ly from core');
+    if (sector) addrParts.push('Sector ' + sector);
+    distEl.textContent = addrParts.join(' · ');
+
+    // Star description
+    const descEl = document.getElementById('pv-desc');
+    descEl.textContent = star.desc || '';
+
     // planet buttons
     const existingPlanets = pv.querySelector('.pv-planets');
     if (existingPlanets) existingPlanets.remove();
@@ -2118,7 +2150,12 @@ class App {
         const btn = document.createElement('span');
         btn.className = 'pv-planet-btn';
         btn.textContent = '\u{1F30D} ' + p.name;
-        // Planet info only (sky view removed)
+        btn.onclick = () => {
+          document.getElementById('pv-name').textContent = p.name;
+          document.getElementById('pv-type').textContent = p.type;
+          descEl.textContent = p.sky ? p.sky.desc : '';
+          distEl.textContent = p.mass ? 'Mass: ' + p.mass + ' · Period: ' + p.period_days + ' days' : '';
+        };
         div.appendChild(btn);
       });
       pv.querySelector('.pv-info').appendChild(div);
@@ -2287,13 +2324,20 @@ class App {
 
     // Adjust point sizes based on zoom (cached refs, not traverse)
     const dist = this.nav.distance;
-    const sizeFactor = Math.max(0.03, Math.min(1, dist * 0.01));
     if (!this._pointsCache) {
       this._pointsCache = [];
       this.scene.traverse(obj => { if (obj.isPoints && obj.material) this._pointsCache.push(obj); });
     }
+    // When zoomed out: small particles show galactic structure
+    // When zoomed in: particles get BIGGER so you feel immersed in the arm
+    let ptSize;
+    if (dist > 40) ptSize = 0.18;           // galaxy overview
+    else if (dist > 15) ptSize = 0.15;      // quadrant
+    else if (dist > 5) ptSize = 0.12;       // sector — still clearly visible
+    else if (dist > 1) ptSize = 0.08;       // local — individual stars resolve
+    else ptSize = 0.05;                     // stellar close-up
     for (const p of this._pointsCache) {
-      p.material.size = 0.06 + sizeFactor * 0.12;
+      p.material.size = ptSize;
     }
 
     // Scale notable star meshes by zoom — delayed shrink so stars stay clickable
@@ -2309,12 +2353,32 @@ class App {
       mesh.scale.setScalar(starScale);
     }
 
-    // Pulse the Sun ring
+    // Pulse the Sun "You Are Here" ring
     if (this.galaxy.sunMesh && this.galaxy.sunMesh.children.length > 1) {
       const ring = this.galaxy.sunMesh.children[1];
-      if (ring && ring.material) {
+      if (ring && ring.material && !ring.userData.planetRing) {
         ring.material.opacity = 0.2 + Math.sin(Date.now() * 0.003) * 0.15;
       }
+    }
+
+    // Pulse teal rings on planet-hosting stars
+    const t = Date.now();
+    if (!this._planetRingCache) {
+      this._planetRingCache = [];
+      for (const mesh of this.galaxy.clickableObjects) {
+        mesh.traverse(child => {
+          if (child.userData && child.userData.planetRing) {
+            this._planetRingCache.push(child);
+          }
+        });
+      }
+    }
+    for (const ring of this._planetRingCache) {
+      ring.lookAt(this.camera.position);
+      const pulse = Math.sin(t * 0.002 + ring.parent.position.x * 5) * 0.5 + 0.5;
+      ring.material.opacity = 0.15 + pulse * 0.3;
+      const sc = 1 + pulse * 0.12;
+      ring.scale.set(sc, sc, 1);
     }
 
     this.renderer.render(this.scene, this.camera);
