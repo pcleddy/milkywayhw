@@ -101,11 +101,11 @@ canvas { display: block; }
   position: fixed; bottom: 20px; right: 20px; z-index: 20;
   background: rgba(8,12,18,0.92); backdrop-filter: blur(12px);
   border: 1px solid rgba(60,100,150,0.3); border-radius: 14px;
-  padding: 0; overflow: hidden; width: 340px;
+  padding: 0; overflow: hidden; width: 380px; max-height: 80vh;
   transform: translateY(120%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
-#photo-viewer.visible { transform: translateY(0); }
-#pv-canvas { width: 340px; height: 200px; display: block; }
+#photo-viewer.visible { transform: translateY(0); overflow-y: auto; }
+#pv-canvas { width: 380px; height: 200px; display: block; }
 .pv-info { padding: 12px 16px; }
 .pv-name { color: #88bbee; font-size: 20px; font-weight: 600; }
 .pv-type { color: #667788; font-size: 15px; margin-top: 2px; }
@@ -294,7 +294,7 @@ const SOLAR_SYSTEM_DATA = {
   sun: {
     name: "The Sun", type: "G2V Yellow Dwarf",
     color: "#FDB813", radius: 0.5, temp_k: 5778, mass_earth: 333000,
-    info: { highlights: "Our star. Contains 99.86% of the solar system's mass. Surface temperature ~5,778 K. About 4.6 billion years old, roughly halfway through its main-sequence life." }
+    info: { highlights: "Our star. Contains 99.86% of the solar system's mass. Surface temperature ~5,778 K. About 4.6 billion years old — halfway through its life. Converts 600 million tons of hydrogen to helium every second. Light from its core takes ~170,000 years to reach the surface, then just 8 minutes to reach Earth. It's technically a yellow dwarf but appears white from space. Fun fact: the Sun is so massive that if you screamed at it, the sound would take 14 years to arrive — and it still wouldn't care." }
   },
   zoomLevels: [
     { id: "overview",  label: "Solar System Overview", minDist: 25, maxDist: 100 },
@@ -310,14 +310,14 @@ const SOLAR_SYSTEM_DATA = {
       au: 0.387, ecc: 0.206, inc: 7.0, argPeri: 29.1, meanAnomaly: 77.5,
       period_days: 87.97, radius_km: 2439.7, radius: 0.015, mass_earth: 0.055,
       color: "#8c7853", textureType: "cratered", moons: [],
-      info: { discovery: "Known since antiquity", highlights: "Fastest orbit (88 days). Extreme temps: −170°C to 430°C. No atmosphere. No moons. Heavily cratered surface like our Moon." }
+      info: { discovery: "Known since antiquity", highlights: "Fastest orbit (88 days) at 47 km/s. Extreme temps: −170°C night to 430°C day. No atmosphere and no moons. Its iron core makes up 85% of its radius — like a cannonball with a thin candy shell. A day on Mercury (176 Earth days) is longer than its year (88 days). NASA's MESSENGER found ice hiding in permanently shadowed craters at the poles. Mercury is shrinking — it's lost about 7 km of radius as its core cools. The planet is basically the solar system's overachieving raisin." }
     },
     {
       id: "venus", name: "Venus", type: "planet", category: "inner",
       au: 0.723, ecc: 0.007, inc: 3.4, argPeri: 131.6, meanAnomaly: 130.2,
       period_days: 224.7, radius_km: 6051.8, radius: 0.024, mass_earth: 0.815,
       color: "#e8c56d", textureType: "cloudy", moons: [],
-      info: { discovery: "Known since antiquity", highlights: "Hottest planet at 462°C. Spins backwards (retrograde). Thick CO₂ atmosphere with sulfuric acid clouds. Similar size to Earth — sometimes called Earth's 'evil twin'." }
+      info: { discovery: "Known since antiquity", highlights: "Hottest planet at 462°C — hotter than Mercury despite being farther from the Sun, thanks to a runaway greenhouse effect. Spins backwards (retrograde) and so slowly that a Venusian day is longer than its year. Atmospheric pressure on the surface is 92× Earth's — like being 900m underwater. Soviet Venera landers survived only minutes before being crushed. It rains sulfuric acid, but it evaporates before hitting the ground. Venus is what happens when Earth's twin gets really into heavy metal." }
     },
     {
       id: "earth", name: "Earth", type: "planet", category: "inner",
@@ -325,9 +325,9 @@ const SOLAR_SYSTEM_DATA = {
       period_days: 365.25, radius_km: 6371, radius: 0.025, mass_earth: 1.0,
       color: "#4A90E2", textureType: "blue-marble",
       moons: [
-        { id: "moon", name: "The Moon", orbitAU: 0.00257, period_days: 27.3, radius: 0.007, color: "#CCCCCC", info: "Our only natural satellite. 384,400 km away. Tidally locked — same face always toward Earth." }
+        { id: "moon", name: "The Moon", orbitAU: 0.00257, period_days: 27.3, radius: 0.007, color: "#CCCCCC", info: "Our only natural satellite. 384,400 km away and drifting 3.8 cm farther each year. Tidally locked — same face always toward Earth. Formed when a Mars-sized body slammed into proto-Earth 4.5 billion years ago. 12 people have walked on it, all between 1969-1972. Has moonquakes, water ice in shadowed craters, and footprints that will last millions of years (no wind). It's moving away so slowly that in 600 million years, total solar eclipses will no longer be possible." }
       ],
-      info: { discovery: "Our home", highlights: "Only known planet with life. Liquid water covers 71% of surface. One natural satellite. Axial tilt of 23.5° gives us seasons." }
+      info: { discovery: "Our home", highlights: "Only known planet with life (so far). Liquid water covers 71% of the surface. Protected by a magnetic field that deflects solar wind — without it, our atmosphere would've been stripped like Mars. The Moon stabilizes our axial tilt at 23.5°, giving us reliable seasons. Earth is the densest planet in the solar system. It's also the only planet not named after a god. We're hurtling through space at 107,000 km/h and nobody's even slightly nervous about it." }
     },
     {
       id: "mars", name: "Mars", type: "planet", category: "inner",
@@ -335,22 +335,22 @@ const SOLAR_SYSTEM_DATA = {
       period_days: 687.0, radius_km: 3389.5, radius: 0.018, mass_earth: 0.107,
       color: "#c1440e", textureType: "rusty",
       moons: [
-        { id: "phobos", name: "Phobos", orbitAU: 0.0000628, period_days: 0.318, radius: 0.003, color: "#999", info: "Tiny irregular moon, only 22 km across. Orbits so close it will crash into Mars in ~50 million years." },
-        { id: "deimos", name: "Deimos", orbitAU: 0.000157, period_days: 1.263, radius: 0.002, color: "#888", info: "Even smaller at 12 km. Slowly drifting away from Mars." }
+        { id: "phobos", name: "Phobos", orbitAU: 0.0000628, period_days: 0.318, radius: 0.003, color: "#999", info: "Only 22 km across and shaped like a lumpy potato. Orbits Mars 3× a day — rises in the west and sets in the east. Stickney Crater covers nearly half its face and almost shattered it. Spiraling inward — in 50 million years it'll either crash into Mars or break into a ring. Probably a captured asteroid, but nobody's totally sure. The most doomed moon in the solar system." },
+        { id: "deimos", name: "Deimos", orbitAU: 0.000157, period_days: 1.263, radius: 0.002, color: "#888", info: "Only 12 km across — you could jog around it in a few hours. Much smoother than Phobos because thick regolith fills in the craters. Slowly spiraling away from Mars, the opposite of its sibling's fate. From Mars's surface it looks like a bright star, not a proper moon. Named after the Greek god of dread, which is a lot of pressure for something the size of a small town." }
       ],
-      info: { discovery: "Known since antiquity", highlights: "The Red Planet. Home to Olympus Mons — tallest volcano in the solar system (22 km). Thin CO₂ atmosphere. Polar ice caps. Prime target for human exploration." }
+      info: { discovery: "Known since antiquity", highlights: "The Red Planet. Home to Olympus Mons — tallest volcano in the solar system at 22 km (2.5× Everest). Valles Marineris is a canyon system stretching 4,000 km — long enough to cross the continental US. Has seasons, polar ice caps, and dust storms that can engulf the entire planet. A Martian year is 687 Earth days. Mars has the ingredients for past life: water ice underground, ancient river beds, and seasonal methane burps scientists still can't explain. It's the only planet inhabited entirely by robots." }
     },
     {
       id: "asteroid-belt", name: "Asteroid Belt", type: "belt",
       au_inner: 2.2, au_outer: 3.2, particleCount: 6000, color: "#999",
-      info: { highlights: "Rocky remnants between Mars and Jupiter. Contains millions of asteroids but total mass is only ~4% of the Moon. Ceres is the largest body here." }
+      info: { highlights: "Rocky remnants between Mars and Jupiter. Contains millions of asteroids but total mass is only ~4% of the Moon — surprisingly sparse. If you collected every asteroid into one ball it would be smaller than our Moon. Jupiter's gravity prevented these rocks from forming a planet. Most asteroids are separated by millions of km, so flying through the belt is nothing like the movies. The real asteroid belt is incredibly boring to fly through — which is exactly how spacecraft like it." }
     },
     {
       id: "ceres", name: "Ceres", type: "dwarf", category: "belt",
       au: 2.769, ecc: 0.076, inc: 10.6, argPeri: 73.6, meanAnomaly: 246.0,
       period_days: 1681.6, radius_km: 473, radius: 0.008, mass_earth: 0.00016,
       color: "#A0A090", textureType: "cratered", moons: [],
-      info: { discovery: "Piazzi 1801", highlights: "Largest object in the asteroid belt and only dwarf planet in the inner solar system. Bright spots (Occator crater) are salt deposits. Visited by NASA's Dawn spacecraft." }
+      info: { discovery: "Piazzi 1801", highlights: "Largest object in the asteroid belt and only dwarf planet in the inner solar system. Contains roughly a third of the belt's total mass. The mysterious bright spots in Occator crater turned out to be salt deposits from a subsurface brine reservoir — basically space brine. Dawn spacecraft orbited it from 2015-2018. Ceres may still have liquid water under its surface. It was considered a planet for 50 years after its discovery, then got demoted — Pluto wasn't even the first to get that treatment." }
     },
     {
       id: "jupiter", name: "Jupiter", type: "planet", category: "outer",
@@ -358,12 +358,12 @@ const SOLAR_SYSTEM_DATA = {
       period_days: 4332.89, radius_km: 69911, radius: 0.08, mass_earth: 317.8,
       color: "#C88B3A", textureType: "banded", hasRings: true, ringColor: "#D4A574", ringOpacity: 0.15,
       moons: [
-        { id: "io", name: "Io", orbitAU: 0.00282, period_days: 1.769, radius: 0.005, color: "#FFD700", info: "Most volcanically active body in the solar system. Over 400 active volcanoes. Tidal heating from Jupiter." },
-        { id: "europa", name: "Europa", orbitAU: 0.00448, period_days: 3.551, radius: 0.005, color: "#E8E8F0", info: "Smooth icy surface hides a subsurface ocean. One of the most promising places to search for extraterrestrial life." },
-        { id: "ganymede", name: "Ganymede", orbitAU: 0.00715, period_days: 7.155, radius: 0.007, color: "#8B8B7A", info: "Largest moon in the solar system — bigger than Mercury. Has its own magnetic field." },
-        { id: "callisto", name: "Callisto", orbitAU: 0.01257, period_days: 16.689, radius: 0.006, color: "#6A6A5B", info: "Most heavily cratered body in the solar system. May have a subsurface ocean. Geologically dead." }
+        { id: "io", name: "Io", orbitAU: 0.00282, period_days: 1.769, radius: 0.005, color: "#FFD700", info: "Most volcanically active body in the solar system — over 400 active volcanoes. Jupiter's gravity kneads it like dough, generating enough tidal heat to resurface the entire moon every million years. Volcanic plumes shoot 500 km into space. Its surface is painted in yellows, oranges, and reds from sulfur compounds. Smells terrible (if you could survive long enough to notice)." },
+        { id: "europa", name: "Europa", orbitAU: 0.00448, period_days: 3.551, radius: 0.005, color: "#E8E8F0", info: "Smooth icy surface hides a subsurface saltwater ocean containing 2-3× more water than all of Earth's oceans combined. Ice shell is 15-25 km thick. Crisscrossed by reddish-brown fractures that may contain organic compounds. NASA's Europa Clipper mission launched in 2024 to investigate its habitability. The most promising place in the solar system to find extraterrestrial life. Arthur C. Clarke said it best: 'All these worlds are yours, except Europa. Attempt no landing there.'" },
+        { id: "ganymede", name: "Ganymede", orbitAU: 0.00715, period_days: 7.155, radius: 0.007, color: "#8B8B7A", info: "Largest moon in the solar system — bigger than Mercury, bigger than Pluto. The only moon with its own magnetic field, which gives it faint auroras. Has a subsurface saltwater ocean sandwiched between layers of ice. ESA's JUICE mission is heading there now (arriving 2031). If it orbited the Sun instead of Jupiter, we'd call it a planet without hesitation." },
+        { id: "callisto", name: "Callisto", orbitAU: 0.01257, period_days: 16.689, radius: 0.006, color: "#6A6A5B", info: "Most heavily cratered body in the solar system — its surface hasn't been refreshed in 4 billion years. Geologically dead but may hide a subsurface ocean anyway. Far enough from Jupiter that radiation levels are survivable, making it the top candidate for a future human base in the Jovian system. Basically the retirement community of the Galilean moons." }
       ],
-      info: { discovery: "Known since antiquity. Galilean moons discovered 1610.", highlights: "King of planets. 2.5× more massive than all other planets combined. Great Red Spot — a storm larger than Earth, raging for centuries. At least 95 known moons." }
+      info: { discovery: "Known since antiquity. Galilean moons discovered 1610.", highlights: "King of planets. 2.5× more massive than all other planets combined. The Great Red Spot is a storm larger than Earth that's been raging for at least 350 years (and shrinking). Jupiter's magnetic field is 20,000× stronger than Earth's. It has at least 95 known moons, faint rings, and acts as a cosmic vacuum cleaner — its gravity deflects asteroids that might otherwise hit Earth. If Jupiter had been about 80× more massive, it would have become a star. The solar system's biggest overachiever that still fell just short." }
     },
     {
       id: "saturn", name: "Saturn", type: "planet", category: "outer",
@@ -371,12 +371,12 @@ const SOLAR_SYSTEM_DATA = {
       period_days: 10759.22, radius_km: 58232, radius: 0.067, mass_earth: 95.16,
       color: "#F4D47F", textureType: "pale", hasRings: true, ringColor: "#E8D8C4", ringOpacity: 0.6,
       moons: [
-        { id: "titan", name: "Titan", orbitAU: 0.00816, period_days: 15.945, radius: 0.007, color: "#E8A030", info: "Only moon with a thick atmosphere (denser than Earth's!). Has methane lakes and rivers on its surface. Huygens probe landed here in 2005." },
-        { id: "enceladus", name: "Enceladus", orbitAU: 0.00159, period_days: 1.370, radius: 0.004, color: "#F8F8FF", info: "Tiny but remarkable. Geysers of water ice erupt from its south pole. Confirmed subsurface ocean — a prime target in the search for life." },
-        { id: "mimas", name: "Mimas", orbitAU: 0.00124, period_days: 0.942, radius: 0.003, color: "#D3D3D3", info: "Famous for its huge Herschel crater — looks just like the Death Star." },
-        { id: "rhea", name: "Rhea", orbitAU: 0.00352, period_days: 4.518, radius: 0.004, color: "#C0C0C0", info: "Second-largest moon of Saturn. Icy and heavily cratered." }
+        { id: "titan", name: "Titan", orbitAU: 0.00816, period_days: 15.945, radius: 0.007, color: "#E8A030", info: "Only moon with a thick atmosphere — 1.5× denser than Earth's, made mostly of nitrogen with methane and ethane. Has lakes, rivers, and rain — but it's all liquid methane at −179°C. The Huygens probe landed in 2005, transmitting for 72 minutes. Dragonfly rotorcraft mission will arrive in 2034 to fly around its surface. Gravity is low enough and atmosphere thick enough that with wings strapped on, a human could fly by flapping their arms. Best vacation spot in the solar system (bring a coat)." },
+        { id: "enceladus", name: "Enceladus", orbitAU: 0.00159, period_days: 1.370, radius: 0.004, color: "#F8F8FF", info: "Only 500 km across but punches way above its weight. Geysers at the south pole blast water ice, organic molecules, and molecular hydrogen into space. Cassini flew through these plumes and tasted them — confirmed a salty subsurface ocean with hydrothermal vents. Essentially has all the ingredients for life: water, energy, organic chemistry. Its sprayed material feeds Saturn's E ring. A tiny ice ball that could be harboring alien microbes right now." },
+        { id: "mimas", name: "Mimas", orbitAU: 0.00124, period_days: 0.942, radius: 0.003, color: "#D3D3D3", info: "Only 396 km across but sports Herschel crater — 130 km wide, a third of the moon's diameter. The resemblance to the Death Star is so uncanny that the crater was named before Star Wars even existed (1789 discovery, crater named 1982). Mimas is the smallest known body in the solar system that's round from self-gravity. Despite being so close to Saturn, it's responsible for sculpting the Cassini Division — the dark gap in Saturn's rings — through orbital resonance. Recent data suggests it may hide a young internal ocean, which nobody expected from something that looks so geologically dead. The solar system's smallest overachiever." },
+        { id: "rhea", name: "Rhea", orbitAU: 0.00352, period_days: 4.518, radius: 0.004, color: "#C0C0C0", info: "Saturn's second-largest moon at 1,527 km across — a dirty snowball that's 75% ice and 25% rock. In 2008, scientists thought they detected rings around Rhea, which would have made it the only moon with its own ring system. Later data couldn't confirm it, but the debate continues. Has a wispy trailing hemisphere streaked with bright ice cliffs from ancient tectonic fractures. Surface temperature: -174°C in sunlight, -220°C in shadow. Named after the mother of Zeus, which is fitting since she orbits Saturn (Cronus), Zeus's father. It's essentially the family reunion moon." }
       ],
-      info: { discovery: "Known since antiquity. Rings first seen by Galileo 1610.", highlights: "The jewel of the solar system. Spectacular ring system made of ice and rock particles. Less dense than water — it would float in a giant bathtub. 146 known moons." }
+      info: { discovery: "Known since antiquity. Rings first seen by Galileo 1610.", highlights: "The jewel of the solar system. Its rings span 282,000 km but average only 10 meters thick — proportionally thinner than a sheet of paper. Less dense than water — it would float in a sufficiently large bathtub (finding the bathtub is the hard part). 146 known moons and counting. Galileo thought the rings were 'ears.' Saturn is losing its rings — they're raining ice onto the planet and will be gone in ~100 million years. Hexagonal storm at the north pole is 30,000 km across and nobody knows why it's a hexagon." }
     },
     {
       id: "uranus", name: "Uranus", type: "planet", category: "outer",
@@ -384,11 +384,11 @@ const SOLAR_SYSTEM_DATA = {
       period_days: 30688.5, radius_km: 25362, radius: 0.036, mass_earth: 14.54,
       color: "#4FD0E7", textureType: "featureless", hasRings: true, ringColor: "#666", ringOpacity: 0.15,
       moons: [
-        { id: "titania", name: "Titania", orbitAU: 0.00292, period_days: 8.706, radius: 0.004, color: "#B0B0B0", info: "Largest Uranian moon. Icy surface with canyons and scarps." },
-        { id: "oberon", name: "Oberon", orbitAU: 0.0039, period_days: 13.463, radius: 0.004, color: "#9B9B9B", info: "Second-largest Uranian moon. Dark, heavily cratered surface." },
-        { id: "miranda", name: "Miranda", orbitAU: 0.000868, period_days: 1.413, radius: 0.003, color: "#A8A8A8", info: "Bizarre, jumbled surface with huge canyons — may have been shattered and reassembled." }
+        { id: "titania", name: "Titania", orbitAU: 0.00292, period_days: 8.706, radius: 0.004, color: "#B0B0B0", info: "Largest moon of Uranus at 1,578 km across — named after the fairy queen in A Midsummer Night's Dream (all Uranian moons get Shakespeare or Alexander Pope names). Scarred by a massive canyon system called Messina Chasma that stretches 1,500 km across the surface. May have a thin CO₂ atmosphere that comes and goes with the seasons — Uranus's 42-year-long seasons, that is. The only close-up images we have are from Voyager 2's 1986 flyby, taken from 365,000 km away. We know more about some exoplanets than we do about Titania. She deserves a return visit." },
+        { id: "oberon", name: "Oberon", orbitAU: 0.0039, period_days: 13.463, radius: 0.004, color: "#9B9B9B", info: "Second-largest Uranian moon, named after the fairy king from A Midsummer Night's Dream. Its surface is the oldest and most cratered of the major Uranian moons — a 4-billion-year scrapbook of impacts. The floor of crater Hamlet (yes, Hamlet) shows mysterious dark material that may be dirty water that oozed up from below and froze. A 6 km-high mountain sits on the limb — one of the tallest features seen on any moon. Oberon orbits so far from Uranus that it barely feels tidal heating at all, making it the cold, distant loner of the Uranian system. Very on-brand for a Shakespeare character." },
+        { id: "miranda", name: "Miranda", orbitAU: 0.000868, period_days: 1.413, radius: 0.003, color: "#A8A8A8", info: "Bizarre, jumbled surface looks like it was assembled by a committee that never met. Verona Rupes is a 20 km cliff — the tallest in the solar system. One theory: it was blasted apart by a collision and gravity pulled the pieces back together in random order. Only 472 km across but packs in more geological weirdness per square km than anywhere else." }
       ],
-      info: { discovery: "Herschel 1781 — first planet discovered with a telescope.", highlights: "Tilted 98° — it rolls around the Sun on its side. Ice giant (not gas giant). Coldest planetary atmosphere: −224°C. Faint ring system discovered 1977." }
+      info: { discovery: "Herschel 1781 — first planet discovered with a telescope.", highlights: "Tilted 98° — it essentially rolls around the Sun on its side, likely knocked over by a massive collision in its youth. Ice giant, not gas giant — its mantle is 'hot ice' compressed by enormous pressure. Coldest planetary atmosphere at −224°C. Has 13 faint rings and 28 known moons, all named after Shakespeare and Pope characters. It takes 84 Earth years to orbit the Sun, meaning one Uranian season lasts 21 years. Herschel originally wanted to name it 'George's Star' after King George III. Astronomers said no." }
     },
     {
       id: "neptune", name: "Neptune", type: "planet", category: "outer",
@@ -396,14 +396,14 @@ const SOLAR_SYSTEM_DATA = {
       period_days: 60182, radius_km: 24622, radius: 0.035, mass_earth: 17.15,
       color: "#4166F5", textureType: "stormy", hasRings: true, ringColor: "#555", ringOpacity: 0.12,
       moons: [
-        { id: "triton", name: "Triton", orbitAU: 0.00237, period_days: 5.877, radius: 0.005, color: "#D4D4FF", info: "Captured Kuiper Belt object — orbits backwards (retrograde). Has cryovolcanoes and nitrogen geysers. Surface temp: −235°C." }
+        { id: "triton", name: "Triton", orbitAU: 0.00237, period_days: 5.877, radius: 0.005, color: "#D4D4FF", info: "A captured Kuiper Belt object — orbits backwards (retrograde), confirming it wasn't born here. Has cryovolcanoes that erupt nitrogen geysers 8 km high. Surface temp: −235°C, one of the coldest surfaces in the solar system. Its cantaloupe terrain looks exactly like the fruit. Tidal forces are gradually spiraling it inward — in about 3.6 billion years, Neptune will tear it apart into a ring system. Currently the largest moon in the solar system on death row." }
       ],
-      info: { discovery: "Le Verrier & Adams 1846 — predicted by mathematics before being seen!", highlights: "Farthest planet. Fastest winds in the solar system (2,100 km/h). Deep blue from methane. Took Voyager 2 twelve years to reach it." }
+      info: { discovery: "Le Verrier & Adams 1846 — predicted by mathematics before being seen!", highlights: "The farthest planet — predicted to exist from wobbles in Uranus's orbit before anyone ever saw it. Fastest winds in the solar system at 2,100 km/h. Deep azure blue from methane absorbing red light. It rains diamonds in its atmosphere (seriously — methane decomposes under extreme pressure). One orbit takes 165 years; it just completed its first full orbit since discovery in 2011. Voyager 2 is the only spacecraft to visit. Neptune has a 'Great Dark Spot' that comes and goes like a cosmic mood ring." }
     },
     {
       id: "kuiper-belt", name: "Kuiper Belt", type: "belt",
       au_inner: 30, au_outer: 55, particleCount: 5000, color: "#777",
-      info: { highlights: "A vast ring of icy bodies beyond Neptune. Home to dwarf planets Pluto, Eris, Haumea, and Makemake. Source of short-period comets." }
+      info: { highlights: "A vast ring of icy bodies beyond Neptune extending from 30 to 50 AU. Home to dwarf planets Pluto, Eris, Haumea, and Makemake. Source of short-period comets. Estimated to contain hundreds of thousands of objects over 100 km wide and trillions of smaller ones. Total mass is 25-30× the asteroid belt. Predicted by Kenneth Edgeworth in 1943 and Gerard Kuiper in 1951 but not confirmed until 1992. It's basically the solar system's attic — full of stuff from the original formation that never got cleaned up." }
     },
     {
       id: "pluto", name: "Pluto", type: "dwarf", category: "kuiper",
@@ -413,21 +413,21 @@ const SOLAR_SYSTEM_DATA = {
       moons: [
         { id: "charon", name: "Charon", orbitAU: 0.000131, period_days: 6.387, radius: 0.005, color: "#888888", info: "Half the size of Pluto — they orbit each other (binary system). Tidally locked face-to-face." }
       ],
-      info: { discovery: "Tombaugh 1930. Reclassified as dwarf planet 2006.", highlights: "Heart-shaped nitrogen ice plain (Tombaugh Regio). New Horizons flew past in 2015 revealing a complex, geologically active world. Binary system with Charon." }
+      info: { discovery: "Tombaugh 1930. Reclassified as dwarf planet 2006.", highlights: "Heart-shaped nitrogen ice plain (Tombaugh Regio) visible from billions of km away. New Horizons flew past in 2015 at 50,000 km/h revealing a complex, geologically active world with mountains of water ice as hard as rock in −230°C cold. Binary system with Charon — they orbit a point in empty space between them. Has a thin nitrogen atmosphere that freezes onto the surface as it moves away from the Sun. Pluto's orbit is so eccentric it sometimes crosses inside Neptune's orbit. The demotion to dwarf planet remains the most controversial HR decision in astronomy." }
     },
     {
       id: "haumea", name: "Haumea", type: "dwarf", category: "kuiper",
       au: 43.13, ecc: 0.195, inc: 28.2, argPeri: 239.0, meanAnomaly: 218.2,
       period_days: 103410, radius_km: 816, radius: 0.007, mass_earth: 0.00066,
       color: "#D8D8D8", textureType: "icy", hasRings: true, ringColor: "#aaa", ringOpacity: 0.2, moons: [],
-      info: { discovery: "Brown et al. 2004", highlights: "Egg-shaped due to extremely fast rotation (4 hours!). Has its own ring system. Two small moons: Hi'iaka and Namaka." }
+      info: { discovery: "Brown et al. 2004", highlights: "Egg-shaped due to extremely fast rotation — one day is just 3.9 hours, making it the fastest-spinning large body in the solar system. The centrifugal force stretches it to nearly twice as long as it is wide. Has its own ring system (discovered 2017) and two small moons named Hi'iaka and Namaka, after Hawaiian goddesses. Its surface is nearly pure crystalline water ice. Named after the Hawaiian goddess of fertility. The first dwarf planet discovered with rings — apparently even misshapen ice potatoes can accessorize." }
     },
     {
       id: "makemake", name: "Makemake", type: "dwarf", category: "kuiper",
       au: 45.79, ecc: 0.159, inc: 29.0, argPeri: 297.2, meanAnomaly: 144.5,
       period_days: 113190, radius_km: 715, radius: 0.006, mass_earth: 0.00050,
       color: "#C4A070", textureType: "icy", moons: [],
-      info: { discovery: "Brown et al. 2005", highlights: "Second-brightest Kuiper Belt object after Pluto. Extremely cold surface (−243°C). Named after the Rapa Nui creation god." }
+      info: { discovery: "Brown et al. 2005", highlights: "Second-brightest Kuiper Belt object after Pluto. Surface temperature around −243°C — only 30 degrees above absolute zero. Reddish-brown surface covered in frozen methane and ethane. Has one known moon (MK2) discovered in 2016 by Hubble. Named after the Rapa Nui (Easter Island) creation god. Takes 306 years to orbit the Sun. Makemake lacks a significant atmosphere, which was confirmed when it passed in front of a star in 2011 and the star just blinked out cleanly. The least dramatic occultation in history." }
     },
     {
       id: "eris", name: "Eris", type: "dwarf", category: "scattered",
@@ -437,7 +437,7 @@ const SOLAR_SYSTEM_DATA = {
       moons: [
         { id: "dysnomia", name: "Dysnomia", orbitAU: 0.000248, period_days: 15.774, radius: 0.003, color: "#777", info: "Eris's only known moon. Named after the daughter of Eris in Greek mythology." }
       ],
-      info: { discovery: "Brown et al. 2005. Its discovery triggered Pluto's reclassification.", highlights: "Most massive known dwarf planet (27% more massive than Pluto). Currently ~96 AU from the Sun. Takes 558 years to orbit once." }
+      info: { discovery: "Brown et al. 2005. Its discovery triggered Pluto's reclassification.", highlights: "Most massive known dwarf planet — 27% more massive than Pluto, which is exactly why Pluto got demoted. If Pluto's a planet, Eris has to be too. Currently ~96 AU from the Sun (three times farther than Neptune). Takes 558 years to orbit once. Named after the Greek goddess of discord and strife — fitting, since its discovery caused absolute chaos among astronomers. Its surface is blindingly white, covered in frozen nitrogen that likely snows down from a temporary atmosphere when it's closer to the Sun. Appropriately named: the planet that started a fight." }
     }
   ]
 };
@@ -1422,7 +1422,10 @@ class App {
     } else {
       document.getElementById('pv-dist').textContent = '';
     }
-    document.getElementById('pv-highlights').textContent = bodyData.info ? bodyData.info.highlights : '';
+    // Planets have info as {discovery, highlights} object; moons/belts have info as plain string
+    const infoText = typeof bodyData.info === 'string' ? bodyData.info
+      : (bodyData.info ? bodyData.info.highlights : '');
+    document.getElementById('pv-highlights').textContent = infoText;
 
     // Draw portrait
     this._drawPortrait(bodyData);
@@ -1470,7 +1473,7 @@ class App {
 
     pv.classList.add('visible');
     clearTimeout(this._pvTimer);
-    this._pvTimer = setTimeout(() => pv.classList.remove('visible'), 20000);
+    this._pvTimer = setTimeout(() => pv.classList.remove('visible'), 60000);
   }
 
   _drawPortrait(bodyData) {

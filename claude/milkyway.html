@@ -81,7 +81,7 @@
   #minimap canvas { width: 100%; height: 100%; }
 
   #photo-viewer {
-    position: fixed; bottom: 60px; right: 20px; width: 240px;
+    position: fixed; bottom: 60px; right: 20px; width: 300px; max-height: 70vh;
     background: rgba(8, 12, 25, 0.95); border: 1px solid rgba(80, 120, 180, 0.3);
     border-radius: 8px; z-index: 20; overflow: hidden;
     opacity: 0; transform: translateY(10px);
@@ -89,7 +89,7 @@
     pointer-events: none;
     backdrop-filter: blur(12px);
   }
-  #photo-viewer.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  #photo-viewer.visible { opacity: 1; transform: translateY(0); pointer-events: auto; overflow-y: auto; }
   #photo-viewer canvas.pv-canvas {
     width: 100%; height: 140px;
     display: block;
@@ -424,16 +424,16 @@ const GALAXY_DATA = {
   },
   notableStars: [
     // --- Galactic landmarks ---
-    { name: "Sagittarius A*", type: "Supermassive Black Hole · 4M solar masses", x: 0, y: 0, z: 0, magnitude: -1, color: "#ffcc44", size: 3.5, distFromSun_ly: 26000 },
-    { name: "Betelgeuse",     type: "Red Supergiant M1-2 · ~700× solar radius",  dist: 26700, angle: 1.34, z: 0.02, color: "#ff6633", size: 2.2, distFromSun_ly: 700 },
-    { name: "Sirius",         type: "A1V Binary · Brightest star in night sky",   dist: 25991, angle: 1.29, z: 0.0, color: "#aaccff", size: 2.0, distFromSun_ly: 8.6 },
-    { name: "Rigel",          type: "B8Ia Blue Supergiant · 120k× solar luminosity", dist: 25130, angle: 1.32, z: -0.01, color: "#99bbff", size: 2.0, distFromSun_ly: 860 },
-    { name: "Deneb",          type: "A2Ia Supergiant · 200k× solar luminosity",   dist: 23500, angle: 1.25, z: 0.02, color: "#ddeeff", size: 1.8, distFromSun_ly: 2600 },
-    { name: "Eta Carinae",    type: "LBV Hypergiant · May explode any century",   dist: 18500, angle: 1.10, z: -0.01, color: "#ffaa55", size: 2.5, distFromSun_ly: 7500 },
-    { name: "Cygnus X-1",    type: "Stellar Black Hole · 21 solar masses",        dist: 19900, angle: 1.20, z: 0.01, color: "#8866cc", size: 2.0, distFromSun_ly: 6100 },
-    { name: "UY Scuti",      type: "Red Supergiant · One of largest known stars", dist: 20700, angle: 0.95, z: 0.0, color: "#ff4422", size: 2.8, distFromSun_ly: 5100 },
-    { name: "Polaris",        type: "F7Ib Cepheid · The North Star",              dist: 25567, angle: 1.31, z: 0.04, color: "#ffeedd", size: 1.6, distFromSun_ly: 433 },
-    { name: "Tabby's Star",  type: "F3V · Mysterious dimming, alien megastructure?", dist: 24540, angle: 1.24, z: 0.01, color: "#ddcc88", size: 1.4, distFromSun_ly: 1470 },
+    { name: "Sagittarius A*", type: "Supermassive Black Hole · 4M solar masses · Event horizon 24M km across · Stars orbit it at 3% light speed · Won 2020 Nobel Prize", x: 0, y: 0, z: 0, magnitude: -1, color: "#ffcc44", size: 3.5, distFromSun_ly: 26000 },
+    { name: "Betelgeuse",     type: "Red Supergiant · 700× solar radius · If placed at the Sun, it would swallow Mars · 'Great Dimming' of 2020 was just a dust sneeze · Will go supernova eventually — not today though",  dist: 26700, angle: 1.34, z: 0.02, color: "#ff6633", size: 2.2, distFromSun_ly: 700 },
+    { name: "Sirius",         type: "A1V Binary · Brightest star in night sky · Only 8.6 ly away · Its white dwarf companion Sirius B is the size of Earth but weighs as much as the Sun · Ancient Egyptians based their calendar on it",   dist: 25991, angle: 1.29, z: 0.0, color: "#aaccff", size: 2.0, distFromSun_ly: 8.6 },
+    { name: "Rigel",          type: "B8Ia Blue Supergiant · 120,000× solar luminosity · Orion's brightest star · If it replaced the Sun you'd need SPF infinity · Only 8M years old but already dying", dist: 25130, angle: 1.32, z: -0.01, color: "#99bbff", size: 2.0, distFromSun_ly: 860 },
+    { name: "Deneb",          type: "A2Ia Supergiant · 200,000× solar luminosity · 2,600 ly away yet still one of brightest in our sky · Tail of Cygnus the Swan · If it were as close as Sirius it would cast shadows at night",   dist: 23500, angle: 1.25, z: 0.02, color: "#ddeeff", size: 1.8, distFromSun_ly: 2600 },
+    { name: "Eta Carinae",    type: "LBV Hypergiant · 5 million × solar luminosity · May go supernova any century now · The Great Eruption of 1843 made it the 2nd brightest star briefly · A ticking cosmic bomb",   dist: 18500, angle: 1.10, z: -0.01, color: "#ffaa55", size: 2.5, distFromSun_ly: 7500 },
+    { name: "Cygnus X-1",    type: "Stellar Black Hole · 21 solar masses · First widely accepted black hole candidate · Settled a famous bet between Hawking and Thorne (Hawking lost) · Companion star is being slowly devoured",        dist: 19900, angle: 1.20, z: 0.01, color: "#8866cc", size: 2.0, distFromSun_ly: 6100 },
+    { name: "UY Scuti",      type: "Red Supergiant · 1,700× solar radius · If placed at the Sun it would extend past Jupiter's orbit · Light takes 5 hours to travel around it · Basically a very diffuse, very confused gas cloud", dist: 20700, angle: 0.95, z: 0.0, color: "#ff4422", size: 2.8, distFromSun_ly: 5100 },
+    { name: "Polaris",        type: "F7Ib Cepheid · The North Star · Only 0.7° from celestial pole · Actually a triple star system · Pulsates every 4 days · Won't always be the pole star — precession is slowly aiming us at Vega instead",              dist: 25567, angle: 1.31, z: 0.04, color: "#ffeedd", size: 1.6, distFromSun_ly: 433 },
+    { name: "Tabby's Star",  type: "F3V · Dims by up to 22% at irregular intervals · Alien megastructure hypothesis got everyone excited · Probably just dust clouds but honestly we still don't fully know · The star that launched a thousand papers", dist: 24540, angle: 1.24, z: 0.01, color: "#ddcc88", size: 1.4, distFromSun_ly: 1470 },
 
     // --- Exoplanet hosts astronomers can't stop talking about ---
     { name: "Proxima Centauri", type: "M5.5Ve Red Dwarf · Nearest star to Sol",   dist: 25996, angle: 1.300, z: 0.0, color: "#ff8866", size: 1.2, distFromSun_ly: 4.24,
@@ -488,43 +488,43 @@ const GALAXY_DATA = {
     // ===== ACROSS THE GALAXY — far from Sol =====
 
     // --- Galactic Core & Inner Bulge ---
-    { name: "The Pistol Star",    type: "Blue Hypergiant · One of most luminous known · 1.6M× solar luminosity", dist: 1200, angle: 0.3, z: 0.0, color: "#99ccff", size: 2.5, distFromSun_ly: 25000 },
-    { name: "Arches Cluster",     type: "Densest star cluster in the galaxy · ~150 massive O/B stars", dist: 800, angle: 0.15, z: 0.0, color: "#aabbdd", size: 2.2, distFromSun_ly: 25400 },
-    { name: "Quintuplet Cluster", type: "Massive cluster near galactic center · Home to Pistol Star", dist: 1000, angle: 0.25, z: 0.0, color: "#bbccdd", size: 2.0, distFromSun_ly: 25000 },
-    { name: "IRS 16",             type: "Cluster of hot stars · Orbiting just 1 ly from Sgr A*", dist: 50, angle: 0.5, z: 0.0, color: "#ddeeff", size: 1.5, distFromSun_ly: 26000 },
+    { name: "The Pistol Star",    type: "Blue Hypergiant · 1.6M× solar luminosity · Ejects 10 solar masses of gas per eruption · Hidden behind dust — only visible in infrared · Would outshine the full Moon at Sirius's distance", dist: 1200, angle: 0.3, z: 0.0, color: "#99ccff", size: 2.5, distFromSun_ly: 25000 },
+    { name: "Arches Cluster",     type: "Densest known star cluster · ~150 massive O/B stars packed into 1 ly · Will dissolve in a few million years · Too hot to approach — the UV alone would sterilize anything nearby", dist: 800, angle: 0.15, z: 0.0, color: "#aabbdd", size: 2.2, distFromSun_ly: 25400 },
+    { name: "Quintuplet Cluster", type: "Massive cluster near galactic center · Home to the Pistol Star · Named for 5 bright infrared sources · Young at only 4M years · Basically a maternity ward for monster stars", dist: 1000, angle: 0.25, z: 0.0, color: "#bbccdd", size: 2.0, distFromSun_ly: 25000 },
+    { name: "IRS 16",             type: "Cluster of hot stars · Orbiting just 1 ly from Sgr A* · How they formed this close to a black hole is still debated · Living dangerously", dist: 50, angle: 0.5, z: 0.0, color: "#ddeeff", size: 1.5, distFromSun_ly: 26000 },
 
     // --- Perseus Arm (far side from us) ---
-    { name: "W49A",               type: "Giant radio nebula · Most luminous star-forming region in galaxy", dist: 38000, angle: 3.5, z: 0.0, color: "#ff8855", size: 2.5, distFromSun_ly: 36000 },
-    { name: "Westerhout 51",      type: "Massive star-forming complex · Far Perseus Arm", dist: 42000, angle: 3.8, z: 0.01, color: "#ff9966", size: 2.0, distFromSun_ly: 43000 },
+    { name: "W49A",               type: "Most luminous star-forming region in the galaxy · Producing stars at a furious rate · 36,000 ly away on the far side · Has more energy output than some entire galaxies", dist: 38000, angle: 3.5, z: 0.0, color: "#ff8855", size: 2.5, distFromSun_ly: 36000 },
+    { name: "Westerhout 51",      type: "Massive star-forming complex · Far Perseus Arm · One of the most distant well-studied regions · Contains enough gas to make thousands of suns", dist: 42000, angle: 3.8, z: 0.01, color: "#ff9966", size: 2.0, distFromSun_ly: 43000 },
 
     // --- Scutum-Centaurus Arm ---
-    { name: "Scutum Star Cloud",  type: "Brightest patch of Milky Way · Billions of stars in a narrow corridor", dist: 14000, angle: 4.2, z: 0.0, color: "#ddcc88", size: 2.8, distFromSun_ly: 18000 },
-    { name: "Westerlund 1",       type: "Super star cluster · Most massive compact cluster known in MW", dist: 22500, angle: 4.7, z: 0.0, color: "#ccbbaa", size: 2.3, distFromSun_ly: 13000 },
-    { name: "SGR 1806-20",        type: "Magnetar · Most powerful magnetic field ever measured", dist: 11000, angle: 4.5, z: 0.0, color: "#cc66ff", size: 2.0, distFromSun_ly: 14500 },
+    { name: "Scutum Star Cloud",  type: "Brightest visible patch of the Milky Way · Billions of stars in a narrow corridor where our line of sight goes straight down the arm · Nature's own floodlight", dist: 14000, angle: 4.2, z: 0.0, color: "#ddcc88", size: 2.8, distFromSun_ly: 18000 },
+    { name: "Westerlund 1",       type: "Most massive compact star cluster in the Milky Way · Contains 24 Wolf-Rayet stars, several hypergiants, and a magnetar · A stellar all-star team", dist: 22500, angle: 4.7, z: 0.0, color: "#ccbbaa", size: 2.3, distFromSun_ly: 13000 },
+    { name: "SGR 1806-20",        type: "Magnetar · Magnetic field 10¹⁵× Earth's · 2004 flare was the brightest event ever observed — it ionized part of our atmosphere from 50,000 ly away · Don't get close", dist: 11000, angle: 4.5, z: 0.0, color: "#cc66ff", size: 2.0, distFromSun_ly: 14500 },
 
     // --- Sagittarius Arm ---
-    { name: "Eagle Nebula (M16)", type: "Star-forming nebula · Home of the Pillars of Creation", dist: 20000, angle: 0.8, z: 0.0, color: "#ff7766", size: 2.2, distFromSun_ly: 7000 },
-    { name: "Omega Nebula (M17)", type: "H II region · One of brightest star-forming regions from Earth", dist: 20500, angle: 0.85, z: 0.0, color: "#ff8877", size: 2.0, distFromSun_ly: 5500 },
-    { name: "Lagoon Nebula (M8)", type: "Giant interstellar cloud · Visible to naked eye from Earth", dist: 21500, angle: 0.75, z: 0.0, color: "#ff9988", size: 1.8, distFromSun_ly: 4100 },
+    { name: "Eagle Nebula (M16)", type: "Star-forming nebula · Home of the Pillars of Creation (made famous by Hubble) · The pillars may already be destroyed by a nearby supernova — we won't see it for 1,000 years", dist: 20000, angle: 0.8, z: 0.0, color: "#ff7766", size: 2.2, distFromSun_ly: 7000 },
+    { name: "Omega Nebula (M17)", type: "H II region · One of brightest star-forming regions visible from Earth · 800× more massive than the Orion Nebula · Also called the Swan, Lobster, or Checkmark Nebula — astronomers can't agree on what it looks like", dist: 20500, angle: 0.85, z: 0.0, color: "#ff8877", size: 2.0, distFromSun_ly: 5500 },
+    { name: "Lagoon Nebula (M8)", type: "Giant interstellar cloud · Visible to naked eye · Contains the Hourglass Nebula at its center, a star-formation tornado · One of only two star-forming nebulae visible without a telescope", dist: 21500, angle: 0.75, z: 0.0, color: "#ff9988", size: 1.8, distFromSun_ly: 4100 },
 
     // --- Norma Arm ---
-    { name: "G0.253+0.016",       type: "The Brick · Mysterious dense gas cloud that refuses to form stars", dist: 3000, angle: 5.5, z: 0.0, color: "#996633", size: 1.8, distFromSun_ly: 26000 },
-    { name: "Norma Cluster",      type: "Massive galaxy cluster visible through MW · Behind the Zone of Avoidance", dist: 16000, angle: 5.2, z: 0.0, color: "#aaaacc", size: 2.0, distFromSun_ly: 22000 },
+    { name: "G0.253+0.016",       type: "The Brick · Mysterious dense gas cloud with enough material for 100,000 stars but stubbornly refuses to form any · Turbulence and magnetic fields keep it suppressed · The galaxy's greatest underachiever", dist: 3000, angle: 5.5, z: 0.0, color: "#996633", size: 1.8, distFromSun_ly: 26000 },
+    { name: "Norma Cluster",      type: "Massive galaxy cluster behind the Zone of Avoidance · Hidden by our own galaxy's dust · Contains hundreds of galaxies we can barely see · The cosmic equivalent of something interesting happening behind a billboard", dist: 16000, angle: 5.2, z: 0.0, color: "#aaaacc", size: 2.0, distFromSun_ly: 22000 },
 
     // --- Outer Galaxy (beyond our orbit) ---
-    { name: "WR 102",             type: "Hottest known star · 210,000 K surface · Oxygen-sequence Wolf-Rayet", dist: 30000, angle: 0.6, z: 0.01, color: "#6688ff", size: 2.0, distFromSun_ly: 9800 },
-    { name: "IRAS 17163-3907",    type: "Fried Egg Nebula · Yellow Hypergiant · 500,000× solar luminosity", dist: 22000, angle: 5.0, z: 0.0, color: "#ffdd44", size: 2.3, distFromSun_ly: 13000 },
-    { name: "Swift J1745-26",     type: "X-ray nova · Black hole binary that flared in 2012", dist: 1500, angle: 0.1, z: 0.0, color: "#9955cc", size: 1.5, distFromSun_ly: 24700 },
+    { name: "WR 102",             type: "Hottest known star · 210,000 K surface (36× the Sun's) · Oxygen-sequence Wolf-Rayet · Burning through its fuel so fast it'll go supernova in a few hundred thousand years · Running very late and very hot", dist: 30000, angle: 0.6, z: 0.01, color: "#6688ff", size: 2.0, distFromSun_ly: 9800 },
+    { name: "IRAS 17163-3907",    type: "Fried Egg Nebula · Yellow Hypergiant · 500,000× solar luminosity · Multiple shells of ejected material make it look exactly like a fried egg · One of the rarest stellar types — fewer than a dozen known", dist: 22000, angle: 5.0, z: 0.0, color: "#ffdd44", size: 2.3, distFromSun_ly: 13000 },
+    { name: "Swift J1745-26",     type: "X-ray nova · Black hole binary that flared spectacularly in 2012 · Caught devouring its companion star · These systems blink on for weeks then go dark for decades · Cosmic snack time", dist: 1500, angle: 0.1, z: 0.0, color: "#9955cc", size: 1.5, distFromSun_ly: 24700 },
 
     // --- Far side of the galaxy (opposite from Sol) ---
-    { name: "RSGC1",              type: "Red Supergiant Cluster 1 · 14 red supergiants in one cluster", dist: 18000, angle: 4.0, z: 0.0, color: "#ff5533", size: 2.5, distFromSun_ly: 22000 },
-    { name: "Stephenson 2-18",    type: "Possibly largest known star · 2,150× solar radius", dist: 17000, angle: 4.1, z: 0.0, color: "#ff3311", size: 3.0, distFromSun_ly: 19000 },
-    { name: "GLIMPSE-C01",        type: "Newly discovered globular cluster · Hidden behind galactic dust for centuries", dist: 10000, angle: 3.0, z: 0.02, color: "#ccaa77", size: 1.8, distFromSun_ly: 10800 },
+    { name: "RSGC1",              type: "Red Supergiant Cluster 1 · 14 red supergiants in one cluster · Each one could swallow our inner solar system · When they start going supernova it'll be spectacular — the galaxy's biggest fireworks display", dist: 18000, angle: 4.0, z: 0.0, color: "#ff5533", size: 2.5, distFromSun_ly: 22000 },
+    { name: "Stephenson 2-18",    type: "Possibly the largest known star · 2,150× solar radius · If placed at the Sun it would extend past Saturn's orbit · So diffuse its outer layers are barely distinguishable from empty space · More of a suggestion than a star", dist: 17000, angle: 4.1, z: 0.0, color: "#ff3311", size: 3.0, distFromSun_ly: 19000 },
+    { name: "GLIMPSE-C01",        type: "Globular cluster hiding behind galactic dust · Discovered only recently via infrared surveys · An ancient relic orbiting the galaxy for billions of years that nobody noticed · Astronomy's best wallflower", dist: 10000, angle: 3.0, z: 0.02, color: "#ccaa77", size: 1.8, distFromSun_ly: 10800 },
 
     // --- Extreme outer disc ---
-    { name: "SDSS J1229+1122",    type: "Hypervelocity star · Ejected from galactic center at 1,600 km/s", dist: 48000, angle: 2.5, z: 0.05, color: "#aaddff", size: 1.5, distFromSun_ly: 40000 },
-    { name: "Snyder's Cloud",     type: "Tidal stream remnant · Ghost of a dwarf galaxy devoured by the Milky Way", dist: 45000, angle: 0.0, z: 0.04, color: "#778899", size: 2.0, distFromSun_ly: 50000 },
-    { name: "Galactic Anticenter", type: "Direction directly away from core · Thinnest part of our galaxy", dist: 52000, angle: Math.PI + 1.3, z: 0.0, color: "#556677", size: 1.5, distFromSun_ly: 26000 }
+    { name: "SDSS J1229+1122",    type: "Hypervelocity star · Ejected from the galactic center at 1,600 km/s by a close encounter with Sgr A* · Fast enough to escape the Milky Way entirely · It's already 40,000 ly from home and will never return · The galaxy's most dramatic exit", dist: 48000, angle: 2.5, z: 0.05, color: "#aaddff", size: 1.5, distFromSun_ly: 40000 },
+    { name: "Snyder's Cloud",     type: "Tidal stream remnant · The ghost of a dwarf galaxy devoured by the Milky Way · Stretched into a thin ribbon of stars as it was pulled apart · Forensic evidence that our galaxy is a cannibal", dist: 45000, angle: 0.0, z: 0.04, color: "#778899", size: 2.0, distFromSun_ly: 50000 },
+    { name: "Galactic Anticenter", type: "Direction directly opposite the core · Thinnest, emptiest part of our galaxy · Looking out into the void between spiral arms · The back of the Milky Way's head", dist: 52000, angle: Math.PI + 1.3, z: 0.0, color: "#556677", size: 1.5, distFromSun_ly: 26000 }
   ],
   regions: [
     { name: "Orion Spur",         type: "Minor Arm",      distRange: [24000, 28000], angleRange: [1.1, 1.5], color: "#5577aa" },
@@ -581,7 +581,7 @@ class Star {
   }
 
   createMesh() {
-    const geom = new THREE.SphereGeometry(this.size * 0.022, 8, 8);
+    const geom = new THREE.SphereGeometry(this.size * 0.04, 8, 8);
     const mat = new THREE.MeshBasicMaterial({ color: this.color });
     this.mesh = new THREE.Mesh(geom, mat);
     this.mesh.position.copy(this.position.toThree());
@@ -596,7 +596,7 @@ class Star {
       opacity: 0.6
     });
     const sprite = new THREE.Sprite(spriteMat);
-    sprite.scale.set(this.size * 0.12, this.size * 0.12, 1);
+    sprite.scale.set(this.size * 0.2, this.size * 0.2, 1);
     this.mesh.add(sprite);
 
     return this.mesh;
@@ -667,7 +667,7 @@ class SpiralArm {
 
       const brightness = 0.4 + Math.random() * 0.6;
       colors.push(c.r * brightness, c.g * brightness, c.b * brightness);
-      sizes.push(0.08 + Math.random() * 0.15);
+      sizes.push(0.12 + Math.random() * 0.2);
     }
 
     const geom = new THREE.BufferGeometry();
@@ -676,7 +676,7 @@ class SpiralArm {
     geom.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
 
     const mat = new THREE.PointsMaterial({
-      size: 0.12,
+      size: 0.18,
       vertexColors: true,
       transparent: true,
       opacity: 0.85,
@@ -742,7 +742,7 @@ class GalacticCore {
     geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
     const mat = new THREE.PointsMaterial({
-      size: 0.1,
+      size: 0.15,
       vertexColors: true,
       transparent: true,
       opacity: 0.9,
@@ -757,9 +757,9 @@ class GalacticCore {
     // Central glow — use multiple smaller overlapping sprites instead of one big one
     // This avoids the visible square edge artifact
     const glowLayers = [
-      { scale: 4, opacity: 0.25 },
-      { scale: 7, opacity: 0.12 },
-      { scale: 11, opacity: 0.05 }
+      { scale: 5, opacity: 0.3 },
+      { scale: 9, opacity: 0.15 },
+      { scale: 14, opacity: 0.06 }
     ];
     for (const gl of glowLayers) {
       const glowMat = new THREE.SpriteMaterial({
@@ -2125,7 +2125,7 @@ class App {
     }
     pv.classList.add('visible');
     clearTimeout(this._photoTimer);
-    this._photoTimer = setTimeout(() => pv.classList.remove('visible'), 20000);
+    this._photoTimer = setTimeout(() => pv.classList.remove('visible'), 60000);
   }
 
   _drawStarPortrait(canvas, star) {

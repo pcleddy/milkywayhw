@@ -26,10 +26,10 @@ canvas { display: block; }
     background: rgba(8,8,25,0.95); border-top: 1px solid #223;
     transition: height 0.3s ease; padding: 0 20px;
 }
-#info-bar.open { height: 210px; padding: 16px 20px; }
-#info-bar.tall { height: 290px; padding: 16px 20px; }
+#info-bar.open { height: 280px; padding: 16px 20px; overflow-y: auto; }
+#info-bar.tall { height: 340px; padding: 16px 20px; overflow-y: auto; }
 #info-bar h2 { color: #8af; font-size: 19px; margin-bottom: 8px; font-weight: normal; }
-#info-bar .row { display: flex; gap: 24px; font-size: 15px; line-height: 1.8; }
+#info-bar .row { display: flex; gap: 24px; font-size: 15px; line-height: 1.8; flex-wrap: wrap; }
 #info-bar .row .col { min-width: 140px; }
 #info-bar .label { color: #557; }
 #info-bar .close {
@@ -57,6 +57,23 @@ canvas { display: block; }
     pointer-events: none; transition: opacity 0.3s; text-align: center;
 }
 .lifeform { color: #6b8; font-style: italic; margin-top: 4px; }
+#tour-banner {
+    position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,8,20,0.85); backdrop-filter: blur(10px);
+    border: 1px solid rgba(200,140,40,0.4); border-radius: 12px;
+    padding: 10px 22px; color: #e8c94a; font-family: monospace; font-size: 15px;
+    z-index: 30; display: none; max-width: 520px; text-align: center;
+    line-height: 1.5; box-shadow: 0 0 30px rgba(200,140,20,0.15);
+}
+#tour-banner .tour-controls { margin-top: 8px; display: flex; gap: 8px; justify-content: center; }
+#tour-banner .tour-controls button {
+    padding: 4px 14px; border-radius: 6px; border: 1px solid rgba(200,140,40,0.4);
+    background: rgba(30,25,50,0.8); color: #e8c94a; cursor: pointer;
+    font-family: monospace; font-size: 13px; transition: all 0.2s;
+}
+#tour-banner .tour-controls button:hover { background: rgba(60,50,100,0.9); border-color: #e8c94a; }
+#tour-banner .elon-quote { font-style: italic; color: #c8a83a; }
+#tour-banner .stop-num { color: #886; font-size: 12px; }
 #solar-canvas {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     display: none; z-index: 1;
@@ -76,7 +93,8 @@ canvas { display: block; }
     <h2 id="info-name"></h2>
     <div class="row" id="info-body"></div>
 </div>
-<div id="hint">scroll to zoom · drag to orbit · click a galaxy</div>
+<div id="hint">scroll to zoom · drag to orbit · click a galaxy · <span style="color:#44ddcc">◉</span> = more info</div>
+<div id="tour-banner"></div>
 <div style="position:fixed;bottom:20px;left:12px;z-index:15;display:flex;gap:6px;">
 <a href="milkyway.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">🌌 Milky Way</a>
 <a href="solarsystem.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">☀️ Solar System</a>
@@ -89,25 +107,25 @@ canvas { display: block; }
 // GALAXY DATA
 // =====================================================
 const galaxies = [
-{name:"Milky Way",ra:17.76,dec:-29,dist:0,mag:null,type:"SBbc barred spiral",size:"100,000 ly",notes:"Our home galaxy, ~200 billion stars",group:"Local Group"},
-{name:"Andromeda (M31)",ra:0.71,dec:41.27,dist:2.537,mag:3.4,type:"SA(s)b spiral",size:"220,000 ly",notes:"Largest in Local Group, approaching at ~110 km/s",group:"Local Group"},
-{name:"Triangulum (M33)",ra:1.56,dec:30.66,dist:2.73,mag:5.7,type:"SA(s)cd spiral",size:"60,000 ly",notes:"Third-largest in Local Group",group:"Local Group"},
-{name:"Large Magellanic Cloud",ra:5.39,dec:-69.76,dist:0.163,mag:0.9,type:"SB(s)m irregular",size:"14,000 ly",notes:"Visible naked eye from southern hemisphere",group:"Local Group"},
-{name:"Small Magellanic Cloud",ra:0.88,dec:-72.8,dist:0.197,mag:2.7,type:"SB(s)m pec irregular",size:"7,000 ly",notes:"Tidally interacting with LMC",group:"Local Group"},
-{name:"Bode's Galaxy (M81)",ra:9.93,dec:69.07,dist:11.8,mag:6.9,type:"SA(s)ab spiral",size:"90,000 ly",notes:"One of the brightest galaxies in the sky",group:"M81 Group"},
-{name:"Cigar Galaxy (M82)",ra:9.93,dec:69.68,dist:11.5,mag:8.4,type:"I0 starburst",size:"37,000 ly",notes:"Intense starburst from M81 interaction",group:"M81 Group"},
-{name:"Whirlpool (M51)",ra:13.50,dec:47.2,dist:23.2,mag:8.4,type:"SA(s)bc pec spiral",size:"76,000 ly",notes:"Classic face-on spiral with companion NGC 5195",group:"M51 Group"},
-{name:"Pinwheel (M101)",ra:14.05,dec:54.35,dist:20.9,mag:7.9,type:"SAB(rs)cd spiral",size:"170,000 ly",notes:"Large face-on, asymmetric disk",group:"M101 Group"},
-{name:"Sombrero (M104)",ra:12.67,dec:-11.62,dist:29.3,mag:8.0,type:"SA(s)a spiral",size:"49,000 ly",notes:"Iconic dust lane and bright nucleus",group:"Virgo Southern Ext."},
+{name:"Milky Way",ra:17.76,dec:-29,dist:0,mag:null,type:"SBbc barred spiral",size:"100,000 ly",notes:"Our home galaxy. 200-400 billion stars, 100 billion planets (minimum). 4 major spiral arms, a central bar, and a supermassive black hole at the center. Currently eating several smaller galaxies. You are here.",group:"Local Group"},
+{name:"Andromeda (M31)",ra:0.71,dec:41.27,dist:2.537,mag:3.4,type:"SA(s)b spiral",size:"220,000 ly",notes:"Largest galaxy in the Local Group with ~1 trillion stars. Approaching us at 110 km/s — will collide with the Milky Way in ~4.5 billion years to form 'Milkomeda.' Visible to the naked eye. The most distant object you can see without a telescope. It has its own entourage of satellite galaxies.",group:"Local Group"},
+{name:"Triangulum (M33)",ra:1.56,dec:30.66,dist:2.73,mag:5.7,type:"SA(s)cd spiral",size:"60,000 ly",notes:"Third-largest in the Local Group. Contains NGC 604, one of the largest H II regions known — 40× bigger than the Orion Nebula. May be gravitationally bound to Andromeda. The farthest permanent object visible to the naked eye (on very clear nights). Third wheel of the Local Group.",group:"Local Group"},
+{name:"Large Magellanic Cloud",ra:5.39,dec:-69.76,dist:0.163,mag:0.9,type:"SB(s)m irregular",size:"14,000 ly",notes:"Visible naked eye from the southern hemisphere. Contains the Tarantula Nebula — the most active star-forming region in the Local Group. SN 1987A, the nearest supernova in modern times, happened here. Named after Magellan but southern peoples knew it for millennia.",group:"Local Group"},
+{name:"Small Magellanic Cloud",ra:0.88,dec:-72.8,dist:0.197,mag:2.7,type:"SB(s)m pec irregular",size:"7,000 ly",notes:"Being torn apart by its bigger sibling (LMC) and the Milky Way. Connected to the LMC by a bridge of gas and young stars. Was once used by navigators as a southern 'compass.' Basically the runt of the Local Group litter.",group:"Local Group"},
+{name:"Bode's Galaxy (M81)",ra:9.93,dec:69.07,dist:11.8,mag:6.9,type:"SA(s)ab spiral",size:"90,000 ly",notes:"One of the brightest galaxies in our sky. Had a close encounter with M82 ~300 million years ago that triggered M82's starburst and warped M81's own arms. Home to a 70-million-solar-mass black hole. Discovered by Bode in 1774.",group:"M81 Group"},
+{name:"Cigar Galaxy (M82)",ra:9.93,dec:69.68,dist:11.5,mag:8.4,type:"I0 starburst",size:"37,000 ly",notes:"Forming stars 10× faster than the Milky Way after M81 punched through it. Superwind of gas blasting outward at 900 km/s from the core. The prototypical starburst galaxy — basically having a cosmic meltdown.",group:"M81 Group"},
+{name:"Whirlpool (M51)",ra:13.50,dec:47.2,dist:23.2,mag:8.4,type:"SA(s)bc pec spiral",size:"76,000 ly",notes:"First galaxy whose spiral structure was observed (Lord Rosse, 1845). Classic face-on spiral being tugged by companion NGC 5195. One of the most photographed galaxies. Its spiral arms were shaped by the gravitational dance with its little companion — proof that cosmic bullying can create beauty.",group:"M51 Group"},
+{name:"Pinwheel (M101)",ra:14.05,dec:54.35,dist:20.9,mag:7.9,type:"SAB(rs)cd spiral",size:"170,000 ly",notes:"Nearly twice the diameter of the Milky Way. Lopsided disk from past interactions. Contains over 3,000 H II star-forming regions. Hosted a visible-to-binoculars supernova (SN 2023ixf). One of the largest face-on spirals in the sky.",group:"M101 Group"},
+{name:"Sombrero (M104)",ra:12.67,dec:-11.62,dist:29.3,mag:8.0,type:"SA(s)a spiral",size:"49,000 ly",notes:"Iconic dark dust lane and brilliant white core. Possibly harbors a 1-billion-solar-mass black hole. Has a huge halo of globular clusters — nearly 2,000 of them (the Milky Way has about 150). Voted most photogenic galaxy by astronomers worldwide (unofficial poll).",group:"Virgo Southern Ext."},
 {name:"Sunflower (M63)",ra:13.26,dec:42.03,dist:29.3,mag:8.6,type:"SA(rs)bc spiral",size:"98,000 ly",notes:"Flocculent spiral with patchy arms",group:"M51 Group"},
-{name:"Black Eye (M64)",ra:12.95,dec:21.68,dist:17.3,mag:8.5,type:"(R)SA(rs)ab spiral",size:"54,000 ly",notes:"Dark dust band, counter-rotating gas",group:"Coma I Group"},
+{name:"Black Eye (M64)",ra:12.95,dec:21.68,dist:17.3,mag:8.5,type:"(R)SA(rs)ab spiral",size:"54,000 ly",notes:"Named for the dark band of dust in front of its bright nucleus. The outer gas rotates opposite to the inner — likely absorbed a smaller galaxy that was spinning the wrong way. Where the two rotation regions collide, new stars are forming furiously. The galaxy that got punched in the eye and made it look good.",group:"Coma I Group"},
 {name:"M65",ra:11.32,dec:13.09,dist:35.0,mag:9.3,type:"SAB(rs)a spiral",size:"90,000 ly",notes:"Part of the Leo Triplet",group:"Leo Triplet"},
 {name:"M66",ra:11.34,dec:12.99,dist:36.0,mag:8.9,type:"SAB(s)b spiral",size:"95,000 ly",notes:"Asymmetric arms from interaction",group:"Leo Triplet"},
-{name:"NGC 3628",ra:11.34,dec:13.59,dist:35.0,mag:9.5,type:"Sb pec edge-on",size:"100,000 ly",notes:"Hamburger Galaxy, edge-on with tidal tail",group:"Leo Triplet"},
+{name:"NGC 3628",ra:11.34,dec:13.59,dist:35.0,mag:9.5,type:"Sb pec edge-on",size:"100,000 ly",notes:"The Hamburger Galaxy — edge-on with a dark dust lane that makes it look delicious. Has a 300,000 ly tidal tail from gravitational interactions with M65 and M66. Messier missed it entirely despite cataloging its two neighbors. The most overlooked galaxy in the Leo Triplet.",group:"Leo Triplet"},
 {name:"M74",ra:1.61,dec:15.78,dist:30.0,mag:9.4,type:"SA(s)c spiral",size:"95,000 ly",notes:"Grand-design spiral, hard to observe",group:"M74 Group"},
 {name:"M77",ra:2.71,dec:-0.01,dist:47.0,mag:8.9,type:"(R)SA(rs)b Seyfert",size:"170,000 ly",notes:"Active Seyfert II nucleus",group:"Field"},
 {name:"M83 (Southern Pinwheel)",ra:13.62,dec:-29.87,dist:14.7,mag:7.5,type:"SAB(s)c spiral",size:"55,000 ly",notes:"6 observed supernovae",group:"Centaurus A/M83"},
-{name:"M87 (Virgo A)",ra:12.51,dec:12.39,dist:53.5,mag:8.6,type:"E+0-1 pec elliptical",size:"240,000 ly",notes:"Supergiant elliptical, first imaged black hole (2019)",group:"Virgo Cluster"},
+{name:"M87 (Virgo A)",ra:12.51,dec:12.39,dist:53.5,mag:8.6,type:"E+0-1 pec elliptical",size:"240,000 ly",notes:"Supergiant elliptical with 12,000+ globular clusters. Home to the first black hole ever photographed (2019, Event Horizon Telescope) — 6.5 billion solar masses. Shoots a relativistic jet 5,000 ly long. Has consumed so many galaxies over billions of years it's more of a galactic graveyard than a galaxy.",group:"Virgo Cluster"},
 {name:"M49",ra:12.50,dec:8.0,dist:55.9,mag:8.4,type:"E2 elliptical",size:"157,000 ly",notes:"Brightest galaxy in Virgo Cluster",group:"Virgo Cluster"},
 {name:"M86",ra:12.44,dec:12.95,dist:52.0,mag:8.9,type:"E3/S0 elliptical",size:"135,000 ly",notes:"Blueshifted, moving toward us in Virgo",group:"Virgo Cluster"},
 {name:"M84",ra:12.42,dec:12.89,dist:57.0,mag:9.1,type:"E1 elliptical",size:"110,000 ly",notes:"Radio galaxy with relativistic jets",group:"Virgo Cluster"},
@@ -123,9 +141,9 @@ const galaxies = [
 {name:"NGC 2403",ra:7.62,dec:65.6,dist:8.0,mag:8.5,type:"SAB(s)cd spiral",size:"50,000 ly",notes:"Bright spiral similar to M33",group:"M81 Group"},
 {name:"NGC 4565 (Needle)",ra:12.60,dec:25.99,dist:42.7,mag:9.6,type:"SA(s)b edge-on",size:"100,000 ly",notes:"Stunning edge-on, very thin disk",group:"Coma I Group"},
 {name:"NGC 4631 (Whale)",ra:12.70,dec:32.54,dist:25.0,mag:9.2,type:"SB(s)d edge-on",size:"140,000 ly",notes:"Distorted edge-on with companion",group:"NGC 4631 Group"},
-{name:"NGC 5128 (Centaurus A)",ra:13.42,dec:-43.02,dist:12.4,mag:6.8,type:"S0 pec elliptical",size:"97,000 ly",notes:"Nearest giant radio galaxy, dramatic dust lane",group:"Centaurus A/M83"},
+{name:"NGC 5128 (Centaurus A)",ra:13.42,dec:-43.02,dist:12.4,mag:6.8,type:"S0 pec elliptical",size:"97,000 ly",notes:"Nearest giant radio galaxy. That dramatic dust lane is the remnant of a spiral galaxy it swallowed. Shoots radio jets spanning 1.5 million ly — larger than the galaxy itself. A textbook case of galactic cannibalism caught in the act.",group:"Centaurus A/M83"},
 {name:"NGC 6822 (Barnard's)",ra:19.75,dec:-14.79,dist:1.63,mag:8.8,type:"IB(s)m irregular",size:"7,000 ly",notes:"Local Group dwarf, similar to SMC",group:"Local Group"},
-{name:"NGC 6946 (Fireworks)",ra:20.58,dec:60.15,dist:25.2,mag:8.8,type:"SAB(rs)cd spiral",size:"75,000 ly",notes:"10 supernovae observed — most of any galaxy",group:"NGC 6946 Group"},
+{name:"NGC 6946 (Fireworks)",ra:20.58,dec:60.15,dist:25.2,mag:8.8,type:"SAB(rs)cd spiral",size:"75,000 ly",notes:"10 observed supernovae since 1917 — more than any other galaxy, hence the name. Sits right behind the Milky Way's dust, making it dimmer than it should be. Stars here seem to explode at an unreasonable rate. If galaxies had insurance premiums, this one would be uninsurable.",group:"NGC 6946 Group"},
 {name:"NGC 7331",ra:22.62,dec:34.42,dist:40.0,mag:9.5,type:"SA(s)b spiral",size:"120,000 ly",notes:"Often called Milky Way's twin",group:"NGC 7331 Group"},
 {name:"IC 342",ra:3.78,dec:68.1,dist:10.7,mag:9.1,type:"SAB(rs)cd spiral",size:"75,000 ly",notes:"Hidden in Zone of Avoidance",group:"IC 342/Maffei Group"},
 {name:"IC 10",ra:0.34,dec:59.29,dist:2.2,mag:10.4,type:"dIrr irregular",size:"5,000 ly",notes:"Nearest starburst galaxy",group:"Local Group"},
@@ -134,11 +152,11 @@ const galaxies = [
 {name:"NGC 55",ra:0.25,dec:-39.2,dist:6.5,mag:7.9,type:"SB(s)m edge-on",size:"70,000 ly",notes:"Large edge-on irregular in Sculptor",group:"Sculptor Group"},
 {name:"NGC 300",ra:0.92,dec:-37.68,dist:6.1,mag:8.1,type:"SA(s)d spiral",size:"44,000 ly",notes:"Well-studied face-on, Sculptor Group",group:"Sculptor Group"},
 {name:"NGC 2903",ra:9.54,dec:21.50,dist:30.0,mag:9.0,type:"SB(s)d spiral",size:"80,000 ly",notes:"Bright barred spiral Messier missed",group:"Field"},
-{name:"NGC 4038/39 (Antennae)",ra:12.03,dec:-18.87,dist:45.0,mag:10.3,type:"Merging pair",size:"120,000 ly",notes:"Most famous colliding galaxy pair",group:"NGC 4038 Group"},
+{name:"NGC 4038/39 (Antennae)",ra:12.03,dec:-18.87,dist:45.0,mag:10.3,type:"Merging pair",size:"120,000 ly",notes:"Two spiral galaxies mid-collision, creating billions of new stars. Long tidal tails of ejected stars give them an insect-like appearance. A preview of what the Milky Way-Andromeda collision will look like. Started merging ~600 million years ago and won't finish for another billion. The universe's most spectacular slow-motion car crash.",group:"NGC 4038 Group"},
 {name:"NGC 1275 (Perseus A)",ra:3.33,dec:41.51,dist:237.0,mag:11.6,type:"cD pec Seyfert",size:"200,000 ly",notes:"Center of Perseus Cluster, powerful radio source",group:"Perseus Cluster"},
-{name:"NGC 4889",ra:13.00,dec:27.98,dist:308.0,mag:11.5,type:"cD elliptical",size:"240,000 ly",notes:"21-billion-solar-mass black hole",group:"Coma Cluster"},
+{name:"NGC 4889",ra:13.00,dec:27.98,dist:308.0,mag:11.5,type:"cD elliptical",size:"240,000 ly",notes:"Home to one of the largest black holes ever measured — 21 billion solar masses, with an event horizon the size of Neptune's orbit. Currently dormant (thankfully). Center of the Coma Cluster. What happens when a galaxy eats everything in sight and runs out of food.",group:"Coma Cluster"},
 {name:"Maffei 1",ra:2.61,dec:59.65,dist:9.8,mag:11.4,type:"E3 elliptical",size:"75,000 ly",notes:"Nearest giant elliptical, in Zone of Avoidance",group:"IC 342/Maffei Group"},
-{name:"Cartwheel Galaxy",ra:0.63,dec:-33.72,dist:489.0,mag:14.2,type:"Ring galaxy",size:"150,000 ly",notes:"Ring from head-on collision",group:"Field"},
+{name:"Cartwheel Galaxy",ra:0.63,dec:-33.72,dist:489.0,mag:14.2,type:"Ring galaxy",size:"150,000 ly",notes:"Created when a smaller galaxy punched straight through it like a bullet through a window. The ring is a shockwave of star formation expanding outward at 200,000 mph. One of the most dramatic JWST targets. Will eventually settle back into a normal spiral. The galaxy equivalent of dropping a stone in a pond.",group:"Field"},
 {name:"M85",ra:12.42,dec:18.19,dist:60.0,mag:9.1,type:"SA(s)0+ lenticular",size:"125,000 ly",notes:"Lenticular with recent minor merger",group:"Virgo Cluster"},
 {name:"M58",ra:12.63,dec:11.82,dist:62.0,mag:9.7,type:"SAB(rs)b spiral",size:"100,000 ly",notes:"Barred spiral in Virgo",group:"Virgo Cluster"},
 {name:"M60",ra:12.73,dec:11.55,dist:54.0,mag:8.8,type:"E2 elliptical",size:"120,000 ly",notes:"Giant elliptical with ultracompact dwarf",group:"Virgo Cluster"},
@@ -323,6 +341,13 @@ const nav = {
     })));
 })();
 
+// Galaxy photo URLs — add entries here as images are uploaded
+const GALAXY_IMAGES = {
+    'Andromeda (M31)': 'https://www.cloudautomat.net/images/galaxies/andromeda.png',
+    // 'Whirlpool Galaxy': 'https://www.cloudautomat.net/images/galaxies/whirlpool.png',
+    // 'Triangulum Galaxy': 'https://www.cloudautomat.net/images/galaxies/triangulum.png',
+};
+
 // Galaxy objects
 const glowTex = makeGlowTexture();
 const galaxyMeshes = [];
@@ -364,6 +389,21 @@ uniqueGalaxies.forEach(g => {
         ring.lookAt(camera.position);
         group.add(ring);
         group.userData.ring = ring;
+    }
+
+    // "Has detail" indicator — pulsing teal ring for galaxies with rich info or photos
+    const hasPhoto = !!GALAXY_IMAGES[g.name];
+    const hasRichNotes = g.notes && g.notes.length > 100;
+    if ((hasPhoto || hasRichNotes) && !isMW) {
+        const dRingGeo = new THREE.RingGeometry(r * 0.65, r * 0.72, 32);
+        const dRingMat = new THREE.MeshBasicMaterial({
+            color: 0x44ddcc, transparent: true, opacity: 0.0,
+            side: THREE.DoubleSide, depthWrite: false
+        });
+        const dRing = new THREE.Mesh(dRingGeo, dRingMat);
+        dRing.lookAt(camera.position);
+        group.add(dRing);
+        group.userData.detailRing = dRing;
     }
 
     // Label sprite
@@ -747,13 +787,6 @@ const portrait = document.getElementById('portrait');
 const pctx = portrait.getContext('2d');
 const portraitImg = document.getElementById('portrait-img');
 
-// Galaxy photo URLs — add entries here as images are uploaded
-const GALAXY_IMAGES = {
-    'Andromeda (M31)': 'https://www.cloudautomat.net/images/galaxies/andromeda.png',
-    // 'Whirlpool Galaxy': 'https://www.cloudautomat.net/images/galaxies/whirlpool.png',
-    // 'Triangulum Galaxy': 'https://www.cloudautomat.net/images/galaxies/triangulum.png',
-};
-
 const imageCache = {};
 
 function showGalaxyPhoto(g, fallback) {
@@ -965,7 +998,8 @@ function updateControls() {
             <button onclick="nav.flyTo(new THREE.Vector3(0,0,0), 30, -0.3)">recenter</button>
             <button onclick="toggleLabels()" id="btn-labels">labels</button>
             <button onclick="toggleRADec()" id="btn-radec">RA/Dec grid</button>
-            <button onclick="toggleMpc()" id="btn-mpc">Mpc grid</button>`;
+            <button onclick="toggleMpc()" id="btn-mpc">Mpc grid</button>
+            <button onclick="startDrunkTour()" id="btn-tour" style="color:#e8c94a;border-color:rgba(200,140,40,0.4)">🍺 Elon's tour</button>`;
     } else {
         c.innerHTML = `
             <button onclick="initGalaxyView()">back to galaxies</button>
@@ -987,9 +1021,150 @@ function toggleLabels() {
 function toggleRADec() { showRADecGrid = !showRADecGrid; raDecGridGroup.visible = showRADecGrid; updateControls(); }
 function toggleMpc() { showMpcGrid = !showMpcGrid; mpcGridGroup.visible = showMpcGrid; updateControls(); }
 
+// =====================================================
+// ELON'S DRUNKEN TOUR OF THE GALAXIES
+// =====================================================
+const drunkTour = {
+    active: false,
+    stops: [],
+    current: -1,
+    timer: null,
+    wobblePhase: 0
+};
+
+const ELON_QUOTES = [
+    "Okay *hic* this one's my favorite. I said that about the last three.",
+    "I could buy this galaxy. Should I buy this galaxy? Someone write that down.",
+    "This is like Mars but bigger. Way bigger. Like embarrassingly bigger.",
+    "If we put a Gigafactory here the commute would be... *checks notes* ...a billion years.",
+    "Honestly this galaxy has incredible fundamentals. Very investable.",
+    "I'm not crying, you're crying. Space is just... *gestures vaguely* ...big, man.",
+    "My other car is orbiting somewhere near here.",
+    "Fun fact: I just made this galaxy the new Twitter headquarters.",
+    "X.com/galaxy. Available? Someone check if that domain is available.",
+    "The thing about galaxies is... *long pause* ...there's a lot of them.",
+    "I promised full self-driving between galaxies by 2025. We're close. Very close.",
+    "Imagine the bandwidth if we put Starlink here. *chef's kiss*",
+    "This galaxy was undervalued. I made a lowball offer. They haven't responded.",
+    "People say I'm eccentric. Those people have never surfed the cosmic web at 3am.",
+    "My engineers said this detour was impossible. I fired them. Then I hired them back.",
+    "The speed of light is a suggestion, not a law. My lawyers are looking into it.",
+    "I'm going to build a tunnel through this one. Just a single lane. It'll be fine.",
+    "Rate this galaxy. I give it 420 out of 69. Wait, flip that.",
+    "Whoever named this galaxy had no vision. I'll rename it after the IPO.",
+    "First principles thinking: every galaxy is just spicy dust. I am also spicy dust.",
+];
+
+function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function startDrunkTour() {
+    if (drunkTour.active) { stopDrunkTour(); return; }
+
+    // Pick galaxies with rich notes + always include a few famous ones
+    const rich = uniqueGalaxies.filter(g =>
+        (g.notes && g.notes.length > 100) || GALAXY_IMAGES[g.name]
+    );
+    // Shuffle and cap at ~12 stops so it doesn't go forever
+    drunkTour.stops = shuffleArray(rich).slice(0, 12);
+    // Always start from home
+    const mw = uniqueGalaxies.find(g => g.name === 'Milky Way');
+    if (mw) drunkTour.stops.unshift(mw);
+
+    drunkTour.current = -1;
+    drunkTour.active = true;
+    drunkTour.wobblePhase = 0;
+    closeInfo();
+
+    const banner = document.getElementById('tour-banner');
+    banner.style.display = 'block';
+    banner.innerHTML = `<div class="elon-quote">*cracks open a space beer*<br>Alright, buckle up. Let me show you the universe.</div>
+        <div class="tour-controls">
+            <button onclick="drunkTourNext()">let's go 🚀</button>
+            <button onclick="stopDrunkTour()">I want off</button>
+        </div>`;
+
+    // Update the tour button to show active state
+    const btn = document.getElementById('btn-tour');
+    if (btn) { btn.textContent = '🍺 end tour'; btn.style.color = '#ff6644'; }
+
+    // Start after a beat
+    drunkTour.timer = setTimeout(() => drunkTourNext(), 3500);
+}
+
+function stopDrunkTour() {
+    drunkTour.active = false;
+    if (drunkTour.timer) clearTimeout(drunkTour.timer);
+    drunkTour.timer = null;
+    const banner = document.getElementById('tour-banner');
+    banner.innerHTML = `<div class="elon-quote">*stumbles off stage*<br>That was... educational. Probably. Goodnight, universe.</div>`;
+    setTimeout(() => { banner.style.display = 'none'; }, 3000);
+    const btn = document.getElementById('btn-tour');
+    if (btn) { btn.textContent = '🍺 Elon\'s tour'; btn.style.color = '#e8c94a'; }
+}
+
+function drunkTourNext() {
+    if (!drunkTour.active) return;
+    if (drunkTour.timer) clearTimeout(drunkTour.timer);
+
+    drunkTour.current++;
+    if (drunkTour.current >= drunkTour.stops.length) {
+        // Tour complete
+        const banner = document.getElementById('tour-banner');
+        banner.innerHTML = `<div class="elon-quote">*mic drop*<br>And that's the universe. You're welcome.<br>I accept payment in Dogecoin.</div>
+            <div class="tour-controls">
+                <button onclick="startDrunkTour()">another round 🍻</button>
+                <button onclick="stopDrunkTour()">I need to lie down</button>
+            </div>`;
+        drunkTour.active = false;
+        const btn = document.getElementById('btn-tour');
+        if (btn) { btn.textContent = '🍺 Elon\'s tour'; btn.style.color = '#e8c94a'; }
+        return;
+    }
+
+    const stop = drunkTour.stops[drunkTour.current];
+    const quote = ELON_QUOTES[drunkTour.current % ELON_QUOTES.length];
+    const banner = document.getElementById('tour-banner');
+    const stopLabel = drunkTour.current === 0 ? 'home base' : `stop ${drunkTour.current} of ${drunkTour.stops.length - 1}`;
+
+    // Drunk wobble: add a random offset to the flight target
+    const wobble = new THREE.Vector3(
+        (Math.random() - 0.5) * 2,
+        (Math.random() - 0.5) * 1.5,
+        (Math.random() - 0.5) * 2
+    );
+    const dest = stop.pos.clone().add(wobble);
+
+    // Fly there with some drunk camera pitch variation
+    const drunkPitch = -0.2 + (Math.random() - 0.5) * 0.5;
+    nav.flyTo(dest, Math.max(2.5, stop.sceneRadius * 12), drunkPitch);
+
+    // Add a yaw wobble too
+    nav.targetYaw += (Math.random() - 0.5) * 0.3;
+
+    banner.innerHTML = `
+        <div class="stop-num">${stopLabel}</div>
+        <div style="color:#fff;font-size:16px;margin:4px 0;">${stop.name}</div>
+        <div class="elon-quote">${quote}</div>
+        <div class="tour-controls">
+            <button onclick="drunkTourNext()">next 🍺</button>
+            <button onclick="showInfo(drunkTour.stops[drunkTour.current])">tell me more</button>
+            <button onclick="stopDrunkTour()">I want off</button>
+        </div>`;
+
+    // Auto-advance after a pause
+    drunkTour.timer = setTimeout(() => drunkTourNext(), 16000);
+}
+
 // Escape
 window.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeInfo();
+    if (e.key === 'Escape') { if (drunkTour.active) stopDrunkTour(); closeInfo(); }
 });
 
 // =====================================================
@@ -1001,11 +1176,18 @@ function animate() {
     if (viewMode === 'galaxies') {
         nav.update();
 
-        // Billboard MW ring
+        // Billboard rings + detail pulse
         galaxyMeshes.forEach(gm => {
             if (gm.userData.ring) {
                 gm.userData.ring.lookAt(camera.position);
                 gm.userData.ring.material.opacity = 0.2 + Math.sin(Date.now() * 0.003) * 0.1;
+            }
+            if (gm.userData.detailRing) {
+                gm.userData.detailRing.lookAt(camera.position);
+                const pulse = Math.sin(Date.now() * 0.002 + gm.position.x * 10) * 0.5 + 0.5;
+                gm.userData.detailRing.material.opacity = 0.12 + pulse * 0.22;
+                const sc = 1 + pulse * 0.15;
+                gm.userData.detailRing.scale.set(sc, sc, 1);
             }
             // Scale labels to stay readable
             gm.children.forEach(c => {
