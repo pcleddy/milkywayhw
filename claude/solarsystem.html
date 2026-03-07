@@ -589,6 +589,8 @@ class CelestialBody {
       parentRef._parentRadius = bodyData.radius || 0.04;
       parentRef._moonIdx = 0;
       bodyData.moons.forEach(moonData => {
+        moonData._parentId = bodyData.id;
+        moonData._parentName = bodyData.name;
         const moon = new CelestialBody(moonData, parentRef);
         moon.group.userData.layerName = 'moons';
         this.moonBodies.push(moon);
@@ -1445,6 +1447,25 @@ class App {
         div.appendChild(btn);
       });
       pv.querySelector('.pv-info').appendChild(div);
+    }
+
+    // Back to parent button (for moons)
+    const existingBack = pv.querySelector('.pv-back-btn');
+    if (existingBack) existingBack.remove();
+    if (bodyData._parentId) {
+      const backBtn = document.createElement('span');
+      backBtn.className = 'pv-moon-btn pv-back-btn';
+      backBtn.style.marginTop = '8px';
+      backBtn.style.display = 'inline-block';
+      backBtn.textContent = '← back to ' + bodyData._parentName;
+      backBtn.onclick = () => {
+        const parent = this.allBodies.find(b => b.data.id === bodyData._parentId);
+        if (parent) {
+          this.nav.flyTo(parent.scenePos.clone(), (parent.data.radius || 0.04) * 8);
+          this.showBodyInfo(parent.data);
+        }
+      };
+      pv.querySelector('.pv-info').appendChild(backBtn);
     }
 
     pv.classList.add('visible');
