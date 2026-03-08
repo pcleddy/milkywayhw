@@ -276,12 +276,15 @@ canvas { display: block; }
 </div>
 <div id="tour-progress"><div id="tour-progress-bar"></div></div>
 
-<div id="cross-link" style="display:flex;gap:6px;">
+<div id="cross-link" style="display:flex;gap:6px;align-items:center;">
 <a href="galaxy-explorer.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">🌐 Galaxies</a>
 <a href="milkyway.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">🌌 Milky Way</a>
+<span style="color:#334455;font-size:11px;margin-left:2px;">│</span>
+<button id="prev-body-btn" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:5px 9px;color:#7799bb;font-size:13px;cursor:pointer;transition:all 0.2s;line-height:1;" onmouseover="this.style.color='#aaccee';this.style.background='rgba(30,45,65,0.9)'" onmouseout="this.style.color='#7799bb';this.style.background='rgba(20,30,45,0.8)'" title="Previous body (← key)">◀</button>
+<button id="next-body-btn" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:5px 9px;color:#7799bb;font-size:13px;cursor:pointer;transition:all 0.2s;line-height:1;" onmouseover="this.style.color='#aaccee';this.style.background='rgba(30,45,65,0.9)'" onmouseout="this.style.color='#7799bb';this.style.background='rgba(20,30,45,0.8)'" title="Next body (→ key)">▶</button>
 </div>
 
-<div id="controls">Scroll to zoom · Drag to orbit · Click a planet for info · Press ? for help</div>
+<div id="controls">Scroll to zoom · Drag to orbit · Click a planet for info · <span style="color:#6699bb">← →</span> <span style="color:#556677">cycle planets</span> · Press ? for help</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -468,19 +471,10 @@ const SOLAR_SYSTEM_DATA = {
       au: 3.46, ecc: 0.641, inc: 7.04, argPeri: 12.8, meanAnomaly: 303.7,
       period_days: 2356, radius: 0.004, color: "#7799aa", isComet: true,
       info: { discovery: "Klim Churyumov, September 1969, on a photograph taken by Svetlana Gerasimenko.", highlights: "The rubber duck comet. ESA's Rosetta mission orbited it for 2 years (2014-2016) and landed the Philae probe on its surface — the first ever comet landing. The nucleus is 4.3×4.1 km and shaped like a rubber duck (two lobes joined by a narrow neck). Surface gravity is so weak you could jump off it easily. It outgasses jets of water and CO₂ as it nears the Sun, creating its coma and tail. Philae bounced twice before settling in a shadowed ditch, but still returned groundbreaking data including amino acids. The comet smells terrible — hydrogen sulfide, ammonia, and formaldehyde. A cosmic dumpster, but our cosmic dumpster." }
-    },
-    {
-      id: "hyakutake", name: "Hyakutake", type: "comet",
-      au: 1108, ecc: 0.9999, inc: 124.9, argPeri: 130.2, meanAnomaly: 0.5,
-      period_days: 25550000, radius: 0.004, color: "#66aacc", isComet: true,
-      info: { discovery: "Yuji Hyakutake, January 30, 1996 — using binoculars.", highlights: "The 'Great Comet of 1996.' Passed just 0.1 AU from Earth — incredibly close for a comet. This produced the longest measured comet tail: 570 million km (3.8 AU), stretching from the Sun past Mars. Its nucleus was only 4.2 km across but its tail was absurdly long relative to its size. X-ray emissions were detected from a comet for the first time with Hyakutake. Orbital period estimated at ~70,000 years, so this was likely the first time anyone on Earth ever saw it, and no human alive today will see it again. A one-time-only cosmic visitor." }
-    },
-    {
-      id: "tsuchinshan", name: "Tsuchinshan-ATLAS (C/2023 A3)", type: "comet",
-      au: 510, ecc: 0.9998, inc: 139.1, argPeri: 308.5, meanAnomaly: 1.0,
-      period_days: 16200000, radius: 0.004, color: "#bbddee", isComet: true,
-      info: { discovery: "Purple Mountain Observatory (Jan 2023) and ATLAS (Feb 2023).", highlights: "The most spectacular comet of 2024. Perihelion on September 27, 2024 at just 0.39 AU from the Sun. Produced an extraordinary anti-tail (forward spike) visible to the naked eye as Earth passed through its orbital plane. Peak brightness around magnitude -4 (bright as Venus). Its dust tail displayed stunning striae — parallel streaks caused by synchronized dust particle ejection. Forward-scattering of sunlight through its dust gave it an almost supernatural glow at closest approach to Earth (0.47 AU on October 12). Orbital period so long it may never return. The comet that dominated social media feeds for weeks." }
     }
+    // Hyakutake & Tsuchinshan-ATLAS removed for now — eccentricities > 0.999
+    // break the log-scale orbital rendering. Revisit when we have a better
+    // approach for near-parabolic orbits.
   ]
 };
 
@@ -496,13 +490,17 @@ function sceneToAU(s)  { return Math.pow(10, s / SCALE) - 1; }
 // ============================================================
 const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0); // J2000.0 epoch in ms
 
-function solveKepler(M, e, iters = 12) {
+function solveKepler(M, e, iters) {
   // Solve Kepler's equation: E - e*sin(E) = M
   // M = mean anomaly (radians), e = eccentricity
   // Returns eccentric anomaly E
-  let E = M;
+  // More iterations for near-parabolic orbits (e > 0.95)
+  if (!iters) iters = e > 0.95 ? 30 : 12;
+  let E = M + e * Math.sin(M); // Better initial guess
   for (let i = 0; i < iters; i++) {
-    E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+    const dE = (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+    E = E - dE;
+    if (Math.abs(dE) < 1e-12) break;
   }
   return E;
 }
@@ -783,23 +781,46 @@ class CelestialBody {
 // ============================================================
 class OrbitalPath {
   constructor(bodyData) {
-    const a = auToScene(bodyData.au);
+    const aAU = bodyData.au;
     const e = bodyData.ecc || 0;
     const inc = (bodyData.inc || 0) * Math.PI / 180;
-    const segments = 128;
+    const argPeri = (bodyData.argPeri || 0) * Math.PI / 180;
+
+    // For near-parabolic orbits (e > 0.95), only draw the inner arc
+    // where the comet is actually visible, not the spike to deep space
+    const isExtreme = e > 0.95;
+    const maxDrawAU = isExtreme ? 50 : 1e9; // ~Kuiper belt edge
+
+    // Find the angular range where r < maxDrawAU
+    // r = a(1-e²)/(1+e·cos θ) < maxDrawAU → cos θ > (a(1-e²)/maxDrawAU - 1)/e
+    let thetaMin = 0, thetaMax = Math.PI * 2;
+    if (isExtreme) {
+      const p = aAU * (1 - e * e); // semi-latus rectum
+      const cosLimit = (p / maxDrawAU - 1) / e;
+      if (cosLimit > -1 && cosLimit < 1) {
+        const thetaCut = Math.acos(cosLimit);
+        thetaMin = -thetaCut; // approach from one side
+        thetaMax = thetaCut;  // leave on the other
+      }
+    }
+
+    const segments = isExtreme ? 256 : 128;
     const points = [];
     for (let i = 0; i <= segments; i++) {
-      const theta = (i / segments) * Math.PI * 2;
-      const r = a * (1 - e * e) / (1 + e * Math.cos(theta));
-      const x = r * Math.cos(theta);
-      const z = r * Math.sin(theta);
-      const y = r * Math.sin(inc) * Math.sin(theta) * 0.3;
+      const theta = thetaMin + (i / segments) * (thetaMax - thetaMin);
+      const rAU = aAU * (1 - e * e) / (1 + e * Math.cos(theta));
+      const rScene = auToScene(Math.min(rAU, maxDrawAU));
+      const angle = theta + argPeri;
+      const x = rScene * Math.cos(angle);
+      const z = rScene * Math.sin(angle);
+      const y = rScene * Math.sin(inc) * Math.sin(angle) * 0.3;
       points.push(new THREE.Vector3(x, y, z));
     }
     const geo = new THREE.BufferGeometry().setFromPoints(points);
+    const baseOpacity = isExtreme ? 0.35 : 0.25;
     const mat = new THREE.LineBasicMaterial({
       color: new THREE.Color(bodyData.color || '#444'),
-      transparent: true, opacity: 0.25, depthWrite: false
+      transparent: true, opacity: baseOpacity, depthWrite: false
     });
     this.line = new THREE.Line(geo, mat);
     this.line.userData.layerName = 'orbits';
@@ -937,7 +958,20 @@ class Navigator {
         return;
       }
       const factor = 1 + Math.max(-0.12, Math.min(0.12, dy * 0.0012));
-      this.smoothZoom = Math.max(this.minDist, Math.min(this.maxDist, this.smoothZoom * factor));
+      const newZoom = this.smoothZoom * factor;
+      if (newZoom < this.minDist && dy < 0) {
+        // Dolly forward — push both camera and target along view direction
+        const forward = new THREE.Vector3(
+          -Math.cos(this.pitch) * Math.sin(this.yaw),
+          -Math.sin(this.pitch),
+          -Math.cos(this.pitch) * Math.cos(this.yaw)
+        );
+        const speed = Math.max(0.02, this.distance * 0.15);
+        this.target.addScaledVector(forward, speed);
+        this._flyTarget = null; // cancel any active flyTo
+      } else {
+        this.smoothZoom = Math.max(this.minDist, Math.min(this.maxDist, newZoom));
+      }
     }, { passive: false });
 
     // Touch support
@@ -966,7 +1000,20 @@ class Navigator {
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const ratio = touchStartDist / Math.max(dist, 1);
-        this.smoothZoom = Math.max(this.minDist, Math.min(this.maxDist, touchStartZoom * ratio));
+        const newZoom = Math.min(this.maxDist, touchStartZoom * ratio);
+        if (newZoom < this.minDist && dist > touchStartDist) {
+          // Dolly forward on pinch-in past min
+          const forward = new THREE.Vector3(
+            -Math.cos(this.pitch) * Math.sin(this.yaw),
+            -Math.sin(this.pitch),
+            -Math.cos(this.pitch) * Math.cos(this.yaw)
+          );
+          const speed = Math.max(0.02, this.distance * 0.15);
+          this.target.addScaledVector(forward, speed * 0.3);
+          this._flyTarget = null;
+        } else {
+          this.smoothZoom = Math.max(this.minDist, newZoom);
+        }
       }
     }, { passive: false });
     window.addEventListener('touchend', () => { dragging = false; });
@@ -1553,20 +1600,13 @@ class App {
       // Arrow left/right to cycle through bodies
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
         e.preventDefault();
-        const list = this._selectableBodies;
-        if (list.length === 0) return;
-        if (e.key === 'ArrowRight') {
-          this._selectedIdx = (this._selectedIdx + 1) % list.length;
-        } else {
-          this._selectedIdx = (this._selectedIdx - 1 + list.length) % list.length;
-        }
-        const body = list[this._selectedIdx];
-        if (body.scenePos) {
-          this.nav.flyTo(body.scenePos.clone(), Math.max(0.15, (body.data.radius || 0.01) * 15));
-        }
-        this.showBodyInfo(body.data);
+        this._cycleBody(e.key === 'ArrowRight' ? 1 : -1);
       }
     });
+
+    // Wire up ◀ ▶ buttons
+    document.getElementById('prev-body-btn').addEventListener('click', () => this._cycleBody(-1));
+    document.getElementById('next-body-btn').addEventListener('click', () => this._cycleBody(1));
 
     // Layer toggles
     document.querySelectorAll('#layer-panel input[type="checkbox"]').forEach(cb => {
@@ -1595,6 +1635,17 @@ class App {
     // Update checkbox
     const cb = document.querySelector(`#layer-panel input[data-layer="${name}"]`);
     if (cb) cb.checked = newVis;
+  }
+
+  _cycleBody(dir) {
+    const list = this._selectableBodies;
+    if (list.length === 0) return;
+    this._selectedIdx = (this._selectedIdx + dir + list.length) % list.length;
+    const body = list[this._selectedIdx];
+    if (body.scenePos) {
+      this.nav.flyTo(body.scenePos.clone(), Math.max(0.15, (body.data.radius || 0.01) * 15));
+    }
+    this.showBodyInfo(body.data);
   }
 
   showBodyInfo(bodyData) {

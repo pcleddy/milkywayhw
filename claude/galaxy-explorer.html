@@ -74,11 +74,6 @@ canvas { display: block; }
 #tour-banner .tour-controls button:hover { background: rgba(60,50,100,0.9); border-color: #e8c94a; }
 #tour-banner .elon-quote { font-style: italic; color: #c8a83a; }
 #tour-banner .stop-num { color: #886; font-size: 12px; }
-#solar-canvas {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    display: none; z-index: 1;
-}
-#solar-canvas.active { display: block; }
 </style>
 </head>
 <body>
@@ -99,7 +94,6 @@ canvas { display: block; }
 <a href="milkyway.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">🌌 Milky Way</a>
 <a href="solarsystem.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">☀️ Solar System</a>
 </div>
-<canvas id="solar-canvas"></canvas>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -236,42 +230,9 @@ function makeGlowTexture() {
 }
 
 // =====================================================
-// SOLAR SYSTEM DATA (unchanged)
 // =====================================================
-const planets = [
-    {name:"Sun",dist:0,radius:20,color:"#ffdd44",rings:false,
-     facts:"G2V main-sequence star, 4.6 billion years old, surface temp ~5,500°C, contains 99.86% of solar system mass",
-     lifeform:"The Lumivores — sentient plasma filaments that surf magnetic field lines. They communicate via coronal mass ejections and consider sunspots to be sacred meditation retreats. Extremely extroverted."},
-    {name:"Mercury",dist:60,radius:5,color:"#aaa088",rings:false,
-     facts:"Smallest planet, no atmosphere, extreme temps -180°C to 430°C, 88-day year, heavily cratered",
-     lifeform:"The Thermoclines — flat crystalline beings that live in the terminator zone between day and night sides. They slide along the shadow's edge at 3.6 km/h to stay at exactly 22°C. Absolutely hate surprises."},
-    {name:"Venus",dist:110,radius:9,color:"#e8c56d",rings:false,
-     facts:"Hottest planet (462°C), dense CO2 atmosphere, retrograde rotation, 243-day day longer than 225-day year",
-     lifeform:"The Acidonauts — balloon-shaped organisms floating at 50km altitude where it's actually pleasant. They photosynthesize sulfuric acid and sneeze lightning. Their poetry is famously depressing."},
-    {name:"Earth",dist:170,radius:9.5,color:"#4488cc",rings:false,
-     facts:"Only known planet with life, 71% water surface, 1 moon, magnetic field protects atmosphere, 4.54 billion years old",
-     lifeform:"Humans — a peculiar species that builds telescopes to look at other planets while arguing about whether their own planet is getting too warm. Invented pizza, which may be their greatest achievement."},
-    {name:"Mars",dist:240,radius:7,color:"#cc6644",rings:false,
-     facts:"Red from iron oxide, largest volcano (Olympus Mons 21km), deepest canyon (Valles Marineris 7km), thin CO2 atmosphere",
-     lifeform:"The Dustwalkers — tall, spindly beings made of electrostatically bonded regolith. They reproduce by dust devil and find Earth's humidity absolutely revolting. Very into minimalist interior design."},
-    {name:"Jupiter",dist:370,radius:18,color:"#d4a574",rings:false,
-     facts:"Largest planet (1,321 Earths), Great Red Spot storm 350+ years old, 95 known moons, strong magnetic field",
-     lifeform:"The Bandfolk — enormous gaseous colonial organisms, each spanning an entire latitude band. They think in weather patterns. The Great Red Spot is actually Gary, who's been having an argument since 1665."},
-    {name:"Saturn",dist:480,radius:15,color:"#e8d5a0",rings:true,
-     facts:"Least dense planet (would float in water), spectacular ring system, 146 known moons including Titan with atmosphere",
-     lifeform:"The Ringherds — tiny crystalline shepherds that maintain the ring gaps. Each one manages about 10 billion ice particles. They invented bureaucracy 3 billion years ago and haven't improved it since."},
-    {name:"Uranus",dist:570,radius:12,color:"#88bbcc",rings:false,
-     facts:"Rotates on its side (98° tilt), ice giant, -224°C, 27 known moons, faint ring system, discovered 1781",
-     lifeform:"The Tiltwise — beings who evolved sideways and find 'upright' civilizations deeply unsettling. They communicate by subtle changes in methane coloring and consider themselves the universe's art critics."},
-    {name:"Neptune",dist:650,radius:11.5,color:"#4466bb",rings:false,
-     facts:"Windiest planet (2,100 km/h), ice giant, 14 known moons, Triton orbits retrograde, discovered by math (1846)",
-     lifeform:"The Howlers — wind-beings that exist only above 1,800 km/h. They sing in frequencies that shatter diamond. Extremely fast-paced culture. Their version of 'patience' translates to about 0.3 seconds."},
-];
-
+// VIEW STATE
 // =====================================================
-// VIEW MODE STATE
-// =====================================================
-let viewMode = 'galaxies';
 let showLabels = true, showRADecGrid = false, showMpcGrid = false;
 let selectedObj = null;
 
@@ -565,7 +526,20 @@ renderer.domElement.addEventListener('wheel', e => {
         return;
     }
     const factor = 1 + dy * 0.0012;
-    nav.smoothZoom = Math.max(nav.minDist, Math.min(nav.maxDist, nav.smoothZoom * factor));
+    const newZoom = nav.smoothZoom * factor;
+    if (newZoom < nav.minDist && dy < 0) {
+        // Dolly forward — fly through objects
+        const forward = new THREE.Vector3(
+            -Math.cos(nav.pitch) * Math.sin(nav.yaw),
+            -Math.sin(nav.pitch),
+            -Math.cos(nav.pitch) * Math.cos(nav.yaw)
+        );
+        const speed = Math.max(0.05, nav.distance * 0.15);
+        nav.target.addScaledVector(forward, speed);
+        nav._flyTarget = null;
+    } else {
+        nav.smoothZoom = Math.max(nav.minDist, Math.min(nav.maxDist, newZoom));
+    }
 }, {passive: false});
 
 // Touch
@@ -594,7 +568,18 @@ renderer.domElement.addEventListener('touchmove', e => {
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         const d = Math.sqrt(dx*dx + dy*dy);
-        nav.smoothZoom = Math.max(nav.minDist, Math.min(nav.maxDist, touchZoom0 * (touchDist0 / Math.max(d, 1))));
+        const newZoom = Math.min(nav.maxDist, touchZoom0 * (touchDist0 / Math.max(d, 1)));
+        if (newZoom < nav.minDist && d > touchDist0) {
+            const forward = new THREE.Vector3(
+                -Math.cos(nav.pitch) * Math.sin(nav.yaw),
+                -Math.sin(nav.pitch),
+                -Math.cos(nav.pitch) * Math.cos(nav.yaw)
+            );
+            nav.target.addScaledVector(forward, nav.distance * 0.05);
+            nav._flyTarget = null;
+        } else {
+            nav.smoothZoom = Math.max(nav.minDist, newZoom);
+        }
     }
 }, {passive: false});
 renderer.domElement.addEventListener('touchend', () => { dragging3d = false; });
@@ -615,10 +600,6 @@ renderer.domElement.addEventListener('click', e => {
             while (obj && !obj.userData.galaxy) obj = obj.parent;
             if (obj && obj.userData.galaxy) {
                 const g = obj.userData.galaxy;
-                if (g.name === 'Milky Way') {
-                    initSolarView();
-                    return;
-                }
                 selectedObj = g;
                 showInfo(g);
                 nav.flyTo(g.pos, Math.max(2, nav.distance * 0.6));
@@ -669,116 +650,6 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-// =====================================================
-// SOLAR SYSTEM 2D VIEW (canvas, unchanged)
-// =====================================================
-const solarCanvas = document.getElementById('solar-canvas');
-const sctx = solarCanvas.getContext('2d');
-let sW, sH, sCamX = 350, sCamY = 0, sZoom = 0.9;
-let sTargetX = 350, sTargetY = 0, sTargetZoom = 0.9;
-let sDragging = false, sDragStart = {x:0,y:0}, sDragMoved = false;
-let sMouseX = 0, sMouseY = 0, sHovered = null;
-
-function sResize() { sW = solarCanvas.width = innerWidth; sH = solarCanvas.height = innerHeight; }
-
-solarCanvas.addEventListener('mousedown', e => {
-    sDragging = true; sDragMoved = false;
-    sDragStart = {x: e.clientX, y: e.clientY};
-    document.body.classList.add('dragging');
-});
-window.addEventListener('mousemove', e => {
-    sMouseX = e.clientX; sMouseY = e.clientY;
-    if (viewMode === 'solar' && sDragging) {
-        const dx = e.clientX - sDragStart.x, dy = e.clientY - sDragStart.y;
-        if (Math.abs(dx) + Math.abs(dy) > 3) sDragMoved = true;
-        sCamX -= dx / sZoom; sCamY -= dy / sZoom;
-        sTargetX = sCamX; sTargetY = sCamY;
-        sDragStart = {x: e.clientX, y: e.clientY};
-    }
-});
-window.addEventListener('mouseup', () => { sDragging = false; document.body.classList.remove('dragging'); });
-solarCanvas.addEventListener('click', e => {
-    if (sDragMoved) return;
-    if (sHovered) { selectedObj = sHovered; showInfo(sHovered); }
-    else { closeInfo(); }
-});
-solarCanvas.addEventListener('wheel', e => {
-    e.preventDefault();
-    const factor = e.deltaY > 0 ? 0.9 : 1.1;
-    const wx = sCamX + (sMouseX - sW/2) / sZoom;
-    const wy = sCamY + (sMouseY - sH/2) / sZoom;
-    sTargetZoom = Math.max(0.08, Math.min(8, sZoom * factor));
-    sTargetX = wx - (sMouseX - sW/2) / sTargetZoom;
-    sTargetY = wy - (sMouseY - sH/2) / sTargetZoom;
-}, {passive: false});
-
-function lerp(a, b, t) { return a + (b - a) * t; }
-
-function drawSolarSystem() {
-    sCamX = lerp(sCamX, sTargetX, 0.12);
-    sCamY = lerp(sCamY, sTargetY, 0.12);
-    sZoom = lerp(sZoom, sTargetZoom, 0.12);
-
-    sctx.fillStyle = '#050510'; sctx.fillRect(0, 0, sW, sH);
-
-    const centerX = 0, centerY = 0;
-    // Orbit lines
-    for (const p of planets) {
-        if (p.dist === 0) continue;
-        const sx = (centerX - sCamX) * sZoom + sW/2;
-        const sy = (centerY - sCamY) * sZoom + sH/2;
-        sctx.beginPath(); sctx.arc(sx, sy, p.dist * sZoom, 0, Math.PI * 2);
-        sctx.strokeStyle = 'rgba(40,50,80,0.3)'; sctx.lineWidth = 0.5; sctx.stroke();
-    }
-
-    sHovered = null;
-    let closest = Infinity;
-    const time = Date.now() * 0.0001;
-
-    for (const p of planets) {
-        let px, py;
-        if (p.dist === 0) { px = centerX; py = centerY; }
-        else {
-            const speed = 1 / Math.sqrt(p.dist);
-            const angle = time * speed + p.dist;
-            px = centerX + Math.cos(angle) * p.dist;
-            py = centerY + Math.sin(angle) * p.dist;
-        }
-        const sx = (px - sCamX) * sZoom + sW/2;
-        const sy = (py - sCamY) * sZoom + sH/2;
-        const r = Math.max(3, p.radius * sZoom * 0.15);
-        const isSel = p === selectedObj;
-
-        if (p.name === 'Sun') {
-            const glow = sctx.createRadialGradient(sx, sy, 0, sx, sy, r * 3);
-            glow.addColorStop(0, '#ffdd4466'); glow.addColorStop(0.5, '#ff880022'); glow.addColorStop(1, 'transparent');
-            sctx.fillStyle = glow; sctx.fillRect(sx - r*3, sy - r*3, r*6, r*6);
-        }
-        if (p.rings) {
-            sctx.beginPath(); sctx.ellipse(sx, sy, r*2, r*0.5, 0.3, 0, Math.PI*2);
-            sctx.strokeStyle = '#e8d5a044'; sctx.lineWidth = Math.max(1, r*0.3); sctx.stroke();
-        }
-        const grad = sctx.createRadialGradient(sx - r*0.3, sy - r*0.3, 0, sx, sy, r);
-        grad.addColorStop(0, lightenColor(p.color, 30)); grad.addColorStop(1, p.color);
-        sctx.beginPath(); sctx.arc(sx, sy, r, 0, Math.PI*2);
-        sctx.fillStyle = isSel ? '#fff' : grad; sctx.fill();
-        if (isSel) {
-            sctx.beginPath(); sctx.arc(sx, sy, r+5, 0, Math.PI*2);
-            sctx.strokeStyle = p.color + '88'; sctx.lineWidth = 1.5; sctx.stroke();
-        }
-        if (showLabels && sZoom > 0.3) {
-            sctx.fillStyle = '#8899aa'; sctx.font = `${Math.min(12, 10*sZoom)}px monospace`;
-            sctx.fillText(p.name, sx + r + 5, sy + 3);
-        }
-        const dx = sMouseX - sx, dy = sMouseY - sy;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if (d < Math.max(r+5, 15) && d < closest) { closest = d; sHovered = p; }
-    }
-    if (sHovered && !sDragging) solarCanvas.style.cursor = 'pointer';
-    else if (!sDragging) solarCanvas.style.cursor = 'grab';
-    document.getElementById('hud').innerHTML = `Solar System · zoom ${sZoom.toFixed(2)}x`;
-}
 
 // =====================================================
 // PORTRAITS (from original)
@@ -894,68 +765,26 @@ function drawGalaxyPortrait(g) {
     }
 }
 
-function drawPlanetPortrait(p) {
-    const w = 120, h = 120;
-    pctx.clearRect(0, 0, w, h);
-    const cx = w/2, cy = h/2, r = Math.min(40, p.radius * 3);
-    if (p.name === 'Sun') {
-        const g = pctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-        g.addColorStop(0, '#fff8e0'); g.addColorStop(0.4, '#ffdd44'); g.addColorStop(0.8, '#ff8800'); g.addColorStop(1, 'transparent');
-        pctx.fillStyle = g; pctx.fillRect(0, 0, w, h);
-        return;
-    }
-    const g = pctx.createRadialGradient(cx-r*0.3, cy-r*0.3, 0, cx, cy, r);
-    g.addColorStop(0, lightenColor(p.color, 40)); g.addColorStop(1, p.color);
-    pctx.beginPath(); pctx.arc(cx, cy, r, 0, Math.PI*2); pctx.fillStyle = g; pctx.fill();
-    if (['Jupiter','Saturn','Uranus','Neptune'].includes(p.name)) {
-        for (let i = -3; i <= 3; i++) {
-            pctx.beginPath();
-            const by = cy + i * r * 0.22;
-            pctx.moveTo(cx-r, by); pctx.quadraticCurveTo(cx, by + (i%2 ? 2 : -2), cx+r, by);
-            pctx.strokeStyle = (i%2 ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.1)');
-            pctx.lineWidth = r * 0.12; pctx.stroke();
-        }
-    }
-    if (p.rings) {
-        pctx.beginPath(); pctx.ellipse(cx, cy, r*1.8, r*0.4, 0, 0, Math.PI*2);
-        pctx.strokeStyle = '#e8d5a066'; pctx.lineWidth = 5; pctx.stroke();
-    }
-}
-
 // =====================================================
 // INFO PANEL
 // =====================================================
 function showInfo(obj) {
     const bar = document.getElementById('info-bar');
-    if (viewMode === 'galaxies') {
-        const mpc = (obj.dist / 3.2616).toFixed(obj.dist < 10 ? 2 : 1);
-        document.getElementById('info-name').textContent = obj.name;
-        document.getElementById('info-body').innerHTML = `
-            <div class="col"><span class="label">type:</span> ${obj.type}<br>
-            <span class="label">distance:</span> ${obj.dist === 0 ? 'here' : obj.dist + ' Mly (' + mpc + ' Mpc)'}<br>
-            <span class="label">app. mag:</span> ${obj.mag || 'n/a'}</div>
-            <div class="col"><span class="label">size:</span> ${obj.size}<br>
-            <span class="label">group:</span> ${obj.group}</div>
-            <div class="col" style="max-width:280px"><span class="label">notes:</span> ${obj.notes}
-            ${obj.name === 'Milky Way' ? '<br><button class="enter-btn" onclick="initSolarView()">enter solar system &rarr;</button>' : ''}</div>`;
-        bar.className = 'open';
-        portraitImg.style.display = 'none';
-        portrait.style.display = 'block';
-        showGalaxyPhoto(obj, () => drawGalaxyPortrait(obj));
-    } else {
-        document.getElementById('info-name').textContent = obj.name;
-        const distAU = obj.dist > 0 ? (obj.dist / 60 * 0.387).toFixed(2) : '—';
-        document.getElementById('info-body').innerHTML = `
-            <div class="col"><span class="label">dist from Sun:</span> ${obj.dist === 0 ? 'center' : distAU + ' AU (approx)'}<br>
-            <span class="label">facts:</span> ${obj.facts}</div>
-            <div class="col" style="max-width:350px"><div class="lifeform"><span class="label" style="color:#557">native lifeform (totally real):</span><br>${obj.lifeform}</div></div>`;
-        bar.className = 'open tall';
-        portraitImg.style.display = 'none';
-        portrait.style.display = 'block';
-        drawPlanetPortrait(obj);
-    }
-    document.getElementById('hint').style.opacity = '0';
+    const mpc = (obj.dist / 3.2616).toFixed(obj.dist < 10 ? 2 : 1);
+    document.getElementById('info-name').textContent = obj.name;
+    document.getElementById('info-body').innerHTML = `
+        <div class="col"><span class="label">type:</span> ${obj.type}<br>
+        <span class="label">distance:</span> ${obj.dist === 0 ? 'here' : obj.dist + ' Mly (' + mpc + ' Mpc)'}<br>
+        <span class="label">app. mag:</span> ${obj.mag || 'n/a'}</div>
+        <div class="col"><span class="label">size:</span> ${obj.size}<br>
+        <span class="label">group:</span> ${obj.group}</div>
+        <div class="col" style="max-width:280px"><span class="label">notes:</span> ${obj.notes}
+        ${obj.name === 'Milky Way' ? '<br><a class="enter-btn" href="solarsystem.html" style="text-decoration:none">enter solar system &rarr;</a>' : ''}</div>`;
+    bar.className = 'open';
+    portraitImg.style.display = 'none';
     portrait.style.display = 'block';
+    showGalaxyPhoto(obj, () => drawGalaxyPortrait(obj));
+    document.getElementById('hint').style.opacity = '0';
 }
 
 function closeInfo() {
@@ -966,46 +795,23 @@ function closeInfo() {
 }
 
 // =====================================================
-// VIEW SWITCHING
+// VIEW SETUP
 // =====================================================
 function initGalaxyView() {
-    viewMode = 'galaxies';
-    solarCanvas.classList.remove('active');
-    renderer.domElement.style.display = 'block';
     nav.flyTo(new THREE.Vector3(0, 0, 0), 30, -0.3);
     selectedObj = null; closeInfo();
-    document.getElementById('hint').textContent = 'scroll to zoom · drag to orbit · click a galaxy · click Milky Way to enter';
-    document.getElementById('hint').style.opacity = '1';
-    updateControls();
-}
-
-function initSolarView() {
-    viewMode = 'solar';
-    solarCanvas.classList.add('active');
-    renderer.domElement.style.display = 'none';
-    sResize();
-    sTargetX = sCamX = 350; sTargetY = sCamY = 0; sTargetZoom = sZoom = 0.9;
-    selectedObj = null; closeInfo();
-    document.getElementById('hint').textContent = 'scroll to zoom · drag to pan · click a planet';
     document.getElementById('hint').style.opacity = '1';
     updateControls();
 }
 
 function updateControls() {
     const c = document.getElementById('controls');
-    if (viewMode === 'galaxies') {
-        c.innerHTML = `
-            <button onclick="nav.flyTo(new THREE.Vector3(0,0,0), 30, -0.3)">recenter</button>
-            <button onclick="toggleLabels()" id="btn-labels">labels</button>
-            <button onclick="toggleRADec()" id="btn-radec">RA/Dec grid</button>
-            <button onclick="toggleMpc()" id="btn-mpc">Mpc grid</button>
-            <button onclick="startDrunkTour()" id="btn-tour" style="color:#e8c94a;border-color:rgba(200,140,40,0.4)">🍺 Elon's tour</button>`;
-    } else {
-        c.innerHTML = `
-            <button onclick="initGalaxyView()">back to galaxies</button>
-            <button onclick="sTargetX=350;sTargetY=0;sTargetZoom=0.9">recenter</button>
-            <button onclick="toggleLabels()" id="btn-labels">labels</button>`;
-    }
+    c.innerHTML = `
+        <button onclick="nav.flyTo(new THREE.Vector3(0,0,0), 30, -0.3)">recenter</button>
+        <button onclick="toggleLabels()" id="btn-labels">labels</button>
+        <button onclick="toggleRADec()" id="btn-radec">RA/Dec grid</button>
+        <button onclick="toggleMpc()" id="btn-mpc">Mpc grid</button>
+        <button onclick="startDrunkTour()" id="btn-tour" style="color:#e8c94a;border-color:rgba(200,140,40,0.4)">🍺 Elon's tour</button>`;
     if (showLabels) document.getElementById('btn-labels')?.classList.add('active');
     if (showRADecGrid) document.getElementById('btn-radec')?.classList.add('active');
     if (showMpcGrid) document.getElementById('btn-mpc')?.classList.add('active');
@@ -1173,44 +979,40 @@ window.addEventListener('keydown', e => {
 function animate() {
     requestAnimationFrame(animate);
 
-    if (viewMode === 'galaxies') {
-        nav.update();
+    nav.update();
 
-        // Billboard rings + detail pulse
-        galaxyMeshes.forEach(gm => {
-            if (gm.userData.ring) {
-                gm.userData.ring.lookAt(camera.position);
-                gm.userData.ring.material.opacity = 0.2 + Math.sin(Date.now() * 0.003) * 0.1;
+    // Billboard rings + detail pulse
+    galaxyMeshes.forEach(gm => {
+        if (gm.userData.ring) {
+            gm.userData.ring.lookAt(camera.position);
+            gm.userData.ring.material.opacity = 0.2 + Math.sin(Date.now() * 0.003) * 0.1;
+        }
+        if (gm.userData.detailRing) {
+            gm.userData.detailRing.lookAt(camera.position);
+            const pulse = Math.sin(Date.now() * 0.002 + gm.position.x * 10) * 0.5 + 0.5;
+            gm.userData.detailRing.material.opacity = 0.12 + pulse * 0.22;
+            const sc = 1 + pulse * 0.15;
+            gm.userData.detailRing.scale.set(sc, sc, 1);
+        }
+        // Scale labels to stay readable
+        gm.children.forEach(c => {
+            if (c.userData.isLabel) {
+                const d = camera.position.distanceTo(gm.position);
+                const s = Math.max(0.3, Math.min(1.5, d * 0.04));
+                c.scale.set(s * 2.5, s * 0.5, 1);
             }
-            if (gm.userData.detailRing) {
-                gm.userData.detailRing.lookAt(camera.position);
-                const pulse = Math.sin(Date.now() * 0.002 + gm.position.x * 10) * 0.5 + 0.5;
-                gm.userData.detailRing.material.opacity = 0.12 + pulse * 0.22;
-                const sc = 1 + pulse * 0.15;
-                gm.userData.detailRing.scale.set(sc, sc, 1);
-            }
-            // Scale labels to stay readable
-            gm.children.forEach(c => {
-                if (c.userData.isLabel) {
-                    const d = camera.position.distanceTo(gm.position);
-                    const s = Math.max(0.3, Math.min(1.5, d * 0.04));
-                    c.scale.set(s * 2.5, s * 0.5, 1);
-                }
-            });
         });
+    });
 
-        // HUD
-        const dist = nav.target.length();
-        const mly = sceneToDist(dist);
-        document.getElementById('hud').innerHTML =
-            `${uniqueGalaxies.length} galaxies · ` +
-            (mly < 1 ? `${(mly*1000).toFixed(0)} kly from home` : `${mly.toFixed(1)} Mly from home`) +
-            ` · zoom ${nav.distance.toFixed(1)}`;
+    // HUD
+    const dist = nav.target.length();
+    const mly = sceneToDist(dist);
+    document.getElementById('hud').innerHTML =
+        `${uniqueGalaxies.length} galaxies · ` +
+        (mly < 1 ? `${(mly*1000).toFixed(0)} kly from home` : `${mly.toFixed(1)} Mly from home`) +
+        ` · zoom ${nav.distance.toFixed(1)}`;
 
-        renderer.render(scene, camera);
-    } else {
-        drawSolarSystem();
-    }
+    renderer.render(scene, camera);
 }
 
 // =====================================================

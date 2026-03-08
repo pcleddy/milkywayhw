@@ -896,7 +896,20 @@ class Navigator {
       if (Math.abs(dy) > 0.01) {
         const clamped = Math.max(-150, Math.min(150, dy));
         const factor = 1 + clamped * 0.0012;
-        this.smoothZoom = Math.max(this.minDist, Math.min(this.maxDist, this.smoothZoom * factor));
+        const newZoom = this.smoothZoom * factor;
+        if (newZoom < this.minDist && dy < 0) {
+          // Dolly forward — fly through objects
+          const forward = new THREE.Vector3(
+            -Math.cos(this.pitch) * Math.sin(this.yaw),
+            -Math.sin(this.pitch),
+            -Math.cos(this.pitch) * Math.cos(this.yaw)
+          );
+          const speed = Math.max(0.02, this.distance * 0.15);
+          this.target.addScaledVector(forward, speed);
+          this._flyTarget = null;
+        } else {
+          this.smoothZoom = Math.max(this.minDist, Math.min(this.maxDist, newZoom));
+        }
       }
 
       // Horizontal scroll (left/right) = strafe target horizontally
