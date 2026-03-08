@@ -74,6 +74,63 @@ canvas { display: block; }
 #tour-banner .tour-controls button:hover { background: rgba(60,50,100,0.9); border-color: #e8c94a; }
 #tour-banner .elon-quote { font-style: italic; color: #c8a83a; }
 #tour-banner .stop-num { color: #886; font-size: 12px; }
+
+/* Glowing help button */
+#help-btn {
+  position: fixed; bottom: 20px; left: 20px; z-index: 15;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(20,60,30,0.8); border: 2px solid rgba(60,200,80,0.6);
+  color: #5eea75; font-size: 20px; font-weight: bold;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  transition: background 0.3s, border-color 0.3s;
+  box-shadow: 0 0 8px rgba(60,200,80,0.2);
+}
+#help-btn:hover {
+  background: rgba(30,80,40,0.9); border-color: rgba(80,230,100,0.8);
+  color: #88ff99;
+}
+#help-btn.pulsing {
+  animation: helpPulse 1.2s ease-in-out;
+  animation-iteration-count: 10;
+}
+@keyframes helpPulse {
+  0%   { box-shadow: 0 0 4px rgba(60,200,80,0.3);  border-color: rgba(60,200,80,0.4); }
+  50%  { box-shadow: 0 0 20px rgba(60,220,80,0.7), 0 0 40px rgba(60,200,80,0.2);
+         border-color: rgba(100,255,120,0.9); color: #aaffbb; }
+  100% { box-shadow: 0 0 4px rgba(60,200,80,0.3);  border-color: rgba(60,200,80,0.4); }
+}
+
+/* Help overlay */
+#help-overlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: 100; background: rgba(3,5,12,0.88);
+  display: none; align-items: center; justify-content: center;
+  backdrop-filter: blur(6px);
+}
+#help-overlay.active { display: flex; }
+#help-box {
+  background: rgba(12,18,35,0.95); border: 1px solid rgba(80,120,180,0.3);
+  border-radius: 12px; padding: 32px 40px; max-width: 520px; width: 90%;
+  position: relative;
+}
+#help-box h2 { font-size: 22px; color: #aaccff; margin-bottom: 16px; font-weight: 400; letter-spacing: 1px; }
+.help-section { margin-bottom: 14px; }
+.help-section h3 { font-size: 14px; color: #556; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+.help-row { display: flex; align-items: center; margin-bottom: 4px; }
+.help-key {
+  display: inline-block; min-width: 28px; padding: 2px 8px;
+  background: rgba(60,80,120,0.35); border: 1px solid rgba(80,110,160,0.4);
+  border-radius: 4px; color: #8899bb; font-size: 15px; font-family: monospace;
+  text-align: center; margin-right: 12px;
+}
+.help-desc { font-size: 16px; color: #889; }
+#help-close {
+  position: absolute; top: 12px; right: 16px; cursor: pointer;
+  color: #556; font-size: 22px;
+}
+#help-close:hover { color: #ccc; }
+.help-footer { margin-top: 16px; font-size: 13px; color: #334; text-align: center; }
 </style>
 </head>
 <body>
@@ -90,9 +147,59 @@ canvas { display: block; }
 </div>
 <div id="hint">scroll to zoom · drag to orbit · click a galaxy · <span style="color:#44ddcc">◉</span> = more info</div>
 <div id="tour-banner"></div>
-<div style="position:fixed;bottom:20px;left:12px;z-index:15;display:flex;gap:6px;">
+
+<div id="help-btn" class="pulsing" title="Help &amp; Controls (?)">?</div>
+
+<div id="help-overlay">
+  <div id="help-box">
+    <span id="help-close">&times;</span>
+    <h2>Galaxy Explorer</h2>
+
+    <div class="help-section">
+      <h3>Navigation</h3>
+      <div class="help-row"><span class="help-key">Scroll</span><span class="help-desc">Zoom in / out</span></div>
+      <div class="help-row"><span class="help-key">Drag</span><span class="help-desc">Orbit around the view target</span></div>
+      <div class="help-row"><span class="help-key">H</span><span class="help-desc">Fly home to Milky Way</span></div>
+    </div>
+
+    <div class="help-section">
+      <h3>Shortcuts</h3>
+      <div class="help-row"><span class="help-key">L</span><span class="help-desc">Toggle galaxy labels</span></div>
+      <div class="help-row"><span class="help-key">R</span><span class="help-desc">Toggle RA/Dec grid</span></div>
+      <div class="help-row"><span class="help-key">M</span><span class="help-desc">Toggle Mpc distance grid</span></div>
+      <div class="help-row"><span class="help-key">T</span><span class="help-desc">Start Elon's drunken tour</span></div>
+      <div class="help-row"><span class="help-key">?</span><span class="help-desc">Toggle this help screen</span></div>
+      <div class="help-row"><span class="help-key">ESC</span><span class="help-desc">Close overlays / stop tour</span></div>
+    </div>
+
+    <div class="help-section">
+      <h3>Interaction</h3>
+      <div class="help-row"><span class="help-key">Click</span><span class="help-desc">Select a galaxy — see info panel</span></div>
+      <div class="help-row"><span class="help-key" style="font-size:9px">Dbl-Click</span><span class="help-desc">Fly to nearest galaxy (snaps within range)</span></div>
+      <div class="help-row"><span class="help-key">&larr; &rarr;</span><span class="help-desc">Cycle through galaxies</span></div>
+    </div>
+
+    <div class="help-section">
+      <h3>About</h3>
+      <div class="help-desc" style="line-height:1.6">
+        Explore the local universe out to ~350 Mly. Galaxies are shown at
+        approximate real positions using redshift-independent distances where
+        available. The Mpc grid shows megaparsec shells from the Milky Way.
+        Sizes are exaggerated for visibility.<br>
+        <span style="color:#44ddcc">◉</span> markers = galaxies with detailed info.
+      </div>
+    </div>
+
+    <div class="help-footer">Press ? or click &times; to close</div>
+  </div>
+</div>
+
+<div style="position:fixed;bottom:20px;left:70px;z-index:15;display:flex;gap:6px;align-items:center;">
 <a href="milkyway.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">🌌 Milky Way</a>
 <a href="solarsystem.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">☀️ Solar System</a>
+<span style="color:#334455;font-size:11px;margin-left:2px;">│</span>
+<button id="prev-galaxy-btn" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:5px 9px;color:#7799bb;font-size:13px;cursor:pointer;transition:all 0.2s;line-height:1;" onmouseover="this.style.color='#aaccee';this.style.background='rgba(30,45,65,0.9)'" onmouseout="this.style.color='#7799bb';this.style.background='rgba(20,30,45,0.8)'" title="Previous galaxy (← key)">◀</button>
+<button id="next-galaxy-btn" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:5px 9px;color:#7799bb;font-size:13px;cursor:pointer;transition:all 0.2s;line-height:1;" onmouseover="this.style.color='#aaccee';this.style.background='rgba(30,45,65,0.9)'" onmouseout="this.style.color='#7799bb';this.style.background='rgba(20,30,45,0.8)'" title="Next galaxy (→ key)">▶</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -162,6 +269,69 @@ const galaxies = [
 {name:"NGC 4449",ra:12.47,dec:44.09,dist:12.7,mag:9.6,type:"IBm irregular",size:"20,000 ly",notes:"Starburst dwarf, resembles LMC",group:"Canes Venatici I"},
 {name:"NGC 5866 (M102?)",ra:15.11,dec:55.76,dist:50.0,mag:9.9,type:"S0 lenticular",size:"60,000 ly",notes:"Edge-on lenticular with sharp dust lane",group:"NGC 5866 Group"},
 {name:"NGC 1399",ra:3.64,dec:-35.45,dist:65.0,mag:9.6,type:"E1 pec elliptical",size:"135,000 ly",notes:"Central dominant galaxy of Fornax Cluster",group:"Fornax Cluster"},
+// ---- BATCH 2: ~60 more notable galaxies ----
+{name:"NGC 253 (Sculptor)",ra:0.79,dec:-25.29,dist:11.4,mag:7.1,type:"SAB(s)c spiral",size:"90,000 ly",notes:"Sculptor Galaxy. One of the brightest spirals beyond the Local Group. Intense central starburst — forming stars at 10× the Milky Way's rate. Visible with binoculars from the southern hemisphere.",group:"Sculptor Group"},
+{name:"NGC 300",ra:0.91,dec:-37.68,dist:6.1,mag:8.1,type:"SA(s)d spiral",size:"45,000 ly",notes:"Flocculent spiral in Sculptor Group. No grand design arms — just patchy star-forming regions scattered like confetti. Very low surface brightness but charming.",group:"Sculptor Group"},
+{name:"NGC 55",ra:0.25,dec:-39.20,dist:6.5,mag:7.9,type:"SB(s)m irregular",size:"70,000 ly",notes:"Edge-on irregular/barred galaxy. Often confused with NGC 300 since they're neighbors. Lots of young blue stars. Paired with NGC 300 like cosmic dance partners.",group:"Sculptor Group"},
+{name:"NGC 1316 (Fornax A)",ra:3.38,dec:-37.21,dist:62.0,mag:8.4,type:"SAB0 lenticular",size:"200,000 ly",notes:"Brightest radio source in Fornax. The result of a major merger ~3 billion years ago — you can see the tidal tails and dust lanes left over. It ate a smaller galaxy and is still digesting.",group:"Fornax Cluster"},
+{name:"NGC 1365",ra:3.56,dec:-36.14,dist:56.0,mag:9.6,type:"SBb barred spiral",size:"200,000 ly",notes:"Great Barred Spiral. Poster child for barred spirals. Its bar funnels gas inward feeding an active nucleus. Two gorgeous sweeping arms trail from the bar ends.",group:"Fornax Cluster"},
+{name:"NGC 2403",ra:7.61,dec:65.60,dist:8.0,mag:8.5,type:"SAB(s)cd spiral",size:"50,000 ly",notes:"Intermediate spiral in the M81 Group. First galaxy outside the Local Group where individual Cepheid variable stars were identified. Edwin Hubble's stepping stone to measuring the universe.",group:"M81 Group"},
+{name:"NGC 3115 (Spindle)",ra:10.09,dec:-7.72,dist:32.0,mag:8.9,type:"S0 lenticular",size:"40,000 ly",notes:"The Spindle Galaxy. Edge-on lenticular that looks like a lens. Harbors one of the nearest billion-solar-mass black holes. Very old stellar population — red and dead.",group:"Leo Spur"},
+{name:"NGC 3521",ra:11.10,dec:-0.04,dist:35.0,mag:8.9,type:"SAB(rs)bc spiral",size:"50,000 ly",notes:"Flocculent spiral with a woolly appearance — no clean spiral arms, just patches and filaments. Its halo has faint shells from ancient mergers.",group:"Leo"},
+{name:"NGC 4244 (Silver Needle)",ra:12.29,dec:37.81,dist:14.1,mag:10.2,type:"SA(s)cd spiral",size:"65,000 ly",notes:"Silver Needle Galaxy. Perfectly edge-on, paper-thin. Shows beautiful dust lane bisecting the disk. A textbook example of what a spiral looks like from the side.",group:"Canes Venatici I"},
+{name:"NGC 4565 (Needle)",ra:12.60,dec:25.99,dist:42.0,mag:9.6,type:"SA(s)b spiral",size:"100,000 ly",notes:"THE Needle Galaxy. Often called 'the Milky Way's twin' because it shows what we'd look like edge-on. Prominent central bulge with a razor-thin dark dust lane. Absolutely gorgeous in amateur telescopes.",group:"Coma I"},
+{name:"NGC 4631 (Whale)",ra:12.70,dec:32.54,dist:25.0,mag:9.0,type:"SB(s)d spiral",size:"140,000 ly",notes:"The Whale Galaxy. Distorted by interaction with its companion NGC 4627 (the Pup). Edge-on with a warped disk. Has a massive radio halo from all the star formation activity.",group:"Canes Venatici I"},
+{name:"NGC 4656 (Hockey Stick)",ra:12.73,dec:32.17,dist:25.0,mag:10.5,type:"SB(s)m irregular",size:"50,000 ly",notes:"The Hockey Stick Galaxy. Gravitationally deformed by the Whale Galaxy next door. One end is bent up like a hockey stick blade. Tidal forces at work — real-time galaxy sculpture.",group:"Canes Venatici I"},
+{name:"NGC 5128 (Centaurus A)",ra:13.42,dec:-43.02,dist:12.0,mag:6.8,type:"S0 pec lenticular",size:"97,000 ly",notes:"Nearest giant radio galaxy. A giant elliptical bisected by a dramatic dark dust band — the remnant of a spiral it devoured. Shoots relativistic jets millions of light-years long. One of the most photographed galaxies in the southern sky.",group:"Centaurus A/M83 Group"},
+{name:"NGC 5236 (M83)",ra:13.62,dec:-29.87,dist:15.0,mag:7.5,type:"SAB(s)c barred spiral",size:"55,000 ly",notes:"Southern Pinwheel. Face-on barred spiral with vivid star-forming regions that glow hot pink. Has produced 6 observed supernovae since 1923 — basically a supernova factory.",group:"Centaurus A/M83 Group"},
+{name:"NGC 6822 (Barnard's)",ra:19.75,dec:-14.80,dist:1.6,mag:8.7,type:"IB(s)m irregular",size:"7,000 ly",notes:"Barnard's Galaxy. A tiny irregular in the Local Group. Only 1.6 million ly away. Low metallicity — like looking at a primitive galaxy. E.E. Barnard discovered it in 1884.",group:"Local Group"},
+{name:"IC 10",ra:0.34,dec:59.29,dist:2.2,mag:10.4,type:"dIrr irregular",size:"5,000 ly",notes:"Nearest starburst galaxy. Forming stars at a furious rate despite being tiny. Hidden behind the Milky Way's disk — heavily obscured by dust. The galaxy equivalent of a quiet kid who's secretly a punk rocker.",group:"Local Group"},
+{name:"NGC 147",ra:0.55,dec:48.51,dist:2.2,mag:9.5,type:"dE5 dwarf elliptical",size:"10,000 ly",notes:"Satellite of Andromeda. A quiet, gas-poor dwarf elliptical. Paired with NGC 185. Very old stars, very little excitement. The retirement community of galaxies.",group:"Local Group"},
+{name:"NGC 185",ra:0.65,dec:48.34,dist:2.0,mag:9.2,type:"dE3p dwarf elliptical",size:"8,000 ly",notes:"Another Andromeda satellite. Unlike its twin NGC 147, this one has a tiny bit of gas and recent star formation near its center — it hasn't fully retired yet.",group:"Local Group"},
+{name:"IC 1613",ra:1.08,dec:2.12,dist:2.4,mag:9.2,type:"dIrr irregular",size:"10,000 ly",notes:"A transparent dwarf irregular — so diffuse you can see galaxies right through it. Almost no dust. Important distance calibrator. The see-through galaxy.",group:"Local Group"},
+{name:"NGC 1052",ra:2.68,dec:-8.26,dist:63.0,mag:10.5,type:"E4 elliptical",size:"70,000 ly",notes:"An old elliptical with an active nucleus. Famous for hosting two ultra-diffuse satellite galaxies (NGC 1052-DF2 and DF4) that appear to have almost no dark matter — still hotly debated.",group:"NGC 1052 Group"},
+{name:"NGC 1275 (Perseus A)",ra:3.33,dec:41.51,dist:237.0,mag:11.6,type:"cD elliptical",size:"220,000 ly",notes:"Central galaxy of the Perseus Cluster. Surrounded by gorgeous filaments of cooling gas tens of thousands of light-years long. Its AGN blows sound waves through the cluster gas.",group:"Perseus Cluster"},
+{name:"NGC 2841",ra:9.35,dec:51.00,dist:46.0,mag:9.2,type:"SA(r)b spiral",size:"150,000 ly",notes:"A tightly wound spiral with an unusually faint star formation rate for its mass. Multiple ring-like features. Very 'well-behaved' galaxy — the accountant of the spiral world.",group:"Ursa Major"},
+{name:"NGC 2976",ra:9.79,dec:67.92,dist:11.6,mag:10.2,type:"SAc dwarf spiral",size:"20,000 ly",notes:"Peculiar dwarf spiral in M81 Group. Its spiral structure has been disrupted by tidal interaction with M81. Ongoing starburst in its center.",group:"M81 Group"},
+{name:"NGC 3034 (M82 backup)",ra:9.93,dec:69.68,dist:11.5,mag:8.4,type:"I0 starburst",size:"37,000 ly",notes:"The Cigar Galaxy seen from another catalogue designation. The archetypal starburst — the galactic equivalent of a bonfire. Red filaments of hydrogen shoot thousands of light-years above and below the disk.",group:"M81 Group"},
+{name:"NGC 3184",ra:10.30,dec:41.42,dist:40.0,mag:9.8,type:"SAB(rs)cd spiral",size:"80,000 ly",notes:"Grand-design face-on spiral. Wonderful symmetric arms. Has hosted multiple supernovae. A photogenic showpiece galaxy in Ursa Major.",group:"Ursa Major"},
+{name:"NGC 3344",ra:10.73,dec:24.92,dist:22.0,mag:9.9,type:"(R)SAB(r)bc spiral",size:"45,000 ly",notes:"Almost perfectly face-on with a prominent inner ring. Isolated galaxy — no major companions, just serenely spinning alone. Has a subtle bar and beautiful symmetry.",group:"Leo Minor"},
+{name:"NGC 3628 (Sarah's Galaxy)",ra:11.34,dec:13.59,dist:35.0,mag:9.5,type:"Sb pec spiral",size:"100,000 ly",notes:"The third member of the Leo Triplet (with M65 and M66). Edge-on with a warped, puffy dust lane and a spectacular tidal tail stretching 300,000 ly. Recently nicknamed Sarah's Galaxy.",group:"Leo Triplet"},
+{name:"NGC 4038/4039 (Antennae)",ra:12.03,dec:-18.87,dist:45.0,mag:10.3,type:"SB(s)m pec merging",size:"350,000 ly (pair)",notes:"The Antennae Galaxies. Two spirals caught mid-collision, sprouting enormous tidal tails that look like insect antennae. Billions of stars being born in the chaos. The universe's most famous car crash.",group:"NGC 4038 Group"},
+{name:"NGC 4214",ra:12.26,dec:36.33,dist:10.0,mag:9.8,type:"IAB(s)m irregular",size:"25,000 ly",notes:"Nearby dwarf starburst galaxy. Heart-shaped central star-forming complex. Low metallicity, lots of young blue star clusters. A miniature galaxy doing big things.",group:"Canes Venatici I"},
+{name:"NGC 4395",ra:12.43,dec:33.55,dist:14.3,mag:10.3,type:"SA(s)m spiral",size:"55,000 ly",notes:"Hosts one of the smallest supermassive black holes ever found — only ~10,000 solar masses. Proves that even small galaxies can have active nuclei. Punches above its weight.",group:"Canes Venatici I"},
+{name:"NGC 4526",ra:12.57,dec:7.70,dist:55.0,mag:9.7,type:"SAB0 lenticular",size:"75,000 ly",notes:"A lenticular in Virgo with a prominent dust lane. Site of SN 1994D — one of the key Type Ia supernovae used to discover the accelerating expansion of the universe. This galaxy helped prove dark energy exists.",group:"Virgo Cluster"},
+{name:"NGC 4594 (Sombrero)",ra:12.67,dec:-11.62,dist:29.3,mag:8.0,type:"SA(s)a spiral",size:"49,000 ly",notes:"The Sombrero Galaxy. Spectacular edge-on spiral with a massive central bulge and a dark dust lane that gives it the appearance of a Mexican hat. 800 billion solar masses. One of the most recognized galaxies in astronomy.",group:"Virgo II"},
+{name:"NGC 4676 (The Mice)",ra:12.78,dec:30.73,dist:290.0,mag:13.5,type:"SB pec merging",size:"170,000 ly (pair)",notes:"Two colliding galaxies with long tidal tails that look like the tails of mice. Hubble poster children for galaxy mergers. In about 400 million years they'll merge into one elliptical.",group:"Coma Cluster"},
+{name:"NGC 4755 (Jewel Box)",ra:12.90,dec:-60.37,dist:0.007,mag:4.2,type:"Open cluster",size:"20 ly",notes:"Not a galaxy! The Jewel Box Cluster in Crux. Included because it's so beautiful — a compact cluster of multicolored stars. Red, blue, and white gems in a cosmic jewelry box. John Herschel named it.",group:"Milky Way"},
+{name:"NGC 5055 (Sunflower)",ra:13.26,dec:42.03,dist:29.0,mag:8.6,type:"SA(rs)bc spiral",size:"98,000 ly",notes:"The Sunflower Galaxy. Tightly wound spiral arms with a flocculent appearance. M63 in the Messier catalogue. Its arms are patchy rather than smooth — like a sunflower's petals.",group:"M51 Group"},
+{name:"NGC 5194 (M51 Whirlpool)",ra:13.50,dec:47.20,dist:23.0,mag:8.4,type:"SA(s)bc pec spiral",size:"76,000 ly",notes:"The Whirlpool Galaxy. First galaxy recognized as a spiral (Lord Rosse, 1845). Connected to NGC 5195 by a tidal bridge. Face-on grand design spiral with textbook arms. The galaxy that launched the concept of spiral nebulae.",group:"M51 Group"},
+{name:"NGC 5457 (M101 Pinwheel)",ra:14.05,dec:54.35,dist:21.0,mag:7.9,type:"SAB(rs)cd spiral",size:"170,000 ly",notes:"The Pinwheel Galaxy. Almost perfectly face-on. Asymmetric — one side is more developed than the other due to past interactions. Enormous for a spiral — nearly twice the Milky Way's diameter.",group:"M101 Group"},
+{name:"NGC 6240",ra:16.89,dec:2.40,dist:400.0,mag:12.8,type:"I0 pec merging",size:"100,000 ly",notes:"A late-stage galaxy merger with TWO supermassive black holes only 3,000 ly apart, spiraling toward each other. Butterfly-shaped shock waves. The most violent phase of a galactic merger.",group:"Ophiuchus"},
+{name:"NGC 6744",ra:19.16,dec:-63.86,dist:25.0,mag:8.3,type:"SAB(r)bc spiral",size:"175,000 ly",notes:"One of the most Milky Way-like galaxies known. Similar size, bar, and spiral structure. If you want to see what our galaxy looks like from outside, this is probably the closest match.",group:"Pavo Group"},
+{name:"NGC 6946 (Fireworks)",ra:20.58,dec:60.15,dist:22.0,mag:8.8,type:"SAB(rs)cd spiral",size:"75,000 ly",notes:"The Fireworks Galaxy. Has produced 10 observed supernovae since 1917 — more than any other galaxy. Sits right behind the Milky Way's disk so it's dimmed by dust. An absolute supernova machine.",group:"NGC 6946 Group"},
+{name:"NGC 7331",ra:22.62,dec:34.42,dist:40.0,mag:9.5,type:"SA(s)b spiral",size:"100,000 ly",notes:"Sometimes called the Milky Way's twin (along with NGC 4565). Unbarred spiral seen at a slight angle. Has a nuclear ring and counter-rotating gas disk — evidence of a past minor merger.",group:"NGC 7331 Group"},
+{name:"NGC 7479",ra:23.08,dec:12.32,dist:105.0,mag:10.9,type:"SB(s)c barred spiral",size:"150,000 ly",notes:"A gorgeous barred spiral with counter-winding spiral features. The arms in radio wavelengths wind opposite to the optical arms — caused by a minor merger. Two-faced galaxy.",group:"Pegasus"},
+{name:"NGC 7742",ra:23.73,dec:10.77,dist:72.0,mag:11.6,type:"SA(r)b Seyfert",size:"45,000 ly",notes:"A face-on ring galaxy with an active Seyfert nucleus. Looks like a fried egg — bright yolk-like core surrounded by a blue ring of star formation. Unbarred yet has a ring, which is unusual.",group:"Pegasus"},
+{name:"NGC 7814 (Little Sombrero)",ra:0.05,dec:16.15,dist:40.0,mag:10.6,type:"SA(s)ab spiral",size:"60,000 ly",notes:"The Little Sombrero. Edge-on spiral with a prominent bulge and dust lane, resembling its big brother NGC 4594. A scaled-down version of the Sombrero Galaxy.",group:"Pegasus"},
+{name:"Arp 220",ra:15.59,dec:23.50,dist:250.0,mag:13.8,type:"Merger",size:"65,000 ly",notes:"The nearest ultra-luminous infrared galaxy. Two galaxy cores only 1,200 ly apart, about to merge. Radiates mostly in infrared because of extreme dust. The universe's most luminous nearby galaxy — 10 trillion solar luminosities.",group:"Serpens"},
+{name:"Arp 273",ra:2.37,dec:39.37,dist:300.0,mag:12.7,type:"Interacting spiral pair",size:"200,000 ly",notes:"Two galaxies caught in a rose-shaped gravitational dance. The larger one has a tidally distorted spiral that looks like a rose petal. Hubble imaged this for its 21st anniversary. Valentine's Day galaxy.",group:"Andromeda (constellation)"},
+{name:"Hoag's Object",ra:15.29,dec:21.59,dist:613.0,mag:16.2,type:"Ring galaxy",size:"120,000 ly",notes:"The most perfect ring galaxy known. A nearly flawless ring of blue stars surrounding a yellow core with a visible gap between them. How it formed is still debated. And there's ANOTHER ring galaxy visible through its gap in the background.",group:"Serpens"},
+{name:"Markarian 231",ra:12.93,dec:56.87,dist:581.0,mag:13.8,type:"SA(rs)c pec Seyfert",size:"60,000 ly",notes:"Nearest quasar to Earth. Hosts a binary black hole system. Enormous outflow of molecular gas at 1,000+ km/s — it's blowing itself apart. Will probably become a dead elliptical.",group:"Ursa Major"},
+{name:"ESO 137-001",ra:16.25,dec:-60.73,dist:220.0,mag:13.6,type:"SB(s)c barred spiral",size:"70,000 ly",notes:"A spiral galaxy being stripped by ram pressure as it plows through the Norma Cluster's hot gas. Has a spectacular 260,000 ly tail of stripped gas and newborn stars behind it. Galaxy on a comet's trajectory.",group:"Norma Cluster"},
+{name:"UGC 2885 (Rubin's Galaxy)",ra:3.88,dec:35.59,dist:232.0,mag:13.5,type:"SA(rs)c spiral",size:"832,000 ly",notes:"One of the largest known spiral galaxies. Named after Vera Rubin who studied its rotation curve. 4× wider than the Milky Way. Despite its size, it sits in a sparse region — a gentle giant in a quiet neighborhood.",group:"Perseus-Pisces"},
+{name:"Maffei 1",ra:2.61,dec:59.65,dist:9.8,mag:11.4,type:"E3 elliptical",size:"75,000 ly",notes:"Nearest giant elliptical galaxy — but hidden behind the Milky Way's disk. Only discovered in 1967 via infrared. If it weren't obscured by dust, it would be visible to the naked eye. The galaxy behind the curtain.",group:"IC 342/Maffei Group"},
+{name:"Maffei 2",ra:2.71,dec:59.60,dist:9.8,mag:14.8,type:"SAB(rs)bc spiral",size:"58,000 ly",notes:"Even more obscured than Maffei 1. A barred spiral lurking behind the Zone of Avoidance. Detected by Paolo Maffei in 1968 on infrared plates. The galaxy twice-hidden.",group:"IC 342/Maffei Group"},
+{name:"Malin 1",ra:12.62,dec:14.33,dist:1190.0,mag:15.8,type:"SB0a low-surface-brightness",size:"650,000 ly",notes:"The first giant low-surface-brightness galaxy discovered. Its disk extends enormously but is almost invisible. If you stood inside it, you wouldn't know you were in a galaxy. The ghost galaxy.",group:"Virgo (background)"},
+{name:"NGC 1277",ra:3.33,dec:41.57,dist:220.0,mag:13.4,type:"S0 compact lenticular",size:"20,000 ly",notes:"Tiny galaxy with a HUGE black hole — 17 billion solar masses, accounting for 14% of the galaxy's total mass. That's like your heart weighing as much as your entire body. The galaxy that's mostly black hole.",group:"Perseus Cluster"},
+{name:"AM 0644-741 (Lindsay-Shapley Ring)",ra:6.73,dec:-74.17,dist:300.0,mag:13.5,type:"Ring galaxy",size:"150,000 ly",notes:"A spectacular ring galaxy formed by a smaller galaxy punching straight through a larger one. The expanding ring of star formation is 150,000 ly in diameter. A cosmic bullseye.",group:"Volans"},
+{name:"I Zwicky 18",ra:9.59,dec:55.24,dist:59.0,mag:15.6,type:"dIrr compact dwarf",size:"3,000 ly",notes:"One of the lowest-metallicity galaxies known — its gas is nearly primordial. For decades thought to be a genuinely young galaxy, but old red giant stars were eventually found hiding inside. Playing younger than it is.",group:"Ursa Major"},
+{name:"NGC 2207/IC 2163",ra:6.27,dec:-21.38,dist:114.0,mag:10.7,type:"Interacting spiral pair",size:"180,000 ly (pair)",notes:"Two spirals grazing each other face-to-face. IC 2163 has been pulled into an eye-shaped tidal structure by NGC 2207. In a billion years they'll merge. Currently producing supernovae at an alarming rate.",group:"Canis Major"},
+{name:"Cygnus A",ra:19.96,dec:40.73,dist:760.0,mag:15.0,type:"E/S0 radio galaxy",size:"100,000 ly",notes:"One of the strongest radio sources in the sky. Its active nucleus shoots jets 300,000 light-years in each direction, ending in enormous radio lobes. Discovered in 1939. The king of radio galaxies.",group:"Cygnus"},
+{name:"IC 342",ra:3.78,dec:68.10,dist:10.7,mag:8.4,type:"SAB(rs)cd spiral",size:"75,000 ly",notes:"The Hidden Galaxy. A beautiful face-on spiral sitting directly behind the Milky Way's disk. If it weren't obscured, it would be one of the brightest galaxies in our sky. Discovered in 1895 but constantly underappreciated.",group:"IC 342/Maffei Group"},
+{name:"Leo A",ra:9.99,dec:30.75,dist:2.6,mag:12.9,type:"dIrr dwarf irregular",size:"5,000 ly",notes:"Tiny dwarf in the Local Group. Most of its star formation happened in the last few billion years — it's a late bloomer. Contains very old and very young stars but almost nothing in between.",group:"Local Group"},
+{name:"Phoenix Dwarf",ra:1.84,dec:-44.44,dist:1.4,mag:13.1,type:"dIrr/dSph transition dwarf",size:"3,000 ly",notes:"A dwarf caught between being irregular and spheroidal. Has a tiny bit of gas and recent star formation. One of the rare 'transition-type' dwarfs. Identity crisis galaxy.",group:"Local Group"},
+{name:"Carina Dwarf",ra:6.69,dec:-50.97,dist:0.33,mag:11.3,type:"dE3 dwarf spheroidal",size:"2,500 ly",notes:"A Milky Way satellite with a complex star formation history — multiple distinct bursts separated by billions of years. Keeps restarting its engine. The galaxy that hit snooze on star formation multiple times.",group:"Milky Way satellite"},
 ];
 
 const seen = new Set();
@@ -170,14 +340,15 @@ const uniqueGalaxies = galaxies.filter(g => { if (seen.has(g.name)) return false
 // =====================================================
 // CONVERT RA/DEC/DIST → 3D POSITIONS
 // =====================================================
-// Use log-compressed distance so Local Group isn't crushed against origin
-// and distant galaxies (Cartwheel 489 Mly) aren't infinitely far
-const DIST_SCALE = 12; // scene units spread
+// Asinh-compressed distance: gentler than log — linear for Local Group,
+// logarithmic for distant galaxies (Cartwheel 489 Mly)
+const _GAL_K = 1.0;         // transition sharpness
+const DIST_SCALE = 4.69;    // tuned to preserve overall scene spread
 function distToScene(mly) {
     if (mly <= 0) return 0;
-    return Math.log10(mly + 1) * DIST_SCALE;
+    return Math.asinh(mly * _GAL_K) * DIST_SCALE;
 }
-function sceneToDist(s) { return Math.pow(10, s / DIST_SCALE) - 1; }
+function sceneToDist(s) { return Math.sinh(s / DIST_SCALE) / _GAL_K; }
 
 uniqueGalaxies.forEach(g => {
     const raDeg = g.ra * 15; // hours → degrees
@@ -190,7 +361,7 @@ uniqueGalaxies.forEach(g => {
         r * Math.sin(decRad),
         r * Math.cos(decRad) * Math.sin(raRad)
     );
-    g.sceneRadius = Math.max(0.15, Math.min(1.2, 1.0 / (0.5 + Math.log10(Math.max(0.1, g.dist) + 1))));
+    g.sceneRadius = Math.max(0.15, Math.min(1.2, 1.0 / (0.5 + Math.asinh(Math.max(0.1, g.dist)))));
 });
 
 const milkyWay = uniqueGalaxies.find(g => g.name === "Milky Way");
@@ -233,7 +404,7 @@ function makeGlowTexture() {
 // =====================================================
 // VIEW STATE
 // =====================================================
-let showLabels = true, showRADecGrid = false, showMpcGrid = false;
+let showLabels = true, showRADecGrid = false, showMpcGrid = true;
 let selectedObj = null;
 
 // =====================================================
@@ -303,11 +474,136 @@ const nav = {
 })();
 
 // Galaxy photo URLs — add entries here as images are uploaded
-const GALAXY_IMAGES = {
-    'Andromeda (M31)': 'https://www.cloudautomat.net/images/galaxies/andromeda.png',
-    // 'Whirlpool Galaxy': 'https://www.cloudautomat.net/images/galaxies/whirlpool.png',
-    // 'Triangulum Galaxy': 'https://www.cloudautomat.net/images/galaxies/triangulum.png',
-};
+// (Set to repo-relative path or full URL when photos are available)
+const GALAXY_IMAGES = {};
+
+// Procedural galaxy texture generator — replaces balls with beautiful sprites
+function makeGalaxyTexture(g) {
+    const sz = 256;
+    const c = document.createElement('canvas');
+    c.width = sz; c.height = sz;
+    const ctx = c.getContext('2d');
+    const cx = sz / 2, cy = sz / 2;
+    const type = (g.type || '').toLowerCase();
+    const col = galaxyColor(g);
+
+    // Parse the base color for tinting
+    const tc = document.createElement('canvas').getContext('2d');
+    tc.fillStyle = col;
+    tc.fillRect(0, 0, 1, 1);
+    const [cr, cg, cb] = tc.getImageData(0, 0, 1, 1).data;
+
+    // Seed from galaxy name for consistency
+    let seed = 0;
+    for (let i = 0; i < g.name.length; i++) seed = ((seed << 5) - seed + g.name.charCodeAt(i)) | 0;
+    const rng = () => { seed = (seed * 16807 + 11) % 2147483647; return (seed & 0x7fffffff) / 0x7fffffff; };
+
+    if (type.includes('spiral') || type.includes('barred')) {
+        // Spiral galaxy — arms radiating from center
+        const arms = type.includes('barred') ? 2 : (2 + Math.floor(rng() * 2));
+        const twist = 2.5 + rng() * 1.5;
+        const tilt = 0.3 + rng() * 0.4; // elliptical compression to simulate viewing angle
+
+        // Core glow
+        const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, sz * 0.15);
+        coreGrad.addColorStop(0, `rgba(${Math.min(255,cr+80)},${Math.min(255,cg+60)},${Math.min(255,cb+30)},1)`);
+        coreGrad.addColorStop(0.5, `rgba(${cr},${cg},${cb},0.5)`);
+        coreGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = coreGrad;
+        ctx.fillRect(0, 0, sz, sz);
+
+        // Draw spiral arm particles
+        for (let i = 0; i < 8000; i++) {
+            const arm = Math.floor(rng() * arms);
+            const armAngle = (arm / arms) * Math.PI * 2;
+            const dist = rng() * sz * 0.45;
+            const angle = armAngle + (dist / sz) * twist + (rng() - 0.5) * 0.5;
+            const spread = (rng() - 0.5) * (10 + dist * 0.15);
+
+            const x = cx + Math.cos(angle) * dist + Math.cos(angle + Math.PI/2) * spread;
+            const y = cy + (Math.sin(angle) * dist + Math.sin(angle + Math.PI/2) * spread) * tilt;
+
+            if (x < 0 || x >= sz || y < 0 || y >= sz) continue;
+
+            const brightness = Math.max(0, 1 - dist / (sz * 0.45));
+            const alpha = (0.15 + brightness * 0.6) * (0.5 + rng() * 0.5);
+            const r2 = 0.5 + rng() * 1.5;
+
+            // Blue-ish young stars in arms, warm core
+            const starR = dist < sz * 0.1 ? Math.min(255, cr + 40) : Math.min(255, cr - 20 + Math.floor(rng() * 60));
+            const starG = dist < sz * 0.1 ? Math.min(255, cg + 20) : Math.min(255, cg + Math.floor(rng() * 40));
+            const starB = dist < sz * 0.1 ? cb : Math.min(255, cb + 40 + Math.floor(rng() * 40));
+
+            ctx.beginPath();
+            ctx.arc(x, y, r2, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${starR},${starG},${starB},${alpha.toFixed(2)})`;
+            ctx.fill();
+        }
+    } else if (type.includes('elliptical') || type.includes('lenticular')) {
+        // Elliptical — smooth blob
+        const ratio = 0.5 + rng() * 0.4;
+        for (let i = 0; i < 5000; i++) {
+            const angle = rng() * Math.PI * 2;
+            const dist = Math.pow(rng(), 0.6) * sz * 0.4;
+            const x = cx + Math.cos(angle) * dist;
+            const y = cy + Math.sin(angle) * dist * ratio;
+            const brightness = 1 - dist / (sz * 0.4);
+            const alpha = brightness * 0.4 * (0.5 + rng() * 0.5);
+            const r2 = 0.4 + rng();
+            ctx.beginPath();
+            ctx.arc(x, y, r2, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${Math.min(255,cr+30)},${Math.min(255,cg+20)},${Math.min(255,cb+10)},${alpha.toFixed(2)})`;
+            ctx.fill();
+        }
+        // Warm core
+        const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, sz * 0.12);
+        coreGrad.addColorStop(0, `rgba(${Math.min(255,cr+60)},${Math.min(255,cg+40)},${Math.min(255,cb+20)},0.8)`);
+        coreGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = coreGrad;
+        ctx.fillRect(0, 0, sz, sz);
+    } else {
+        // Irregular — scattered clumps
+        const clumps = 3 + Math.floor(rng() * 4);
+        for (let cl = 0; cl < clumps; cl++) {
+            const clx = cx + (rng() - 0.5) * sz * 0.4;
+            const cly = cy + (rng() - 0.5) * sz * 0.3;
+            const clr = 15 + rng() * 25;
+            for (let i = 0; i < 600; i++) {
+                const angle = rng() * Math.PI * 2;
+                const dist = Math.pow(rng(), 0.5) * clr;
+                const x = clx + Math.cos(angle) * dist;
+                const y = cly + Math.sin(angle) * dist;
+                const alpha = (0.3 + rng() * 0.4) * (1 - dist / clr);
+                ctx.beginPath();
+                ctx.arc(x, y, 0.5 + rng(), 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${cr},${Math.min(255,cg+30)},${Math.min(255,cb+50)},${alpha.toFixed(2)})`;
+                ctx.fill();
+            }
+        }
+    }
+
+    // Robust circular alpha fade — pixel-level for clean edges
+    const imgData = ctx.getImageData(0, 0, sz, sz);
+    const px = imgData.data;
+    const fadeStart = sz * 0.22;
+    const fadeEnd = sz * 0.46;
+    for (let py = 0; py < sz; py++) {
+        for (let px2 = 0; px2 < sz; px2++) {
+            const dx = px2 - cx, dy = py - cy;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const idx = (py * sz + px2) * 4;
+            if (dist >= fadeEnd) {
+                px[idx + 3] = 0;
+            } else if (dist > fadeStart) {
+                const fade = 1 - (dist - fadeStart) / (fadeEnd - fadeStart);
+                px[idx + 3] = Math.floor(px[idx + 3] * fade * fade); // quadratic for smoother falloff
+            }
+        }
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    return new THREE.CanvasTexture(c);
+}
 
 // Galaxy objects
 const glowTex = makeGlowTexture();
@@ -321,23 +617,46 @@ uniqueGalaxies.forEach(g => {
 
     const col = new THREE.Color(galaxyColor(g));
     const isMW = g.name === 'Milky Way';
-
-    // Core sphere
     const r = g.sceneRadius;
-    const geo = new THREE.SphereGeometry(r * 0.3, 12, 12);
-    const mat = new THREE.MeshBasicMaterial({ color: isMW ? 0xffee88 : col });
-    const mesh = new THREE.Mesh(geo, mat);
-    group.add(mesh);
-    clickableObjects.push(mesh);
 
-    // Glow sprite
-    const spMat = new THREE.SpriteMaterial({
-        map: glowTex, color: col, transparent: true, opacity: 0.4,
-        blending: THREE.AdditiveBlending, depthWrite: false
-    });
-    const sp = new THREE.Sprite(spMat);
-    sp.scale.set(r * 3, r * 3, 1);
-    group.add(sp);
+    // Clickable sphere — invisible but raycaster still hits it
+    const hitGeo = new THREE.SphereGeometry(r * 0.5, 8, 8);
+    const hitMat = new THREE.MeshBasicMaterial({ opacity: 0, transparent: true, depthWrite: false });
+    const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+    hitMesh.renderOrder = -1;
+    group.add(hitMesh);
+    clickableObjects.push(hitMesh);
+
+    if (!isMW) {
+        // Procedural galaxy texture — billboard sprite
+        const galaxyTex = makeGalaxyTexture(g);
+        const galaxyMat = new THREE.SpriteMaterial({
+            map: galaxyTex, transparent: true, depthWrite: false,
+            blending: THREE.AdditiveBlending, sizeAttenuation: true
+        });
+        const galaxySprite = new THREE.Sprite(galaxyMat);
+        const spriteScale = r * 2.8;
+        galaxySprite.scale.set(spriteScale, spriteScale, 1);
+        group.add(galaxySprite);
+
+        // Subtle additive glow behind
+        const spMat = new THREE.SpriteMaterial({
+            map: glowTex, color: col, transparent: true, opacity: 0.2,
+            blending: THREE.AdditiveBlending, depthWrite: false
+        });
+        const sp = new THREE.Sprite(spMat);
+        sp.scale.set(r * 3.5, r * 3.5, 1);
+        group.add(sp);
+    } else {
+        // Milky Way keeps original glow style (we're inside it)
+        const spMat = new THREE.SpriteMaterial({
+            map: glowTex, color: col, transparent: true, opacity: 0.5,
+            blending: THREE.AdditiveBlending, depthWrite: false
+        });
+        const sp = new THREE.Sprite(spMat);
+        sp.scale.set(r * 3, r * 3, 1);
+        group.add(sp);
+    }
 
     // MW pulsing ring
     if (isMW) {
@@ -446,7 +765,7 @@ scene.add(raDecGridGroup);
 
 // Mpc distance grid (concentric spheres from origin)
 const mpcGridGroup = new THREE.Group();
-mpcGridGroup.visible = false;
+mpcGridGroup.visible = true;
 const mpcDistances = [1, 5, 10, 20, 50, 100];
 mpcDistances.forEach(mpc => {
     const mly = mpc * 3.2616;
@@ -601,6 +920,8 @@ renderer.domElement.addEventListener('click', e => {
             if (obj && obj.userData.galaxy) {
                 const g = obj.userData.galaxy;
                 selectedObj = g;
+                const gIdx = uniqueGalaxies.indexOf(g);
+                if (gIdx >= 0) selectedGalaxyIdx = gIdx;
                 showInfo(g);
                 nav.flyTo(g.pos, Math.max(2, nav.distance * 0.6));
             }
@@ -614,10 +935,47 @@ renderer.domElement.addEventListener('dblclick', e => {
     mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    const pt = new THREE.Vector3();
-    if (raycaster.ray.intersectPlane(plane, pt)) {
-        nav.flyTo(pt, nav.distance);
+
+    // First try direct hit
+    const hits = raycaster.intersectObjects(clickableObjects, false);
+    if (hits.length > 0) {
+        let obj = hits[0].object;
+        while (obj && !obj.userData.galaxy) obj = obj.parent;
+        if (obj && obj.userData.galaxy) {
+            const g = obj.userData.galaxy;
+            selectedObj = g;
+            showInfo(g);
+            nav.flyTo(g.pos, Math.max(1.5, g.sceneRadius * 3));
+            return;
+        }
+    }
+
+    // No direct hit — find nearest galaxy by screen-space distance
+    const clickScreen = new THREE.Vector2(e.clientX, e.clientY);
+    let bestGalaxy = null, bestDist = Infinity;
+    const tmpV = new THREE.Vector3();
+    uniqueGalaxies.forEach(g => {
+        tmpV.copy(g.pos).project(camera);
+        // Skip galaxies behind camera
+        if (tmpV.z > 1) return;
+        const sx = (tmpV.x * 0.5 + 0.5) * window.innerWidth;
+        const sy = (-tmpV.y * 0.5 + 0.5) * window.innerHeight;
+        const d = Math.hypot(sx - clickScreen.x, sy - clickScreen.y);
+        if (d < bestDist) { bestDist = d; bestGalaxy = g; }
+    });
+
+    // Only snap if nearest galaxy is within 200px on screen
+    if (bestGalaxy && bestDist < 200) {
+        selectedObj = bestGalaxy;
+        showInfo(bestGalaxy);
+        nav.flyTo(bestGalaxy.pos, Math.max(1.5, bestGalaxy.sceneRadius * 3));
+    } else {
+        // Fallback: fly to the plane intersection point
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const pt = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(plane, pt)) {
+            nav.flyTo(pt, nav.distance);
+        }
     }
 });
 
@@ -968,9 +1326,68 @@ function drunkTourNext() {
     drunkTour.timer = setTimeout(() => drunkTourNext(), 16000);
 }
 
-// Escape
+// Keyboard shortcuts
 window.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { if (drunkTour.active) stopDrunkTour(); closeInfo(); }
+    if (e.key === 'Escape') {
+        document.getElementById('help-overlay').classList.remove('active');
+        if (drunkTour.active) stopDrunkTour();
+        closeInfo();
+        return;
+    }
+    if (e.key === '?') {
+        document.getElementById('help-overlay').classList.toggle('active');
+        return;
+    }
+    // Don't process shortcuts while help overlay is open
+    if (document.getElementById('help-overlay').classList.contains('active')) return;
+
+    const k = e.key.toLowerCase();
+    if (k === 'h') {
+        nav.flyTo(new THREE.Vector3(0, 0, 0), 30, -0.3);
+        return;
+    }
+    if (k === 'l') { toggleLabels(); }
+    if (k === 'r') { toggleRADec(); }
+    if (k === 'm') { toggleMpc(); }
+    if (k === 't') { if (!drunkTour.active) startDrunkTour(); else stopDrunkTour(); }
+
+    // Arrow left/right — cycle through galaxies
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        cycleGalaxy(e.key === 'ArrowRight' ? 1 : -1);
+    }
+});
+
+let selectedGalaxyIdx = -1;
+function cycleGalaxy(dir) {
+    if (uniqueGalaxies.length === 0) return;
+    selectedGalaxyIdx += dir;
+    if (selectedGalaxyIdx >= uniqueGalaxies.length) selectedGalaxyIdx = 0;
+    if (selectedGalaxyIdx < 0) selectedGalaxyIdx = uniqueGalaxies.length - 1;
+    const g = uniqueGalaxies[selectedGalaxyIdx];
+    selectedObj = g;
+    showInfo(g);
+    nav.flyTo(g.pos, Math.max(1.5, g.sceneRadius * 3));
+}
+
+document.getElementById('prev-galaxy-btn').addEventListener('click', () => cycleGalaxy(-1));
+document.getElementById('next-galaxy-btn').addEventListener('click', () => cycleGalaxy(1));
+
+// Help button + overlay wiring
+document.getElementById('help-close').addEventListener('click', () => {
+    document.getElementById('help-overlay').classList.remove('active');
+});
+document.getElementById('help-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('help-overlay')) {
+        document.getElementById('help-overlay').classList.remove('active');
+    }
+});
+const helpBtn = document.getElementById('help-btn');
+helpBtn.addEventListener('click', () => {
+    document.getElementById('help-overlay').classList.toggle('active');
+});
+helpBtn.addEventListener('animationend', () => {
+    helpBtn.classList.remove('pulsing');
 });
 
 // =====================================================

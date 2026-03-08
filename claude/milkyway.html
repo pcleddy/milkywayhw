@@ -18,17 +18,6 @@
   #distance-label { font-size: 15px; color: #668; }
   #coords { font-size: 14px; color: #556; margin-top: 4px; font-family: monospace; }
 
-  #star-info {
-    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-    background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(100, 140, 220, 0.3);
-    border-radius: 8px; padding: 14px 24px; z-index: 10;
-    pointer-events: none; opacity: 0; transition: opacity 0.4s;
-    text-align: center; min-width: 260px;
-    backdrop-filter: blur(8px);
-  }
-  #star-info.visible { opacity: 1; }
-  #star-info .name { font-size: 22px; color: #aaccff; margin-bottom: 4px; }
-  #star-info .detail { font-size: 15px; color: #889; }
 
   #controls {
     position: fixed; bottom: 20px; right: 20px; z-index: 10;
@@ -156,7 +145,7 @@
     transition: width 0.5s;
   }
   #tour-start-btn {
-    position: fixed; bottom: 20px; left: 340px;
+    position: fixed; bottom: 20px; left: 420px;
     z-index: 15; padding: 6px 14px; font-size: 12px;
     background: rgba(20,30,45,0.8); backdrop-filter: blur(8px);
     border: 1px solid rgba(80,100,140,0.3);
@@ -268,10 +257,6 @@
   <div id="mode-label" style="font-size:13px; color:#446688; margin-top:4px; text-transform:uppercase; letter-spacing:1px;">All</div>
 </div>
 
-<div id="star-info">
-  <div class="name" id="si-name"></div>
-  <div class="detail" id="si-detail"></div>
-</div>
 
 <div id="zoom-bar"><div id="zoom-indicator"></div></div>
 
@@ -311,9 +296,12 @@
 </div>
 
 <div id="help-btn" class="pulsing" title="Help &amp; Controls (?)">?</div>
-<div style="position:fixed;bottom:20px;left:70px;z-index:15;display:flex;gap:6px;">
+<div style="position:fixed;bottom:20px;left:70px;z-index:15;display:flex;gap:6px;align-items:center;">
 <a href="galaxy-explorer.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">🌐 Galaxies</a>
 <a href="solarsystem.html" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:6px 14px;color:#8899bb;font-size:12px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#aabbdd'" onmouseout="this.style.color='#8899bb'">☀️ Solar System</a>
+<span style="color:#334455;font-size:11px;margin-left:2px;">│</span>
+<button id="prev-star-btn" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:5px 9px;color:#7799bb;font-size:13px;cursor:pointer;transition:all 0.2s;line-height:1;" onmouseover="this.style.color='#aaccee';this.style.background='rgba(30,45,65,0.9)'" onmouseout="this.style.color='#7799bb';this.style.background='rgba(20,30,45,0.8)'" title="Previous star (← key)">◀</button>
+<button id="next-star-btn" style="background:rgba(20,30,45,0.8);backdrop-filter:blur(8px);border:1px solid rgba(80,100,140,0.3);border-radius:8px;padding:5px 9px;color:#7799bb;font-size:13px;cursor:pointer;transition:all 0.2s;line-height:1;" onmouseover="this.style.color='#aaccee';this.style.background='rgba(30,45,65,0.9)'" onmouseout="this.style.color='#7799bb';this.style.background='rgba(20,30,45,0.8)'" title="Next star (→ key)">▶</button>
 </div>
 
 <div id="controls">
@@ -356,7 +344,8 @@
     <div class="help-section">
       <h3>Interaction</h3>
       <div class="help-row"><span class="help-key">Click</span><span class="help-desc">Select a star — see info + portrait panel</span></div>
-      <div class="help-row"><span class="help-key" style="font-size:9px">Dbl-Click</span><span class="help-desc">Re-center navigation on that point in space</span></div>
+      <div class="help-row"><span class="help-key" style="font-size:9px">Dbl-Click</span><span class="help-desc">Fly to nearest star (snaps within range)</span></div>
+      <div class="help-row"><span class="help-key">&larr; &rarr;</span><span class="help-desc">Cycle through notable stars</span></div>
     </div>
 
     <div class="help-section">
@@ -527,7 +516,58 @@ const GALAXY_DATA = {
     // --- Extreme outer disc ---
     { name: "SDSS J1229+1122",    type: "Hypervelocity star · Ejected from the galactic center at 1,600 km/s by a close encounter with Sgr A* · Fast enough to escape the Milky Way entirely · It's already 40,000 ly from home and will never return · The galaxy's most dramatic exit", dist: 48000, angle: 2.5, z: 0.05, color: "#aaddff", size: 1.5, distFromSun_ly: 40000 },
     { name: "Snyder's Cloud",     type: "Tidal stream remnant · The ghost of a dwarf galaxy devoured by the Milky Way · Stretched into a thin ribbon of stars as it was pulled apart · Forensic evidence that our galaxy is a cannibal", dist: 45000, angle: 0.0, z: 0.04, color: "#778899", size: 2.0, distFromSun_ly: 50000 },
-    { name: "Galactic Anticenter", type: "Direction directly opposite the core · Thinnest, emptiest part of our galaxy · Looking out into the void between spiral arms · The back of the Milky Way's head", dist: 52000, angle: Math.PI + 1.3, z: 0.0, color: "#556677", size: 1.5, distFromSun_ly: 26000 }
+    { name: "Galactic Anticenter", type: "Direction directly opposite the core · Thinnest, emptiest part of our galaxy · Looking out into the void between spiral arms · The back of the Milky Way's head", dist: 52000, angle: Math.PI + 1.3, z: 0.0, color: "#556677", size: 1.5, distFromSun_ly: 26000 },
+
+    // ===== 25 MORE FAMOUS STARS =====
+
+    // --- Naked-eye classics ---
+    { name: "Vega", type: "A0V Main Sequence · Former pole star, future pole star again", dist: 25975, angle: 1.302, z: 0.01, color: "#ccddff", size: 1.8, distFromSun_ly: 25, desc: "The standard candle of the sky. For over a century, Vega was the star against which all other stellar brightnesses were measured — magnitude zero by definition. 25 light-years away, spinning so fast it bulges 23% wider at its equator. It was the North Star 14,000 years ago and will be again in another 12,000. The first star (other than the Sun) ever photographed (1850). Has a huge debris disk that hinted at planets before we'd found any. Part of the Summer Triangle with Deneb and Altair." },
+    { name: "Altair", type: "A7V · Fastest-spinning nearby star · 286 km/s at equator", dist: 25983, angle: 1.301, z: 0.0, color: "#ddeeff", size: 1.5, distFromSun_ly: 16.7, desc: "Only 16.7 light-years away, spinning so fast (one rotation every 9 hours vs the Sun's 25 days) that it's visibly egg-shaped — 22% wider at its equator than pole to pole. One of the first stars to be directly imaged as a disc rather than a point of light, revealing its oblate shape. Part of the Summer Triangle. In Japanese legend, Altair (Hikoboshi the cowherd) is separated from Vega (Orihime the weaver) by the Milky Way, reuniting once a year on the seventh day of the seventh month." },
+    { name: "Arcturus", type: "K1.5III Orange Giant · 170× solar luminosity", dist: 25963, angle: 1.299, z: 0.02, color: "#ffcc77", size: 1.7, distFromSun_ly: 36.7, desc: "The brightest star in the northern celestial hemisphere. An orange giant 36.7 light-years away that's already exhausted its core hydrogen and ballooned to 25× the Sun's diameter. Moving through space at 122 km/s — an interloper from a different stellar population, likely captured from a smaller galaxy the Milky Way devoured billions of years ago. Its light was used to open the 1933 Chicago World's Fair by focusing it through a telescope onto a photoelectric cell." },
+    { name: "Aldebaran", type: "K5III Orange Giant · Eye of the Bull in Taurus", dist: 25935, angle: 1.296, z: -0.01, color: "#ff9955", size: 1.6, distFromSun_ly: 65, desc: "The angry red eye of Taurus the Bull. 65 light-years away and 44 times the Sun's diameter — approaching us at 54 km/s. An aging giant that will shed its outer layers and become a white dwarf. The Voyager 1 spacecraft is heading in its general direction and will pass within 1.7 light-years in about 40,000 years. The name means 'The Follower' in Arabic because it rises just after the Pleiades." },
+    { name: "Antares", type: "M1Iab Red Supergiant · Heart of the Scorpion · Rival of Mars", dist: 25410, angle: 1.284, z: -0.01, color: "#ff4433", size: 2.3, distFromSun_ly: 550, desc: "The heart of Scorpius and rival of Mars — its name literally means 'anti-Ares' (anti-Mars) because its red color confused ancient astronomers. A red supergiant 550 light-years away and 680 times the Sun's radius. If placed at the Sun, its surface would extend past Mars. It's losing mass in a stellar wind so violent you can see the gas being blown off in infrared images. Binary companion Antares B is a hot blue star buried in the supergiant's wind. Will go supernova within the next million years." },
+    { name: "Canopus", type: "A9II Bright Giant · 2nd brightest star in sky", dist: 25690, angle: 1.29, z: -0.02, color: "#ffeedd", size: 1.9, distFromSun_ly: 310, desc: "Second brightest star in the night sky after Sirius, but much more luminous — 10,700 times the Sun's output vs Sirius's 25. It just happens to be further away (310 ly). Used as a navigation reference by spacecraft because it's bright and far from the ecliptic plane. Named after the navigator of Menelaus's fleet in the Trojan War. Invisible from most of the Northern Hemisphere, making it exotic and mysterious to ancient European astronomers." },
+    { name: "Capella", type: "G8III + G1III · Giant binary system", dist: 25954, angle: 1.298, z: 0.02, color: "#ffdd88", size: 1.5, distFromSun_ly: 42.9, desc: "The sixth brightest star in the sky is actually four stars — two yellow giants orbiting each other every 104 days, plus a distant pair of red dwarfs. The two giants are what the Sun will look like in 5 billion years: bloated, cooler, and nearing the end. Only 42.9 light-years away. The name means 'little goat' in Latin. One of the most studied binary systems in astronomy because the two stars are so well-matched yet at slightly different evolutionary stages." },
+    { name: "Procyon", type: "F5IV-V Subgiant · 8th brightest star", dist: 25989, angle: 1.301, z: 0.0, color: "#ffeebb", size: 1.4, distFromSun_ly: 11.5, desc: "Only 11.5 light-years away — one of our nearest stellar neighbors. Its name means 'before the dog' because it rises just before Sirius (the Dog Star). A binary system: the visible F-type star is just beginning to evolve off the main sequence, and its companion Procyon B is a white dwarf that completed its evolution long ago. The fate of the brighter star is written in its companion." },
+    { name: "Spica", type: "B1III-IV + B2V · Rotating ellipsoidal binary", dist: 25740, angle: 1.291, z: -0.01, color: "#aabbff", size: 1.6, distFromSun_ly: 250, desc: "The brightest star in Virgo, 250 light-years away. Actually two massive blue stars orbiting so close together (4-day period) that they distort each other into egg shapes through tidal forces. Combined luminosity is 12,100 times the Sun's. Hipparchus's observations of Spica in 127 BC helped him discover the precession of the equinoxes — the slow wobble of Earth's axis that takes 26,000 years to complete. Washington DC's street plan was oriented to align with Spica." },
+    { name: "Fomalhaut", type: "A3V · Has a directly imaged debris ring", dist: 25975, angle: 1.302, z: -0.01, color: "#ddeeff", size: 1.4, distFromSun_ly: 25, desc: "25 light-years away with a spectacular debris ring first imaged by Hubble — often called the 'Eye of Sauron' for its appearance. In 2008, what appeared to be a directly imaged exoplanet (Fomalhaut b) turned out to be an expanding cloud of debris from a collision between two asteroid-sized bodies — the first time we'd witnessed the aftermath of such an event. The star is part of a loose triple system spanning 5.5 light-years. One of the Royal Stars of ancient Persia." },
+
+    // --- Extreme and exotic ---
+    { name: "Plaskett's Star", type: "O7.5I + O6I · Most massive known binary", dist: 20400, angle: 1.15, z: 0.01, color: "#88aaff", size: 2.0, distFromSun_ly: 6600, desc: "The most massive binary star system known — two blue supergiants of ~50 solar masses each orbiting every 14.4 days so close they exchange mass through a bridge of gas between them. Combined luminosity is nearly a million times the Sun's. Discovered by J.S. Plaskett in 1922. Both stars will eventually go supernova, possibly producing a binary neutron star or black hole system. A gravitational wave source factory." },
+    { name: "Mira", type: "M7IIIe Pulsating Red Giant · 'The Wonderful Star'", dist: 25690, angle: 1.290, z: 0.0, color: "#ff5544", size: 1.8, distFromSun_ly: 300, desc: "The first known variable star, discovered in 1596 by David Fabricius. Mira pulsates over an 11-month cycle, ranging from easily visible to invisible to the naked eye — earning it the name 'Wonderful.' In 2007, NASA's GALEX satellite revealed it has a comet-like tail of gas 13 light-years long, shedding material as it plows through interstellar space at 130 km/s. The tail contains enough carbon and oxygen to seed new planetary systems. A dying star leaving a trail of future worlds." },
+    { name: "PSR B1919+21", type: "Pulsar · First pulsar ever discovered (1967)", dist: 23400, angle: 1.22, z: 0.02, color: "#44ccff", size: 1.5, distFromSun_ly: 2283, desc: "The first pulsar ever detected, discovered by Jocelyn Bell Burnell in 1967. Its eerily regular radio pulses (every 1.337 seconds) were initially designated LGM-1 — 'Little Green Men 1' — because nobody could imagine a natural source that precise. Turned out to be a rapidly spinning neutron star the size of a city, with a magnetic field beaming radio waves like a lighthouse. Bell Burnell's supervisor Antony Hewish won the Nobel Prize for it (controversially — many felt she deserved it more)." },
+    { name: "Algol", type: "B8V + K0IV Eclipsing Binary · The Demon Star", dist: 25907, angle: 1.294, z: 0.01, color: "#aaccff", size: 1.5, distFromSun_ly: 93, desc: "The 'Demon Star' — its name comes from the Arabic 'ra's al-ghul' (head of the demon), which also gave us the Batman villain. Every 2.87 days it dims noticeably when the dimmer companion passes in front. Ancient Egyptians documented its variability 3,200 years ago. It presents the 'Algol paradox': the less massive star is more evolved, which shouldn't happen — solved when we realized mass transfer had reversed their roles. The prototype of eclipsing binary stars." },
+    { name: "R136a1", type: "WN5h · Most luminous star known · 8.7M× solar luminosity", dist: 26000, angle: 1.31, z: -0.06, color: "#99bbff", size: 2.8, distFromSun_ly: 163000, desc: "Technically in the Large Magellanic Cloud (a satellite galaxy), but too extraordinary to exclude. The most luminous star known — 8.7 million times the Sun's luminosity. About 215 solar masses, near the theoretical maximum. Surface temperature 46,000 K. Loses an Earth's mass of material every month in its stellar wind. Will die in a spectacular hypernova or pair-instability supernova within a couple million years. Pushes the limits of what we thought was possible for a star." },
+    { name: "Geminga", type: "Neutron Star · Closest known pulsar · Invisible in visible light", dist: 25745, angle: 1.291, z: 0.01, color: "#55aadd", size: 1.3, distFromSun_ly: 815, desc: "One of the closest neutron stars to Earth at 815 light-years. Originally detected as a gamma-ray source with no visible counterpart — its name reportedly comes from Milanese dialect 'gh'è minga' meaning 'it's not there.' A rotation-powered pulsar spinning 4.2 times per second, but its radio beam doesn't point at us, so it's radio-silent. It was likely created by a supernova about 300,000 years ago whose remnant has since dispersed. A ghost star." },
+
+    // --- Exoplanet hosts with stories ---
+    { name: "HR 8799", type: "F0V · First star with directly imaged exoplanets", dist: 25870, angle: 1.294, z: 0.01, color: "#eeddff", size: 1.4, distFromSun_ly: 129, desc: "In 2008, this star made history as the first to have multiple exoplanets directly photographed — not detected indirectly, but actually seen as points of light. Four massive gas giants (b, c, d, e) orbit in a resonant chain. Time-lapse images over years show them actually moving in their orbits. Also has two debris belts resembling a scaled-up version of our asteroid and Kuiper belts. A solar system caught in the act of being a solar system.",
+      planets: [
+        { name: "HR 8799 e", type: "Super-Jupiter · Innermost directly imaged planet", mass: "9 Jupiter", period_days: 18000, color: "#cc8855",
+          sky: { starColor: "#ffeedd", starSize: 1.5, desc: "Bright white star dominates the inner sky. Three sibling planets visible as bright points. Thick atmosphere of water vapor, CO, and methane. Clouds of iron and silicates." }}
+      ]},
+    { name: "51 Pegasi", type: "G4V Sun-like · First confirmed exoplanet around Sun-like star", dist: 25950, angle: 1.298, z: 0.01, color: "#ffee99", size: 1.3, distFromSun_ly: 50.9, desc: "The star that changed everything. In 1995, Michel Mayor and Didier Queloz discovered a Jupiter-mass planet orbiting this Sun-like star every 4.2 days — impossibly close. 'Hot Jupiters' weren't supposed to exist. It shattered our models of planetary formation and won Mayor and Queloz the 2019 Nobel Prize in Physics. Before 51 Peg b (nicknamed 'Dimidium'), we had zero confirmed exoplanets around Sun-like stars. Now we know of thousands.",
+      planets: [
+        { name: "51 Peg b (Dimidium)", type: "Hot Jupiter · THE first exoplanet", mass: "0.47 Jupiter", period_days: 4.23, color: "#ddaa66",
+          sky: { starColor: "#ffee88", starSize: 12.0, desc: "Star fills the sky, blazing yellow-white. Surface temperature ~1200°C. Atmosphere of vaporized metals. The planet that proved other solar systems exist." }}
+      ]},
+    { name: "Kepler-22", type: "G5V Sun-like · First confirmed HZ planet by Kepler", dist: 25390, angle: 1.28, z: 0.01, color: "#ffee88", size: 1.2, distFromSun_ly: 638, desc: "Host of Kepler-22b, the first planet confirmed by NASA's Kepler mission to orbit in the habitable zone of a Sun-like star (announced December 2011). The planet is 2.4 times Earth's radius — bigger than Earth but smaller than Neptune. We don't know if it's rocky with a thick atmosphere or a mini-Neptune with no solid surface. But its orbit of 290 days in the habitable zone of a Sun-like star made it the poster child for potentially habitable worlds.",
+      planets: [
+        { name: "Kepler-22b", type: "Super-Earth or Mini-Neptune · First Kepler HZ planet", mass: "~36 Earth?", period_days: 289.9, color: "#5588aa",
+          sky: { starColor: "#ffee66", starSize: 1.1, desc: "Slightly dimmer Sun-like star. If oceans exist, the sky could be remarkably Earth-like — blue with white clouds. A 290-day year eerily close to our own." }}
+      ]},
+    { name: "GJ 1214", type: "M4.5V Red Dwarf · First known 'water world'", dist: 25958, angle: 1.299, z: 0.0, color: "#ff7755", size: 1.2, distFromSun_ly: 48, desc: "Hosts GJ 1214 b, the archetype 'water world' — a planet 2.7× Earth's radius with a density suggesting it could be 75% water by mass. JWST confirmed its atmosphere is rich in heavy molecules, likely water vapor and CO2, not hydrogen. Only 48 light-years away, making it one of the best-studied sub-Neptune atmospheres. If the water interpretation is right, this planet has no solid surface — just deepening layers of water, from steam to liquid to exotic high-pressure ice.",
+      planets: [
+        { name: "GJ 1214 b", type: "Water World · 75% water by mass?", mass: "6.6 Earth", period_days: 1.58, color: "#3366aa",
+          sky: { starColor: "#ff5533", starSize: 6.0, desc: "Enormous red star in a steamy sky. Thick water vapor atmosphere scatters light into deep orange haze. No land anywhere — just ocean all the way down, getting stranger with depth." }}
+      ]},
+
+    // --- Historical and navigational ---
+    { name: "Alpha Centauri A", type: "G2V · Nearest Sun-like star · Solar twin", dist: 25997, angle: 1.300, z: 0.0, color: "#ffee88", size: 1.5, distFromSun_ly: 4.37, desc: "The nearest Sun-like star at 4.37 light-years. Almost identical to our Sun — same spectral type (G2V), similar mass, similar age. Part of a triple system with Alpha Centauri B (K1V orange dwarf) and Proxima Centauri. If there's a habitable planet here, it would have a remarkably similar star in its sky to what we see. The Breakthrough Starshot project aims to send tiny laser-propelled probes here at 20% light speed — arriving in ~20 years after launch. Our closest potential interstellar destination." },
+    { name: "Barnard's Star", type: "M4Ve Red Dwarf · Fastest-moving star in our sky", dist: 25994, angle: 1.300, z: 0.0, color: "#ff8855", size: 1.2, distFromSun_ly: 5.96, desc: "The fastest-moving star across our sky (10.3 arcseconds per year) and the fourth closest star system to Earth. A tiny, ancient red dwarf — one of the oldest stars in the galaxy at 10+ billion years. In 1916, E.E. Barnard measured its enormous proper motion. In the 1960s, Peter van de Kamp claimed to detect a planet, sparking decades of controversy. Recent data suggests a possible super-Earth (Barnard b) with a 233-day orbit. Approaching us at 110 km/s — will be the nearest star in 10,000 years." },
+    { name: "Wolf 359", type: "M6.5Ve Red Dwarf · One of nearest & faintest stars known", dist: 25993, angle: 1.300, z: 0.0, color: "#ff6644", size: 1.0, distFromSun_ly: 7.86, desc: "Only 7.86 light-years away, yet so faint (0.1% of the Sun's luminosity) that you can't see it without a telescope. One of the least luminous stars known. Famous in science fiction as the site of a devastating Borg battle in Star Trek: TNG. A flare star — despite its dimness, it occasionally erupts with flares that briefly multiply its brightness. Hosts at least two candidate planets. A perfect example of how the most common stars in the galaxy are the ones you'd never notice." },
+    { name: "Tau Ceti", type: "G8.5V · Nearest single Sun-like star · 5 candidate planets", dist: 25988, angle: 1.301, z: 0.0, color: "#ffdd99", size: 1.3, distFromSun_ly: 11.9, desc: "The nearest single Sun-like star (11.9 ly), making it a perennial favorite in science fiction and SETI targeting. Frank Drake's Project Ozma (1960) — the first modern SETI experiment — listened to Tau Ceti for alien radio signals. Has a massive debris disk (10× our Kuiper belt) and 5 candidate planets, two possibly in the habitable zone. Metal-poor compared to the Sun, which may mean its planets are geologically different. If intelligent life exists at Tau Ceti, they could detect our TV signals in about 12 years." },
+    { name: "61 Cygni", type: "K5V + K7V Binary · First star with measured distance", dist: 25989, angle: 1.301, z: 0.01, color: "#ffbb77", size: 1.3, distFromSun_ly: 11.4, desc: "The first star whose distance was measured using parallax, by Friedrich Bessel in 1838 — a breakthrough that proved stars are incredibly far away and shattered humanity's last excuse for thinking the universe was small. 11.4 light-years away. A binary system of two orange dwarfs orbiting each other every 659 years. Called 'The Flying Star' for its large proper motion. Bessel's measurement was one of the most important observations in the history of astronomy." }
   ],
   regions: [
     { name: "Orion Spur",         type: "Minor Arm",      distRange: [24000, 28000], angleRange: [1.1, 1.5], color: "#5577aa" },
@@ -560,6 +600,156 @@ class Vec3 {
   }
 }
 
+// ---------- Procedural Star Textures ----------
+const _starTexCache = {};
+function makeStarTexture(color, typeName, size) {
+  // Cache key from color + rough type category
+  const cat = _starCategory(typeName);
+  const key = color + '|' + cat;
+  if (_starTexCache[key]) return _starTexCache[key];
+
+  const sz = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = sz;
+  const ctx = c.getContext('2d');
+  const cx = sz / 2, cy = sz / 2;
+
+  // Parse color
+  const tc = document.createElement('canvas').getContext('2d');
+  tc.fillStyle = color;
+  tc.fillRect(0, 0, 1, 1);
+  const [cr, cg, cb] = tc.getImageData(0, 0, 1, 1).data;
+
+  if (cat === 'blackhole') {
+    // Dark center with bright accretion ring
+    const ringGrad = ctx.createRadialGradient(cx, cy, sz*0.08, cx, cy, sz*0.3);
+    ringGrad.addColorStop(0, 'rgba(0,0,0,1)');
+    ringGrad.addColorStop(0.4, `rgba(${cr},${cg},${cb},0.9)`);
+    ringGrad.addColorStop(0.6, `rgba(${Math.min(255,cr+60)},${Math.min(255,cg+40)},${cb},0.6)`);
+    ringGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = ringGrad;
+    ctx.fillRect(0, 0, sz, sz);
+    // Jets
+    ctx.save();
+    ctx.globalAlpha = 0.25;
+    ctx.beginPath();
+    ctx.moveTo(cx-2, cy); ctx.lineTo(cx-1, 4); ctx.lineTo(cx+1, 4); ctx.lineTo(cx+2, cy);
+    ctx.fillStyle = `rgba(${Math.min(255,cr+80)},${Math.min(255,cg+60)},255,0.5)`;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx-2, cy); ctx.lineTo(cx-1, sz-4); ctx.lineTo(cx+1, sz-4); ctx.lineTo(cx+2, cy);
+    ctx.fill();
+    ctx.restore();
+  } else if (cat === 'neutron' || cat === 'magnetar') {
+    // Intense compact core with sharp rays
+    const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, sz*0.12);
+    coreGrad.addColorStop(0, '#ffffff');
+    coreGrad.addColorStop(0.5, `rgba(${cr},${cg},${cb},0.9)`);
+    coreGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = coreGrad;
+    ctx.fillRect(0, 0, sz, sz);
+    // Sharp 4-point diffraction spikes
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let a = 0; a < 4; a++) {
+      const angle = a * Math.PI / 2 + Math.PI / 4;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      const len = sz * 0.45;
+      ctx.lineTo(cx + Math.cos(angle) * len, cy + Math.sin(angle) * len);
+      ctx.strokeStyle = `rgba(${cr},${cg},${cb},0.4)`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    ctx.restore();
+  } else if (cat === 'supergiant' || cat === 'hypergiant') {
+    // Bloated, textured surface with convection cells
+    const baseGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, sz*0.4);
+    baseGrad.addColorStop(0, `rgba(${Math.min(255,cr+40)},${Math.min(255,cg+30)},${Math.min(255,cb+20)},1)`);
+    baseGrad.addColorStop(0.6, `rgba(${cr},${cg},${cb},0.8)`);
+    baseGrad.addColorStop(0.85, `rgba(${Math.max(0,cr-30)},${Math.max(0,cg-20)},${Math.max(0,cb-10)},0.3)`);
+    baseGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = baseGrad;
+    ctx.fillRect(0, 0, sz, sz);
+    // Surface granulation
+    let seed = cr * 256 + cg;
+    const rng = () => { seed = (seed * 16807 + 11) % 2147483647; return (seed & 0x7fffffff) / 0x7fffffff; };
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 40; i++) {
+      const angle = rng() * Math.PI * 2;
+      const dist = rng() * sz * 0.3;
+      const x = cx + Math.cos(angle) * dist;
+      const y = cy + Math.sin(angle) * dist;
+      const cellR = 3 + rng() * 6;
+      const cellGrad = ctx.createRadialGradient(x, y, 0, x, y, cellR);
+      cellGrad.addColorStop(0, `rgba(${Math.min(255,cr+30)},${Math.min(255,cg+20)},${Math.min(255,cb+15)},0.15)`);
+      cellGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = cellGrad;
+      ctx.beginPath(); ctx.arc(x, y, cellR, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  } else {
+    // Normal star — clean radial glow with subtle diffraction spikes
+    const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, sz*0.35);
+    coreGrad.addColorStop(0, '#ffffff');
+    coreGrad.addColorStop(0.15, `rgba(${Math.min(255,cr+60)},${Math.min(255,cg+50)},${Math.min(255,cb+40)},0.95)`);
+    coreGrad.addColorStop(0.4, `rgba(${cr},${cg},${cb},0.5)`);
+    coreGrad.addColorStop(0.7, `rgba(${cr},${cg},${cb},0.15)`);
+    coreGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = coreGrad;
+    ctx.fillRect(0, 0, sz, sz);
+    // Subtle 4-point diffraction
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.2;
+    for (let a = 0; a < 2; a++) {
+      const angle = a * Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(angle) * sz*0.35, cy + Math.sin(angle) * sz*0.35);
+      ctx.lineTo(cx - Math.cos(angle) * sz*0.35, cy - Math.sin(angle) * sz*0.35);
+      ctx.strokeStyle = `rgba(${cr},${cg},${cb},0.6)`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Robust circular alpha fade — pixel-level for clean edges
+  const imgData = ctx.getImageData(0, 0, sz, sz);
+  const px = imgData.data;
+  const fadeStart = sz * 0.32;
+  const fadeEnd = sz * 0.48;
+  for (let py = 0; py < sz; py++) {
+    for (let px2 = 0; px2 < sz; px2++) {
+      const dx = px2 - cx, dy = py - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const idx = (py * sz + px2) * 4;
+      if (dist >= fadeEnd) {
+        px[idx + 3] = 0;
+      } else if (dist > fadeStart) {
+        const fade = 1 - (dist - fadeStart) / (fadeEnd - fadeStart);
+        px[idx + 3] = Math.floor(px[idx + 3] * fade * fade);
+      }
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  const tex = new THREE.CanvasTexture(c);
+  _starTexCache[key] = tex;
+  return tex;
+}
+
+function _starCategory(typeName) {
+  if (!typeName) return 'normal';
+  const t = typeName.toLowerCase();
+  if (t.includes('black hole') || t.includes('sagittarius a')) return 'blackhole';
+  if (t.includes('magnetar')) return 'magnetar';
+  if (t.includes('neutron') || t.includes('pulsar')) return 'neutron';
+  if (t.includes('hypergiant')) return 'hypergiant';
+  if (t.includes('supergiant')) return 'supergiant';
+  return 'normal';
+}
+
 // ---------- Star ----------
 class Star {
   constructor(data) {
@@ -584,23 +774,40 @@ class Star {
   }
 
   createMesh() {
-    const geom = new THREE.SphereGeometry(this.size * 0.04, 8, 8);
-    const mat = new THREE.MeshBasicMaterial({ color: this.color });
-    this.mesh = new THREE.Mesh(geom, mat);
+    // Invisible hit sphere for raycasting
+    const hitGeom = new THREE.SphereGeometry(this.size * 0.05, 6, 6);
+    const hitMat = new THREE.MeshBasicMaterial({ opacity: 0, transparent: true, depthWrite: false });
+    this.mesh = new THREE.Mesh(hitGeom, hitMat);
     this.mesh.position.copy(this.position.toThree());
     this.mesh.userData = { star: this };
 
-    // glow sprite
-    const spriteMat = new THREE.SpriteMaterial({
+    // Procedural star sprite — replaces the old colored ball
+    const starTex = makeStarTexture(this.color, this.type, this.size);
+    const starMat = new THREE.SpriteMaterial({
+      map: starTex, transparent: true, depthWrite: false,
+      blending: THREE.AdditiveBlending, sizeAttenuation: true
+    });
+    const starSprite = new THREE.Sprite(starMat);
+    const cat = _starCategory(this.type);
+    const spriteScale = cat === 'supergiant' || cat === 'hypergiant'
+      ? this.size * 0.28
+      : cat === 'blackhole' ? this.size * 0.22
+      : this.size * 0.18;
+    starSprite.scale.set(spriteScale, spriteScale, 1);
+    this.mesh.add(starSprite);
+
+    // Additive glow halo behind
+    const glowMat = new THREE.SpriteMaterial({
       map: GlowTexture.get(),
       color: this.color,
       transparent: true,
       blending: THREE.AdditiveBlending,
-      opacity: 0.6
+      opacity: cat === 'blackhole' ? 0.3 : 0.45,
+      depthWrite: false
     });
-    const sprite = new THREE.Sprite(spriteMat);
-    sprite.scale.set(this.size * 0.2, this.size * 0.2, 1);
-    this.mesh.add(sprite);
+    const glow = new THREE.Sprite(glowMat);
+    glow.scale.set(this.size * 0.2, this.size * 0.2, 1);
+    this.mesh.add(glow);
 
     // Pulsing ring for stars with mapped planets
     if (this.planets && this.planets.length > 0) {
@@ -682,7 +889,9 @@ class SpiralArm {
       positions.push(x, y, z);
 
       const brightness = 0.4 + Math.random() * 0.6;
-      colors.push(c.r * brightness, c.g * brightness, c.b * brightness);
+      // Dim particles in the inner 30% (r < 15) to reduce central glare
+      const centralDim = r < 15 ? 0.5 + 0.5 * (r / 15) : 1.0;
+      colors.push(c.r * brightness * centralDim, c.g * brightness * centralDim, c.b * brightness * centralDim);
       sizes.push(0.12 + Math.random() * 0.2);
     }
 
@@ -692,11 +901,12 @@ class SpiralArm {
     geom.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
 
     const mat = new THREE.PointsMaterial({
-      size: 0.18,
+      size: 0.22,
       vertexColors: true,
       transparent: true,
       opacity: 0.85,
       blending: THREE.AdditiveBlending,
+      depthWrite: false,
       sizeAttenuation: true,
       map: GlowTexture.get()
     });
@@ -723,7 +933,8 @@ class GalacticCore {
     const positions = [];
     const colors = [];
 
-    // Core bulge
+    // Core bulge — dimmed 30% to reduce central glare
+    const dimFactor = 0.7;
     for (let i = 0; i < count; i++) {
       const r = Math.random() ** 0.5 * 5;
       const theta = Math.random() * Math.PI * 2;
@@ -736,10 +947,10 @@ class GalacticCore {
       positions.push(x, y, z);
 
       const warmth = 0.7 + Math.random() * 0.3;
-      colors.push(1.0 * warmth, 0.85 * warmth, 0.5 * warmth);
+      colors.push(1.0 * warmth * dimFactor, 0.85 * warmth * dimFactor, 0.5 * warmth * dimFactor);
     }
 
-    // Bar stars
+    // Bar stars — also dimmed
     for (let i = 0; i < count * 0.5; i++) {
       const along = (Math.random() - 0.5) * this.barLength;
       const across = (Math.random() - 0.5) * this.barWidth * 0.5;
@@ -750,7 +961,7 @@ class GalacticCore {
 
       positions.push(x, up, z);
       const w = 0.6 + Math.random() * 0.4;
-      colors.push(1.0*w, 0.8*w, 0.45*w);
+      colors.push(1.0*w * dimFactor, 0.8*w * dimFactor, 0.45*w * dimFactor);
     }
 
     const geom = new THREE.BufferGeometry();
@@ -761,8 +972,9 @@ class GalacticCore {
       size: 0.15,
       vertexColors: true,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.6,
       blending: THREE.AdditiveBlending,
+      depthWrite: false,
       sizeAttenuation: true,
       map: GlowTexture.get()
     });
@@ -773,9 +985,9 @@ class GalacticCore {
     // Central glow — use multiple smaller overlapping sprites instead of one big one
     // This avoids the visible square edge artifact
     const glowLayers = [
-      { scale: 5, opacity: 0.3 },
-      { scale: 9, opacity: 0.15 },
-      { scale: 14, opacity: 0.06 }
+      { scale: 5, opacity: 0.2 },
+      { scale: 9, opacity: 0.1 },
+      { scale: 14, opacity: 0.04 }
     ];
     for (const gl of glowLayers) {
       const glowMat = new THREE.SpriteMaterial({
@@ -830,7 +1042,9 @@ class BackgroundStars {
       vertexColors: true,
       transparent: true,
       opacity: 0.6,
-      sizeAttenuation: false
+      depthWrite: false,
+      sizeAttenuation: false,
+      map: GlowTexture.get()
     }));
   }
 }
@@ -893,18 +1107,22 @@ class Navigator {
       if (Math.abs(dy) < 0.01 && Math.abs(dx) < 0.01) return;
 
       // Vertical scroll (up/down) = zoom
+      // Speed adapts to current distance: gentle when close, faster when far
       if (Math.abs(dy) > 0.01) {
         const clamped = Math.max(-150, Math.min(150, dy));
-        const factor = 1 + clamped * 0.0012;
+        // Gentler zoom at close distances to prevent overshooting
+        const zoomSensitivity = this.smoothZoom < 1 ? 0.0006 :
+                                 this.smoothZoom < 5 ? 0.0008 : 0.0012;
+        const factor = 1 + clamped * zoomSensitivity;
         const newZoom = this.smoothZoom * factor;
         if (newZoom < this.minDist && dy < 0) {
-          // Dolly forward — fly through objects
+          // Dolly forward — fly through objects (also gentler)
           const forward = new THREE.Vector3(
             -Math.cos(this.pitch) * Math.sin(this.yaw),
             -Math.sin(this.pitch),
             -Math.cos(this.pitch) * Math.cos(this.yaw)
           );
-          const speed = Math.max(0.02, this.distance * 0.15);
+          const speed = Math.max(0.005, this.distance * 0.08);
           this.target.addScaledVector(forward, speed);
           this._flyTarget = null;
         } else {
@@ -945,8 +1163,15 @@ class Navigator {
   }
 
   update() {
-    // Smooth zoom
-    this.distance += (this.smoothZoom - this.distance) * 0.08;
+    // Smooth fly-to interpolation
+    if (this._flyTarget) {
+      this.target.lerp(this._flyTarget, 0.06);
+      if (this.target.distanceTo(this._flyTarget) < 0.001) this._flyTarget = null;
+    }
+
+    // Smooth zoom — gentler interpolation at close range to prevent jerk
+    const zoomLerp = this.distance < 2 ? 0.05 : 0.08;
+    this.distance += (this.smoothZoom - this.distance) * zoomLerp;
 
     // Arrow keys: orbital rotation (keep target centered, change viewing angle)
     // Skip if overlays are open
@@ -1005,7 +1230,9 @@ class Navigator {
   }
 
   flyTo(position, dist, pitch) {
-    this.target.copy(position);
+    // Smooth fly-to instead of instant snap
+    this._flyTarget = position.clone();
+    this._flyDist = dist || 2;
     this.smoothZoom = dist || 2;
     if (pitch !== undefined) {
       this.targetPitch = pitch;
@@ -1099,7 +1326,7 @@ class Galaxy {
 
     // Galactic core
     this.core = new GalacticCore(this.data.bar, this.data.meta.scale);
-    const coreGroup = this.core.generate(40000);
+    const coreGroup = this.core.generate(25000);
     coreGroup.userData.layerName = 'core';
     this.layers.core = [coreGroup];
     this.scene.add(coreGroup);
@@ -1109,7 +1336,7 @@ class Galaxy {
     for (const armData of this.data.arms) {
       const arm = new SpiralArm(armData, this.data.meta.scale);
       this.arms.push(arm);
-      const armObj = arm.generate(60000);
+      const armObj = arm.generate(40000);
       armObj.userData.layerName = 'arms';
       this.layers.arms.push(armObj);
       this.scene.add(armObj);
@@ -1117,7 +1344,7 @@ class Galaxy {
 
     // Disk filler stars
     this.layers.disk = [];
-    this._addDiskStars(80000);
+    this._addDiskStars(50000);
 
     // Notable stars
     this.layers.notable = [];
@@ -1161,7 +1388,9 @@ class Galaxy {
       const y = (Math.random() - 0.5) * 1.5 * Math.exp(-r * 0.04);
       positions.push(Math.cos(a)*r, y, Math.sin(a)*r);
       const b = 0.15 + Math.random() * 0.35;
-      colors.push(b*0.9, b*0.92, b);
+      // Dim inner 30% to reduce central glare
+      const cDim = r < 15 ? 0.5 + 0.5 * (r / 15) : 1.0;
+      colors.push(b*0.9*cDim, b*0.92*cDim, b*cDim);
     }
     const geom = new THREE.BufferGeometry();
     geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -1172,7 +1401,9 @@ class Galaxy {
       transparent: true,
       opacity: 0.5,
       blending: THREE.AdditiveBlending,
-      sizeAttenuation: true
+      depthWrite: false,
+      sizeAttenuation: true,
+      map: GlowTexture.get()
     }));
     diskPoints.userData.layerName = 'disk';
     this.layers.disk.push(diskPoints);
@@ -1180,10 +1411,20 @@ class Galaxy {
   }
 
   _addSun() {
-    const geom = new THREE.SphereGeometry(0.038, 12, 12);
-    const mat = new THREE.MeshBasicMaterial({ color: 0xffdd44 });
+    // Invisible hit sphere for raycasting
+    const geom = new THREE.SphereGeometry(0.05, 6, 6);
+    const mat = new THREE.MeshBasicMaterial({ opacity: 0, transparent: true, depthWrite: false });
     this.sunMesh = new THREE.Mesh(geom, mat);
     this.sunMesh.position.copy(this.sunPosition.toThree());
+
+    // Procedural sun sprite
+    const sunTex = makeStarTexture('#ffdd44', 'G2V Main Sequence', 1.5);
+    const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: sunTex, transparent: true, depthWrite: false,
+      blending: THREE.AdditiveBlending, sizeAttenuation: true
+    }));
+    sunSprite.scale.set(0.15, 0.15, 1);
+    this.sunMesh.add(sunSprite);
     this.sunMesh.userData = {
       star: { name: "Sol (You Are Here)", type: "G2V Main Sequence — Our Sun", color: "#ffdd44", distFromSun_ly: 0, dist: 26000, desc: "Our home star. A thoroughly average G2V yellow dwarf — middle-aged, middle-sized, middle-of-the-road in every way. Which turns out to be exactly the kind of star you want if you're into things like 'stable orbits' and 'not being sterilized by radiation.' 4.6 billion years old with another 5 billion to go. Located in the Orion Spur, a minor arm between Perseus and Sagittarius. 8 planets, 5 dwarf planets, hundreds of moons, and one species that won't stop arguing about whether Pluto counts." },
       hasPlanets: true, category: 'planet-host'
@@ -1433,8 +1674,8 @@ class Galaxy {
       group.add(sprite);
     }
 
-    // Start hidden — toggle with X key
-    group.visible = false;
+    // Visible by default — toggle with X key
+    group.visible = true;
     this.layers.coordgrid.push(group);
     this.scene.add(group);
   }
@@ -1442,10 +1683,12 @@ class Galaxy {
   _addPlaneHint() {
     const planeGeom = new THREE.RingGeometry(5, 53, 64);
     const planeMat = new THREE.MeshBasicMaterial({
-      color: 0x334466, side: THREE.DoubleSide, transparent: true, opacity: 0.03
+      color: 0x334466, side: THREE.DoubleSide, transparent: true, opacity: 0.03,
+      depthWrite: false
     });
     const plane = new THREE.Mesh(planeGeom, planeMat);
     plane.rotation.x = Math.PI / 2;
+    plane.renderOrder = -2;
     plane.userData.layerName = 'plane';
     this.layers.plane.push(plane);
     this.scene.add(plane);
@@ -1916,26 +2159,49 @@ class App {
           const r = Math.sqrt(hitPoint.x * hitPoint.x + hitPoint.z * hitPoint.z);
           if (r < 60) {
             this.nav.flyTo(hitPoint, this.nav.distance);
-            // Brief HUD flash with sector designation
-            const el = document.getElementById('star-info');
-            const sectorName = this.galaxy.getSectorDesignation(hitPoint);
-            document.getElementById('si-name').textContent = `Sector ${sectorName}`;
-            const galX = (hitPoint.x / GALAXY_DATA.meta.scale).toFixed(0);
-            const galZ = (hitPoint.z / GALAXY_DATA.meta.scale).toFixed(0);
-            document.getElementById('si-detail').textContent = `Recentered · ${galX}, ${galZ} ly`;
-            el.classList.add('visible');
-            clearTimeout(this._infoTimer);
-            this._infoTimer = setTimeout(() => el.classList.remove('visible'), 2000);
           }
         }
       }
     });
 
-    // Double-click = recenter on that point
+    // Double-click = smart snap to nearest star, or recenter on galactic plane
     this.renderer.domElement.addEventListener('dblclick', e => {
       const mx = (e.clientX / window.innerWidth) * 2 - 1;
       const my = -(e.clientY / window.innerHeight) * 2 + 1;
       this.raycaster.setFromCamera(new THREE.Vector2(mx, my), this.camera);
+
+      // First try direct hit on a clickable star
+      const hits = this.raycaster.intersectObjects(this.galaxy.clickableObjects);
+      if (hits.length > 0 && hits[0].object.userData.star && hits[0].object.visible) {
+        const star = hits[0].object.userData.star;
+        const pos = star.position.toThree();
+        this.nav.flyTo(pos, Math.max(0.15, star.size * 0.3));
+        this._showStarInfo(star);
+        return;
+      }
+
+      // No direct hit — find nearest notable star by screen-space distance
+      const clickScreen = new THREE.Vector2(e.clientX, e.clientY);
+      let bestStar = null, bestMesh = null, bestDist = Infinity;
+      const tmpV = new THREE.Vector3();
+      this.galaxy.clickableObjects.forEach(mesh => {
+        if (!mesh.visible || !mesh.userData.star) return;
+        tmpV.copy(mesh.position).project(this.camera);
+        if (tmpV.z > 1) return;
+        const sx = (tmpV.x * 0.5 + 0.5) * window.innerWidth;
+        const sy = (-tmpV.y * 0.5 + 0.5) * window.innerHeight;
+        const d = Math.hypot(sx - clickScreen.x, sy - clickScreen.y);
+        if (d < bestDist) { bestDist = d; bestStar = mesh.userData.star; bestMesh = mesh; }
+      });
+
+      if (bestStar && bestDist < 200) {
+        const pos = bestStar.position.toThree();
+        this.nav.flyTo(pos, Math.max(0.15, bestStar.size * 0.3));
+        this._showStarInfo(bestStar);
+        return;
+      }
+
+      // Fallback: recenter on galactic plane intersection
       const ray = this.raycaster.ray;
       if (Math.abs(ray.direction.y) > 0.0001) {
         const t = -ray.origin.y / ray.direction.y;
@@ -1944,15 +2210,6 @@ class App {
           const r = Math.sqrt(hitPoint.x * hitPoint.x + hitPoint.z * hitPoint.z);
           if (r < 60) {
             this.nav.flyTo(hitPoint, this.nav.distance);
-            const el = document.getElementById('star-info');
-            const sectorName = this.galaxy.getSectorDesignation(hitPoint);
-            document.getElementById('si-name').textContent = `Sector ${sectorName}`;
-            const galX = (hitPoint.x / GALAXY_DATA.meta.scale).toFixed(0);
-            const galZ = (hitPoint.z / GALAXY_DATA.meta.scale).toFixed(0);
-            document.getElementById('si-detail').textContent = `Recentered \u00b7 ${galX}, ${galZ} ly`;
-            el.classList.add('visible');
-            clearTimeout(this._infoTimer);
-            this._infoTimer = setTimeout(() => el.classList.remove('visible'), 2000);
           }
         }
       }
@@ -2120,16 +2377,36 @@ class App {
       if (e.key === '1') this._setFilterMode('all');
       if (e.key === '2') this._setFilterMode('planets');
       if (e.key === '3') this._setFilterMode('stars');
+
+      // Arrow left/right — cycle through notable stars
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        this._cycleStar(e.key === 'ArrowRight' ? 1 : -1);
+      }
     });
+
+    // Wire up ◀ ▶ buttons
+    document.getElementById('prev-star-btn').addEventListener('click', () => this._cycleStar(-1));
+    document.getElementById('next-star-btn').addEventListener('click', () => this._cycleStar(1));
+  }
+
+  _cycleStar(dir) {
+    const stars = this.galaxy.stars;
+    if (!stars || stars.length === 0) return;
+    if (this._selectedStarIdx === undefined) this._selectedStarIdx = -1;
+    this._selectedStarIdx += dir;
+    if (this._selectedStarIdx >= stars.length) this._selectedStarIdx = 0;
+    if (this._selectedStarIdx < 0) this._selectedStarIdx = stars.length - 1;
+    const star = stars[this._selectedStarIdx];
+    const pos = star.position.toThree();
+    this.nav.flyTo(pos, Math.max(0.15, star.size * 0.3));
+    this._showStarInfo(star);
   }
 
   _showStarInfo(star) {
-    const el = document.getElementById('star-info');
-    document.getElementById('si-name').textContent = star.name;
-    document.getElementById('si-detail').textContent = star.type;
-    el.classList.add('visible');
-    clearTimeout(this._infoTimer);
-    this._infoTimer = setTimeout(() => el.classList.remove('visible'), 4000);
+    // Track selected index so arrow keys continue from here
+    const idx = this.galaxy.stars.indexOf(star);
+    if (idx >= 0) this._selectedStarIdx = idx;
 
     // Star portrait via canvas
     const pv = document.getElementById('photo-viewer');
@@ -2335,35 +2612,36 @@ class App {
     this._updateHUD();
     this.minimap.draw(this.nav.target, this.nav.distance, this.galaxy.sunPosition.toThree());
 
-    // Adjust point sizes based on zoom (cached refs, not traverse)
+    // Dynamic near/far plane for better depth precision at all zoom levels
     const dist = this.nav.distance;
+    const nearPlane = Math.max(0.001, dist * 0.001);
+    const farPlane = Math.max(600, dist * 10);
+    if (Math.abs(this.camera.near - nearPlane) > 0.0001) {
+      this.camera.near = nearPlane;
+      this.camera.far = farPlane;
+      this.camera.updateProjectionMatrix();
+    }
     if (!this._pointsCache) {
       this._pointsCache = [];
       this.scene.traverse(obj => { if (obj.isPoints && obj.material) this._pointsCache.push(obj); });
     }
-    // When zoomed out: small particles show galactic structure
-    // When zoomed in: particles get BIGGER so you feel immersed in the arm
-    let ptSize;
-    if (dist > 40) ptSize = 0.18;           // galaxy overview
-    else if (dist > 15) ptSize = 0.15;      // quadrant
-    else if (dist > 5) ptSize = 0.12;       // sector — still clearly visible
-    else if (dist > 1) ptSize = 0.08;       // local — individual stars resolve
-    else ptSize = 0.05;                     // stellar close-up
+    // Smooth logarithmic curve: larger when zoomed out, smaller when zoomed in
+    // Range: ~0.04 (very close) to ~0.18 (galaxy overview)
+    const logDist = Math.log10(Math.max(0.005, dist));
+    const ptSize = 0.04 + (logDist + 2.3) * 0.035; // maps -2.3..2.25 → 0.04..0.2
+    const clampedPt = Math.max(0.03, Math.min(0.2, ptSize));
     for (const p of this._pointsCache) {
-      p.material.size = ptSize;
+      p.material.size = clampedPt;
     }
 
-    // Scale notable star meshes by zoom — delayed shrink so stars stay clickable
-    let starScale;
-    if (dist > 60)      starScale = 1.0;    // galaxy view — full size
-    else if (dist > 25) starScale = 0.8;    // quadrant view
-    else if (dist > 8)  starScale = 0.5;    // sector view
-    else if (dist > 2)  starScale = 0.25;   // local neighborhood
-    else if (dist > 0.6) starScale = 0.1;   // stellar close-up
-    else if (dist > 0.15) starScale = 0.04; // extreme close
-    else                starScale = 0.015;  // practically on top of it
+    // Scale notable star meshes based on each star's distance from camera
+    // This prevents jitter/jumping when zoomed close — each star scales
+    // smoothly relative to its own distance rather than the global orbit radius
+    const camPos = this.camera.position;
     for (const mesh of this.galaxy.clickableObjects) {
-      mesh.scale.setScalar(starScale);
+      const d = camPos.distanceTo(mesh.position);
+      const s = Math.max(0.012, Math.min(1.0, Math.pow(d / 90, 0.7)));
+      mesh.scale.setScalar(s);
     }
 
     // Pulse the Sun "You Are Here" ring
