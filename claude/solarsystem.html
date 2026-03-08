@@ -292,6 +292,7 @@ canvas { display: block; }
 
     <div class="help-section">
       <h3>Shortcuts</h3>
+      <div class="help-row"><span class="help-key">H</span><span class="help-desc">Home — reset to full solar system overview</span></div>
       <div class="help-row"><span class="help-key">&larr; &rarr;</span><span class="help-desc">Cycle through planets, dwarfs &amp; comets</span></div>
       <div class="help-row"><span class="help-key">?</span><span class="help-desc">Toggle this help screen</span></div>
       <div class="help-row"><span class="help-key">ESC</span><span class="help-desc">Close overlays / stop tour</span></div>
@@ -1809,7 +1810,7 @@ class SolarSystem {
     // Sun
     this.sun = new SunObject(data.sun);
     this.scene.add(this.sun.group);
-    this.clickableObjects.push(this.sun.group);
+    this.clickableObjects.push(this.sun.mesh);  // only the small hit sphere, not the huge glow sprites
 
     // Bodies
     data.bodies.forEach(bd => {
@@ -2006,7 +2007,11 @@ class App {
           while (obj && !obj.userData.bodyData) obj = obj.parent;
           if (obj && obj.userData.bodyData) {
             this.showBodyInfo(obj.userData.bodyData);
-            this.nav.flyTo(obj.position.clone(), Math.max(this.nav.distance * 0.5, (obj.userData.bodyData.radius || 0.01) * 8));
+            const bd1 = obj.userData.bodyData;
+            const r1 = bd1.radius || 0.01;
+            const body1 = this.allBodies.find(b => b.data.id === bd1.id);
+            const targetPos1 = body1 && body1.scenePos ? body1.scenePos.clone() : obj.parent ? obj.parent.position.clone() : obj.position.clone();
+            this.nav.flyTo(targetPos1, Math.max(r1 * 8, 0.05));
           }
         }
       }, 300);
@@ -2029,7 +2034,9 @@ class App {
           const body = this.allBodies.find(b => b.data.id === bd.id);
           if (body) {
             this.showBodyInfo(bd);
-            this.nav.flyTo(body.mesh.position, Math.max(0.5, this.nav.distance * 0.5));
+            const r2 = bd.radius || 0.01;
+            const targetPos2 = body.scenePos ? body.scenePos.clone() : body.group.position.clone();
+            this.nav.flyTo(targetPos2, Math.max(r2 * 8, 0.05));
             return;
           }
         }
@@ -2040,8 +2047,8 @@ class App {
       let bestBody = null, bestDist = Infinity;
       const tmpV = new THREE.Vector3();
       this.allBodies.forEach(b => {
-        if (!b.mesh) return;
-        tmpV.copy(b.mesh.position).project(this.camera);
+        if (!b.group) return;
+        tmpV.copy(b.group.position).project(this.camera);
         if (tmpV.z > 1) return; // behind camera
         const sx = (tmpV.x * 0.5 + 0.5) * window.innerWidth;
         const sy = (-tmpV.y * 0.5 + 0.5) * window.innerHeight;
@@ -2051,7 +2058,9 @@ class App {
 
       if (bestBody && bestDist < 200) {
         this.showBodyInfo(bestBody.data);
-        this.nav.flyTo(bestBody.mesh.position, Math.max(0.5, this.nav.distance * 0.5));
+        const r3 = bestBody.data.radius || 0.01;
+        const targetPos3 = bestBody.scenePos ? bestBody.scenePos.clone() : bestBody.group.position.clone();
+        this.nav.flyTo(targetPos3, Math.max(r3 * 8, 0.05));
       } else {
         // Fallback: fly to ecliptic plane intersection
         const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -2104,6 +2113,11 @@ class App {
         return;
       }
       if (document.getElementById('help-overlay').classList.contains('active')) return;
+      // H = Home — recenter on the Sun at default overview zoom
+      if (e.key === 'h' || e.key === 'H') {
+        this.nav.flyTo(new THREE.Vector3(0, 0, 0), 35, -0.45);
+        return;
+      }
       // Arrow left/right to cycle through bodies
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
         e.preventDefault();
@@ -2426,13 +2440,13 @@ class App {
       }
     });
 
-    // Sun pulse
+    // Sun pulse — use stored base opacity so it doesn't drain to zero
     if (this.solarSystem.sun) {
       const t = Date.now() * 0.001;
       this.solarSystem.sun.group.children.forEach((child, i) => {
         if (child.isSprite) {
-          const base = child.material.opacity;
-          child.material.opacity = base * (0.9 + Math.sin(t * 1.5 + i) * 0.1);
+          if (child._baseOpacity === undefined) child._baseOpacity = child.material.opacity;
+          child.material.opacity = child._baseOpacity * (0.9 + Math.sin(t * 1.5 + i) * 0.1);
         }
       });
     }
