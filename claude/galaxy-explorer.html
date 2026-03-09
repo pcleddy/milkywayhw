@@ -148,6 +148,41 @@ canvas { display: block; }
 <div id="hint">scroll to zoom · drag to orbit · click a galaxy · <span style="color:#44ddcc">◉</span> = more info</div>
 <div id="tour-banner"></div>
 
+<div id="scale-overlay" style="position:fixed;inset:0;z-index:100;background:rgba(3,5,12,0.92);display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <div style="background:rgba(12,18,35,0.95);border:1px solid rgba(180,120,60,0.4);border-radius:12px;padding:32px 40px;max-width:560px;width:90%;position:relative;color:#ccddee;font-size:15px;line-height:1.7;">
+    <span id="scale-close" style="position:absolute;top:12px;right:16px;cursor:pointer;font-size:22px;color:#556;transition:color 0.2s;">&times;</span>
+    <h2 style="font-size:22px;color:#ddaa55;margin-bottom:16px;font-weight:400;letter-spacing:1px;">The Log Truth</h2>
+    <p style="color:#8899aa;margin-bottom:12px;font-size:13px;text-transform:uppercase;letter-spacing:1.5px;">What this map is hiding from you</p>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Galaxy sizes: inflated for visibility</div>
+      <div style="color:#99aabb;">Galaxies here are drawn roughly 5–10× their true angular size relative to the distances between them. At true scale, they'd be tiny specks separated by vast, vast emptiness. The Local Group would look like three dim dots in a sea of nothing.</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Distances: compressed but proportional</div>
+      <div style="color:#99aabb;">The relative positions use real astronomical data (RA, Dec, redshift-independent distances). Andromeda really is ~2.5 Mly away and the Virgo Cluster really is ~54 Mly. But the 3D projection compresses the depth to fit your screen.</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">What you can't see: the emptiness between</div>
+      <div style="color:#99aabb;">If the Milky Way were a dinner plate, Andromeda would be another plate about 20 feet away. The nearest large galaxy cluster (Virgo) would be 400 feet away. This map makes it look like a busy neighborhood. It's actually a desert.</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Each dot contains billions of stars</div>
+      <div style="color:#99aabb;">Every galaxy sprite on this map represents 10 million to 1 trillion individual stars, each surrounded by its own planets and moons. The Milky Way alone has more stars than every grain of sand on every beach on Earth.</div>
+    </div>
+
+    <div style="margin-bottom:6px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Zoom in on one? That's the Milky Way map.</div>
+      <div style="color:#99aabb;">Click the Milky Way link to explore inside a single galaxy. Then click Solar System to explore inside a single star system. Three maps, three levels of logarithmic lies, all necessary to make the invisible visible.</div>
+    </div>
+
+    <div style="margin-top:16px;font-size:13px;color:#556;text-align:center;">Press L or click × to close</div>
+  </div>
+</div>
+
 <div id="help-btn" class="pulsing" title="Help &amp; Controls (?)">?</div>
 
 <div id="help-overlay">
@@ -164,7 +199,8 @@ canvas { display: block; }
 
     <div class="help-section">
       <h3>Shortcuts</h3>
-      <div class="help-row"><span class="help-key">L</span><span class="help-desc">Toggle galaxy labels</span></div>
+      <div class="help-row"><span class="help-key">A</span><span class="help-desc">Toggle actual size — galaxies shrink</span></div>
+      <div class="help-row"><span class="help-key">L</span><span class="help-desc">The Log Truth — what's really going on</span></div>
       <div class="help-row"><span class="help-key">R</span><span class="help-desc">Toggle RA/Dec grid</span></div>
       <div class="help-row"><span class="help-key">M</span><span class="help-desc">Toggle Mpc distance grid</span></div>
       <div class="help-row"><span class="help-key">T</span><span class="help-desc">Start Elon's drunken tour</span></div>
@@ -1330,6 +1366,7 @@ function drunkTourNext() {
 window.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         document.getElementById('help-overlay').classList.remove('active');
+        document.getElementById('scale-overlay').style.display = 'none';
         if (drunkTour.active) stopDrunkTour();
         closeInfo();
         return;
@@ -1346,10 +1383,33 @@ window.addEventListener('keydown', e => {
         nav.flyTo(new THREE.Vector3(0, 0, 0), 30, -0.3);
         return;
     }
-    if (k === 'l') { toggleLabels(); }
+    if (k === 'l') {
+        const so = document.getElementById('scale-overlay');
+        so.style.display = so.style.display === 'flex' ? 'none' : 'flex';
+        return;
+    }
     if (k === 'r') { toggleRADec(); }
     if (k === 'm') { toggleMpc(); }
     if (k === 't') { if (!drunkTour.active) startDrunkTour(); else stopDrunkTour(); }
+    if (k === 'a') {
+        window._galActualSize = !window._galActualSize;
+        const on = window._galActualSize;
+        // Real galaxy diameters are ~0.03–0.15 Mpc. At our scene scale, they're drawn
+        // at sceneRadius ~0.15–1.2 units. Shrink ~5× to approximate real ratios.
+        const ratio = on ? 0.15 : 1.0;
+        galaxyMeshes.forEach(gm => {
+            gm.children.forEach(child => {
+                if (child.userData.isLabel) return; // keep labels readable
+                if (!child._origScale) child._origScale = child.scale.clone();
+                if (on) {
+                    child.scale.copy(child._origScale).multiplyScalar(ratio);
+                } else {
+                    child.scale.copy(child._origScale);
+                }
+            });
+        });
+        return;
+    }
 
     // Arrow left/right — cycle through galaxies
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
@@ -1372,6 +1432,16 @@ function cycleGalaxy(dir) {
 
 document.getElementById('prev-galaxy-btn').addEventListener('click', () => cycleGalaxy(-1));
 document.getElementById('next-galaxy-btn').addEventListener('click', () => cycleGalaxy(1));
+
+// Scale overlay close
+document.getElementById('scale-close').addEventListener('click', () => {
+    document.getElementById('scale-overlay').style.display = 'none';
+});
+document.getElementById('scale-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('scale-overlay')) {
+        document.getElementById('scale-overlay').style.display = 'none';
+    }
+});
 
 // Help button + overlay wiring
 document.getElementById('help-close').addEventListener('click', () => {

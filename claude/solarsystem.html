@@ -260,7 +260,9 @@ canvas { display: block; }
   <label><input type="checkbox" data-layer="comets" checked> Comets</label>
   <label><input type="checkbox" data-layer="labels" checked> Labels</label>
   <label><input type="checkbox" data-layer="habzone"> Habitable Zone</label>
+  <label><input type="checkbox" data-layer="hillsphere"> Hill Spheres (gravity)</label>
   <label><input type="checkbox" data-layer="grid"> Distance Grid</label>
+  <label><input type="checkbox" id="actual-size-toggle"> Actual Size (lol)</label>
 </div>
 
 <div id="photo-viewer">
@@ -293,6 +295,10 @@ canvas { display: block; }
     <div class="help-section">
       <h3>Shortcuts</h3>
       <div class="help-row"><span class="help-key">H</span><span class="help-desc">Home — reset to full solar system overview</span></div>
+      <div class="help-row"><span class="help-key">A</span><span class="help-desc">Toggle actual size — the humbling truth</span></div>
+      <div class="help-row"><span class="help-key">G</span><span class="help-desc">Hill spheres — gravitational influence zones</span></div>
+      <div class="help-row"><span class="help-key">L</span><span class="help-desc">The Log Truth — what's really going on</span></div>
+      <div class="help-row"><span class="help-key">T</span><span class="help-desc">Toggle all text labels on/off</span></div>
       <div class="help-row"><span class="help-key">&larr; &rarr;</span><span class="help-desc">Cycle through planets, dwarfs &amp; comets</span></div>
       <div class="help-row"><span class="help-key">?</span><span class="help-desc">Toggle this help screen</span></div>
       <div class="help-row"><span class="help-key">ESC</span><span class="help-desc">Close overlays / stop tour</span></div>
@@ -305,6 +311,46 @@ canvas { display: block; }
     </div>
 
     <div class="help-footer">Press ? or click &times; to close</div>
+  </div>
+</div>
+
+<div id="scale-overlay" style="position:fixed;inset:0;z-index:100;background:rgba(3,5,12,0.92);display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <div style="background:rgba(12,18,35,0.95);border:1px solid rgba(180,120,60,0.4);border-radius:12px;padding:32px 40px;max-width:560px;width:90%;position:relative;color:#ccddee;font-size:15px;line-height:1.7;">
+    <span id="scale-close" style="position:absolute;top:12px;right:16px;cursor:pointer;font-size:22px;color:#556;transition:color 0.2s;">&times;</span>
+    <h2 style="font-size:22px;color:#ddaa55;margin-bottom:16px;font-weight:400;letter-spacing:1px;">The Log Truth</h2>
+    <p style="color:#8899aa;margin-bottom:12px;font-size:13px;text-transform:uppercase;letter-spacing:1.5px;">What this map is hiding from you</p>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Planet Sizes: inflated 100–1,000×</div>
+      <div style="color:#99aabb;">Earth is shown ~100× too big. Mercury ~160×. If planets were drawn to scale with their orbits, every single one would be invisible — smaller than a pixel on any screen ever made.</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">The Sun: shrunken 19× relative to its map size</div>
+      <div style="color:#99aabb;">Even at the exaggerated planet scale, a true-sized Sun would fill half the inner solar system and swallow everything out to Mercury's orbit visually. We made it small enough that you can see past it.</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Orbital distances: roughly proportional</div>
+      <div style="color:#99aabb;">The orbital paths are the most honest part. Neptune really is ~30× farther from the Sun than Earth. But this means planets near the Sun look crowded and outer planets look lonely — which is actually true to life.</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Moon distances: compressed ~10×</div>
+      <div style="color:#99aabb;">Moons are huddled near their planets for visibility. In reality, the Earth-Moon distance is 30× Earth's diameter. Jupiter's moons are scattered across a space larger than the Sun.</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Press G to see Hill spheres (gravity zones)</div>
+      <div style="color:#99aabb;">Each planet's Hill sphere is the region where its gravity dominates over the Sun's — where it can hold onto moons. Jupiter's zone is massive (0.35 AU). Earth's is tiny (0.01 AU). Anything outside a planet's Hill sphere belongs to the Sun.</div>
+    </div>
+
+    <div style="margin-bottom:6px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Press A to see actual size</div>
+      <div style="color:#99aabb;">Toggle it and watch everything vanish. That's reality. Every textbook, every poster, every app does what we do here — because the truth is simply too empty to draw.</div>
+    </div>
+
+    <div style="margin-top:16px;font-size:13px;color:#556;text-align:center;">Press L or click × to close</div>
   </div>
 </div>
 
@@ -1865,6 +1911,67 @@ class SolarSystem {
     this.scene.add(hzMesh);
     this._addToLayer('habzone', hzMesh);
 
+    // Hill spheres — gravitational influence zones
+    // r_Hill = a * (m_planet / (3 * m_sun))^(1/3)
+    const sunMassEarth = data.sun.mass_earth; // 333000
+    data.bodies.forEach(bd => {
+      if (!bd.mass_earth || !bd.au || bd.type === 'belt') return;
+      const hillRadiusAU = bd.au * Math.pow(bd.mass_earth / (3 * sunMassEarth), 1/3);
+      if (hillRadiusAU < 0.001) return; // too small to see
+
+      // Create a translucent sphere at the planet's position
+      // We use a constant scene-space radius based on the Hill sphere
+      // compressed through our asinh scale at the planet's distance
+      const innerEdge = auToScene(bd.au - hillRadiusAU);
+      const outerEdge = auToScene(bd.au + hillRadiusAU);
+      const sceneRadius = (outerEdge - innerEdge) / 2;
+
+      const hillGeo = new THREE.SphereGeometry(Math.max(0.05, sceneRadius), 32, 24);
+      const hillColor = bd.category === 'inner' ? 0x4488cc : bd.category === 'outer' ? 0x88aa44 : 0xaa6644;
+      const hillMat = new THREE.MeshBasicMaterial({
+        color: hillColor, transparent: true, opacity: 0.06,
+        side: THREE.DoubleSide, depthWrite: false
+      });
+      const hillMesh = new THREE.Mesh(hillGeo, hillMat);
+      hillMesh.visible = false;
+      this.scene.add(hillMesh);
+      this._addToLayer('hillsphere', hillMesh);
+
+      // Wireframe outline for visibility
+      const wireGeo = new THREE.SphereGeometry(Math.max(0.05, sceneRadius), 24, 16);
+      const wireMat = new THREE.MeshBasicMaterial({
+        color: hillColor, transparent: true, opacity: 0.15,
+        wireframe: true, depthWrite: false
+      });
+      const wireMesh = new THREE.Mesh(wireGeo, wireMat);
+      wireMesh.visible = false;
+      this.scene.add(wireMesh);
+      this._addToLayer('hillsphere', wireMesh);
+
+      // Label
+      const hillLabel = this._makeTextSprite(
+        bd.name + ' Hill (' + (hillRadiusAU < 0.1 ? (hillRadiusAU * 1000).toFixed(0) + 'k km' : hillRadiusAU.toFixed(2) + ' AU') + ')',
+        '#' + hillColor.toString(16).padStart(6, '0')
+      );
+      hillLabel.visible = false;
+      this.scene.add(hillLabel);
+      this._addToLayer('hillsphere', hillLabel);
+
+      // Store reference so we can update position each frame
+      const body = this.allBodies.find(b => b.data.id === bd.id);
+      if (body) {
+        if (!body._hillObjects) body._hillObjects = [];
+        body._hillObjects.push(hillMesh, wireMesh, hillLabel);
+        // Set initial position
+        if (body.scenePos) {
+          hillMesh.position.copy(body.scenePos);
+          wireMesh.position.copy(body.scenePos);
+          hillLabel.position.copy(body.scenePos);
+          hillLabel.position.y += sceneRadius + 0.1;
+        }
+      }
+    });
+
     // Distance grid (concentric rings at 1, 5, 10, 30 AU)
     const gridDistances = [1, 5, 10, 30, 50];
     gridDistances.forEach(au => {
@@ -1902,16 +2009,19 @@ class SolarSystem {
 
   _makeTextSprite(text, color) {
     const c = document.createElement('canvas');
-    c.width = 128; c.height = 32;
     const ctx = c.getContext('2d');
+    ctx.font = '20px sans-serif';
+    const tw = Math.max(128, Math.ceil(ctx.measureText(text).width) + 24);
+    c.width = tw; c.height = 32;
     ctx.font = '20px sans-serif';
     ctx.fillStyle = color;
     ctx.textAlign = 'center';
-    ctx.fillText(text, 64, 22);
+    ctx.fillText(text, tw / 2, 22);
     const tex = new THREE.CanvasTexture(c);
     const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
     const sp = new THREE.Sprite(mat);
-    sp.scale.set(0.6, 0.15, 1);
+    const aspect = tw / 32;
+    sp.scale.set(0.15 * aspect, 0.15, 1);
     return sp;
   }
 
@@ -2105,6 +2215,7 @@ class App {
     window.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         document.getElementById('help-overlay').classList.remove('active');
+        document.getElementById('scale-overlay').style.display = 'none';
         if (this.tour.running) this.tour.stop();
         return;
       }
@@ -2116,6 +2227,29 @@ class App {
       // H = Home — recenter on the Sun at default overview zoom
       if (e.key === 'h' || e.key === 'H') {
         this.nav.flyTo(new THREE.Vector3(0, 0, 0), 35, -0.45);
+        return;
+      }
+      // L = The Log Truth
+      if (e.key === 'l' || e.key === 'L') {
+        const so = document.getElementById('scale-overlay');
+        so.style.display = so.style.display === 'flex' ? 'none' : 'flex';
+        return;
+      }
+      // G = toggle Hill Spheres (gravity)
+      if (e.key === 'g' || e.key === 'G') {
+        this._toggleLayer('hillsphere');
+        return;
+      }
+      // A = toggle Actual Size
+      if (e.key === 'a' || e.key === 'A') {
+        const cb = document.getElementById('actual-size-toggle');
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+        return;
+      }
+      // T = toggle all text/labels
+      if (e.key === 't' || e.key === 'T') {
+        this._toggleLayer('labels');
         return;
       }
       // Arrow left/right to cycle through bodies
@@ -2142,6 +2276,16 @@ class App {
       helpBtn.classList.remove('pulsing');
     });
 
+    // Scale overlay close
+    document.getElementById('scale-close').addEventListener('click', () => {
+      document.getElementById('scale-overlay').style.display = 'none';
+    });
+    document.getElementById('scale-overlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('scale-overlay')) {
+        document.getElementById('scale-overlay').style.display = 'none';
+      }
+    });
+
     // Wire up ◀ ▶ buttons
     document.getElementById('prev-body-btn').addEventListener('click', () => this._cycleBody(-1));
     document.getElementById('next-body-btn').addEventListener('click', () => this._cycleBody(1));
@@ -2155,6 +2299,46 @@ class App {
           o.visible = cb.checked;
           if (o.isGroup) o.traverse(c => { c.visible = cb.checked; });
         });
+      });
+    });
+
+    // Actual Size toggle — the humbling truth of space
+    // Actual Size toggle — the humbling truth of space
+    this._actualSize = false;
+    const KM_PER_AU = 149597870.7;
+    const SCALE = SOLAR_SYSTEM_DATA.meta.scaleFactor; // 8
+    document.getElementById('actual-size-toggle').addEventListener('change', (e) => {
+      this._actualSize = e.target.checked;
+
+      // Helper: shrink all children of a group by a uniform ratio
+      const scaleGroup = (group, ratio) => {
+        group.children.forEach(child => {
+          if (!child._origScale) child._origScale = child.scale.clone();
+          if (this._actualSize) {
+            child.scale.copy(child._origScale).multiplyScalar(ratio);
+          } else {
+            child.scale.copy(child._origScale);
+          }
+        });
+      };
+
+      // Sun: map radius 0.5, real radius 696340 km
+      const sun = this.solarSystem.sun;
+      if (sun) {
+        const sunMapR = sun.group.userData.bodyData.radius; // 0.5
+        const sunRealSceneR = (696340 / KM_PER_AU) * SCALE; // real radius in scene units
+        const sunRatio = sunRealSceneR / sunMapR; // ~0.074
+        scaleGroup(sun.group, sunRatio);
+      }
+
+      // All bodies: use radius_km where available
+      this.allBodies.forEach(body => {
+        const bd = body.data;
+        const rkm = bd.radius_km || 10; // moons/comets: ~10km
+        const realSceneR = (rkm / KM_PER_AU) * SCALE;
+        const mapR = bd.radius || 0.01;
+        const ratio = realSceneR / mapR;
+        scaleGroup(body.group, ratio);
       });
     });
 
@@ -2411,6 +2595,24 @@ class App {
       this._updateLiveCoords();
     }
 
+    // Update Hill sphere positions to follow planets
+    this.allBodies.forEach(body => {
+      if (body._hillObjects && body.scenePos) {
+        body._hillObjects.forEach((obj, i) => {
+          obj.position.copy(body.scenePos);
+          // Labels sit on top of the sphere
+          if (obj.isSprite) obj.position.y += obj.position.y === body.scenePos.y ? 0 : 0;
+        });
+        // Label is the last one — offset it upward
+        const label = body._hillObjects[body._hillObjects.length - 1];
+        if (label && label.isSprite) {
+          label.position.copy(body.scenePos);
+          const meshRadius = body._hillObjects[0].geometry?.parameters?.radius || 0.2;
+          label.position.y += meshRadius + 0.15;
+        }
+      }
+    });
+
     this.minimap.draw(this.allBodies, this.nav.target, new THREE.Vector3(0, 0, 0));
 
     // Scale labels by distance
@@ -2422,14 +2624,16 @@ class App {
         body.label.scale.set(labelScale * aspect, labelScale, 1);
         body.label.position.y = body.data.radius * 2.5 + labelScale * 0.5;
       }
-      // Scale glow sprites
-      body.group.children.forEach(child => {
-        if (child.isSprite && child !== body.label) {
-          const r = body.data.radius || 0.01;
-          const glowScale = Math.max(r * 4, dist * 0.01);
-          child.scale.set(glowScale, glowScale, 1);
-        }
-      });
+      // Scale glow sprites (skip when actual-size mode is on)
+      if (!this._actualSize) {
+        body.group.children.forEach(child => {
+          if (child.isSprite && child !== body.label) {
+            const r = body.data.radius || 0.01;
+            const glowScale = Math.max(r * 4, dist * 0.01);
+            child.scale.set(glowScale, glowScale, 1);
+          }
+        });
+      }
     });
 
     // Point comet tails away from Sun (origin)

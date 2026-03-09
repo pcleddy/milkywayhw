@@ -293,6 +293,42 @@
   <div class="layer-row"><input type="checkbox" id="layer-plane" checked data-layer="plane"><label for="layer-plane">Galactic Plane</label></div>
   <div class="layer-row"><input type="checkbox" id="layer-sectors" checked data-layer="sectors"><label for="layer-sectors">Sector Grid (Z)</label></div>
   <div class="layer-row"><input type="checkbox" id="layer-coordgrid" data-layer="coordgrid"><label for="layer-coordgrid">Coord Grid (X)</label></div>
+  <div class="layer-row" style="margin-top:8px;border-top:1px solid rgba(60,80,120,0.2);padding-top:8px;"><input type="checkbox" id="actual-size-toggle"><label for="actual-size-toggle" style="color:#aa6644;">Actual Size (lol)</label></div>
+</div>
+
+<div id="scale-overlay" style="position:fixed;inset:0;z-index:100;background:rgba(3,5,12,0.92);display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <div style="background:rgba(12,18,35,0.95);border:1px solid rgba(180,120,60,0.4);border-radius:12px;padding:32px 40px;max-width:560px;width:90%;position:relative;color:#ccddee;font-size:15px;line-height:1.7;">
+    <span id="scale-close" style="position:absolute;top:12px;right:16px;cursor:pointer;font-size:22px;color:#556;transition:color 0.2s;">&times;</span>
+    <h2 style="font-size:22px;color:#ddaa55;margin-bottom:16px;font-weight:400;letter-spacing:1px;">The Log Truth</h2>
+    <p style="color:#8899aa;margin-bottom:12px;font-size:13px;text-transform:uppercase;letter-spacing:1.5px;">What this map is hiding from you</p>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Stars are not dots. They're points.</div>
+      <div style="color:#99aabb;">On this map, 1 unit ≈ 1,000 light-years. The Sun's real diameter is 0.000000009 light-years. Every star you see is drawn roughly 10 billion times too large. At true scale, you are looking at pure darkness — no star would illuminate a single pixel.</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Star sizes here = importance, not physics</div>
+      <div style="color:#99aabb;">Sirius appears big because it's famous and close. Betelgeuse appears big because it's a supergiant. But at this scale, a supergiant and a red dwarf are equally invisible. We size them by significance so you can find them.</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">The galaxy shape is real — the particles aren't</div>
+      <div style="color:#99aabb;">Spiral arms, the central bar, the core bulge — all based on real observations. But the individual particles represent millions of stars each. The Milky Way has 100–400 billion stars. We're showing about 80,000 particles.</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Distances between stars: incomprehensibly vast</div>
+      <div style="color:#99aabb;">Even in our "dense" galactic neighborhood, the nearest star is 4.24 light-years away. If the Sun were a marble in New York, the nearest other marble would be in Los Angeles. The space between stars is almost perfectly empty.</div>
+    </div>
+
+    <div style="margin-bottom:6px;">
+      <div style="color:#ddaa55;font-size:13px;margin-bottom:4px;font-weight:600;">Press A to see actual size</div>
+      <div style="color:#99aabb;">Toggle it. Everything disappears. At maximum zoom you still see nothing. That's 100,000 light-years of galaxy containing hundreds of billions of stars — and you can't see a single one.</div>
+    </div>
+
+    <div style="margin-top:16px;font-size:13px;color:#556;text-align:center;">Press L or click × to close</div>
+  </div>
 </div>
 
 <div id="help-btn" class="pulsing" title="Help &amp; Controls (?)">?</div>
@@ -329,11 +365,12 @@
       <h3>Shortcuts</h3>
       <div class="help-row"><span class="help-key">T</span><span class="help-desc">Start / stop guided tour</span></div>
       <div class="help-row"><span class="help-key">H</span><span class="help-desc">Fly home to Sol (our Sun)</span></div>
+      <div class="help-row"><span class="help-key">A</span><span class="help-desc">Toggle actual size — the void stares back</span></div>
       <div class="help-row"><span class="help-key">G</span><span class="help-desc">Galaxy overview — overhead, 50% visible</span></div>
       <div class="help-row"><span class="help-key">1</span><span class="help-desc">Mode: All (stars + planet hosts)</span></div>
       <div class="help-row"><span class="help-key">2</span><span class="help-desc">Mode: Planets only (exoplanet hosts)</span></div>
       <div class="help-row"><span class="help-key">3</span><span class="help-desc">Mode: Stars only (no planet hosts)</span></div>
-      <div class="help-row"><span class="help-key">L</span><span class="help-desc">Toggle layer panel (inc. sector grid overlay)</span></div>
+      <div class="help-row"><span class="help-key">L</span><span class="help-desc">The Log Truth — what's really going on</span></div>
       <div class="help-row"><span class="help-key">X</span><span class="help-desc">Toggle coordinate grid (lat/long lines)</span></div>
       <div class="help-row"><span class="help-key">Z</span><span class="help-desc">Toggle sector grid (named sectors)</span></div>
       <div class="help-row"><span class="help-key">?</span><span class="help-desc">Toggle this help screen</span></div>
@@ -1196,29 +1233,7 @@ class Navigator {
     this.yaw += (this.targetYaw - this.yaw) * 0.12;
     this.pitch += (this.targetPitch - this.pitch) * 0.12;
 
-    // A/D = orbit yaw (circle left/right around target)
-    if (this.keys['a']) this.targetYaw += this.orbitSpeed;
-    if (this.keys['d']) this.targetYaw -= this.orbitSpeed;
     this.targetPitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, this.targetPitch));
-
-    const speed = this.moveSpeed * (this.distance * 0.02 + 0.01);
-
-    // W/S = move target up/down relative to current camera perspective
-    if (this.keys['w'] || this.keys['s']) {
-      // Camera's local up vector based on current orientation
-      const up = new THREE.Vector3(
-        -Math.sin(this.pitch) * Math.sin(this.yaw),
-        Math.cos(this.pitch),
-        -Math.sin(this.pitch) * Math.cos(this.yaw)
-      ).normalize();
-      const dir = this.keys['w'] ? 1 : -1;
-      this.target.addScaledVector(up, speed * dir);
-    }
-
-    // Q/E = move target up/down (absolute Y)
-    if (this.keys['q'] || this.keys['e']) {
-      this.target.y += (this.keys['q'] ? speed : -speed);
-    }
 
     // Position camera
     const cx = this.target.x + Math.cos(this.pitch) * Math.sin(this.yaw) * this.distance;
@@ -2276,6 +2291,60 @@ class App {
       });
     });
 
+    // Actual Size toggle — stars are points, space is empty
+    document.getElementById('actual-size-toggle').addEventListener('change', (e) => {
+      const on = e.target.checked;
+      // Real star sizes in light-years are ~10^-8 ly (Sun = 0.000000009 ly)
+      // Our map unit ≈ 1000 ly, so real stars are ~10^-11 map units.
+      // We can't actually render that, so we just make everything vanishingly small.
+      const starScale = on ? 0.0001 : 1.0;
+
+      // Shrink all PointsMaterial particle systems
+      this.galaxy.scene.traverse(obj => {
+        if (obj.isPoints && obj.material) {
+          if (!obj.material._origSize) obj.material._origSize = obj.material.size;
+          obj.material.size = on ? obj.material._origSize * 0.001 : obj.material._origSize;
+          obj.material.needsUpdate = true;
+        }
+      });
+
+      // Shrink all notable star sprites
+      this.galaxy.clickableObjects.forEach(mesh => {
+        mesh.children.forEach(child => {
+          if (child.isSprite) {
+            if (!child._origScale) child._origScale = child.scale.clone();
+            if (on) {
+              child.scale.copy(child._origScale).multiplyScalar(starScale);
+            } else {
+              child.scale.copy(child._origScale);
+            }
+          }
+        });
+      });
+
+      // Shrink the Sun marker too
+      if (this.galaxy.sunMesh) {
+        this.galaxy.sunMesh.children.forEach(child => {
+          if (child.isSprite) {
+            if (!child._origScale) child._origScale = child.scale.clone();
+            if (on) child.scale.copy(child._origScale).multiplyScalar(starScale);
+            else child.scale.copy(child._origScale);
+          }
+        });
+      }
+
+      // Also dim the core glow sprites
+      this.galaxy.scene.traverse(obj => {
+        if (obj.isSprite && obj.material && obj.material.blending === THREE.AdditiveBlending) {
+          if (obj.parent === this.galaxy.scene || (obj.parent && !obj.parent.userData.star)) {
+            if (!obj._origScale) obj._origScale = obj.scale.clone();
+            if (on) obj.scale.copy(obj._origScale).multiplyScalar(0.001);
+            else obj.scale.copy(obj._origScale);
+          }
+        }
+      });
+    });
+
     // Close layer panel when clicking outside
     window.addEventListener('click', e => {
       const panel = document.getElementById('layer-panel');
@@ -2284,6 +2353,16 @@ class App {
           !panel.contains(e.target) && e.target !== btn) {
         panel.classList.remove('active');
         btn.classList.remove('hidden');
+      }
+    });
+
+    // Scale overlay close
+    document.getElementById('scale-close').addEventListener('click', () => {
+      document.getElementById('scale-overlay').style.display = 'none';
+    });
+    document.getElementById('scale-overlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('scale-overlay')) {
+        document.getElementById('scale-overlay').style.display = 'none';
       }
     });
 
@@ -2323,6 +2402,7 @@ class App {
     window.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         document.getElementById('help-overlay').classList.remove('active');
+        document.getElementById('scale-overlay').style.display = 'none';
         if (this.tour.running) this.tour.stop();
         return;
       }
@@ -2363,10 +2443,9 @@ class App {
         if (cb) cb.checked = nowVisible;
       }
       if (k === 'l') {
-        const panel = document.getElementById('layer-panel');
-        const btn = document.getElementById('layer-toggle-btn');
-        panel.classList.toggle('active');
-        btn.classList.toggle('hidden', panel.classList.contains('active'));
+        const so = document.getElementById('scale-overlay');
+        so.style.display = so.style.display === 'flex' ? 'none' : 'flex';
+        return;
       }
       if (k === 't') {
         if (this.tour.running) this.tour.stop();
@@ -2377,6 +2456,14 @@ class App {
       if (e.key === '1') this._setFilterMode('all');
       if (e.key === '2') this._setFilterMode('planets');
       if (e.key === '3') this._setFilterMode('stars');
+
+      // A = toggle Actual Size
+      if (k === 'a') {
+        const cb = document.getElementById('actual-size-toggle');
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+        return;
+      }
 
       // Arrow left/right — cycle through notable stars
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
