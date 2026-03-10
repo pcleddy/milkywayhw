@@ -6,7 +6,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #050510; overflow: hidden; cursor: grab; font-family: monospace; color: #ccd; }
 body.dragging { cursor: grabbing; }
-canvas { display: block; }
+canvas { display: block; touch-action: none; }
 #hud {
     position: fixed; top: 12px; left: 12px; color: #889; font-size: 15px;
     pointer-events: none; line-height: 1.6;
@@ -131,6 +131,15 @@ canvas { display: block; }
 }
 #help-close:hover { color: #ccc; }
 .help-footer { margin-top: 16px; font-size: 13px; color: #334; text-align: center; }
+
+@media (max-width: 768px) {
+  #hud { top: 10px; left: 10px; }
+  #controls { bottom: 10px; right: 10px; max-width: 45vw; font-size: 12px; }
+  #help-btn { bottom: 10px; left: 10px; font-size: 16px; width: 32px; height: 32px; }
+  #zoom-bar { display: none; }
+  #hover-tip { display: none; }
+  #info-panel { max-height: 50vh; bottom: 50px; }
+}
 </style>
 </head>
 <body>
@@ -937,7 +946,27 @@ renderer.domElement.addEventListener('touchmove', e => {
         }
     }
 }, {passive: false});
-renderer.domElement.addEventListener('touchend', () => { dragging3d = false; });
+renderer.domElement.addEventListener('touchend', e => {
+    dragging3d = false;
+    // Tap / double-tap detection
+    if (e.changedTouches.length === 1) {
+        const t = e.changedTouches[0];
+        if (!dragMoved3d) {
+            const now = Date.now();
+            const cx = t.clientX, cy = t.clientY;
+            if ((now - (renderer.domElement._lastTapTime || 0)) < 300) {
+                clearTimeout(renderer.domElement._tapTimeout);
+                renderer.domElement._lastTapTime = 0;
+                renderer.domElement.dispatchEvent(new MouseEvent('dblclick', { clientX: cx, clientY: cy, bubbles: true }));
+            } else {
+                renderer.domElement._lastTapTime = now;
+                renderer.domElement._tapTimeout = setTimeout(() => {
+                    renderer.domElement.dispatchEvent(new MouseEvent('click', { clientX: cx, clientY: cy, bubbles: true }));
+                }, 300);
+            }
+        }
+    }
+});
 
 // Click
 let clickTimer3d = null;

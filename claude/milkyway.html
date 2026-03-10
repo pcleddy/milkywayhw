@@ -7,7 +7,7 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #000; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; color: #ccc; }
-  canvas { display: block; }
+  canvas { display: block; touch-action: none; }
 
   #hud {
     position: fixed; top: 20px; left: 20px; z-index: 10;
@@ -245,6 +245,23 @@
   }
   .mode-btn:hover { color: #99aacc; background: rgba(60,80,120,0.2); }
   .mode-btn.active { color: #aaccff; background: rgba(60,90,140,0.4); }
+
+  /* === MOBILE RESPONSIVE === */
+  @media (max-width: 768px) {
+    #hud { top: 10px; left: 10px; }
+    #hud > div:first-child { font-size: 14px !important; }
+    #controls { bottom: 10px; right: 10px; max-width: 45vw; font-size: 12px; max-height: 50vh; overflow-y: auto; }
+    #help-btn { bottom: 10px; left: 10px; font-size: 16px; width: 32px; height: 32px; }
+    #zoom-bar { display: none; }
+    #minimap { top: 10px; right: 10px; width: 90px !important; height: 90px !important; }
+    #photo-viewer { bottom: 50px; right: 10px; left: 10px; max-width: none; max-height: 50vh; }
+    .photo-name { font-size: 15px !important; }
+    .photo-type { font-size: 12px !important; }
+    .photo-desc { font-size: 12px !important; }
+    #help-overlay .help-box { width: 90vw; max-height: 80vh; padding: 16px; }
+    .const-btn { padding: 4px 10px !important; font-size: 12px !important; margin: 2px 3px !important; }
+    #hover-tip { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -293,6 +310,18 @@
   <div class="layer-row"><input type="checkbox" id="layer-plane" checked data-layer="plane"><label for="layer-plane">Galactic Plane</label></div>
   <div class="layer-row"><input type="checkbox" id="layer-sectors" checked data-layer="sectors"><label for="layer-sectors">Sector Grid (Z)</label></div>
   <div class="layer-row"><input type="checkbox" id="layer-coordgrid" data-layer="coordgrid"><label for="layer-coordgrid">Coord Grid (X)</label></div>
+  <div class="layer-row"><input type="checkbox" id="layer-constellation" data-layer="constellation"><label for="layer-constellation">Constellations</label></div>
+  <div id="constellation-btns" style="display:none;padding:2px 0 4px 22px;">
+    <button class="const-btn" data-const="orion" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Orion</button>
+    <button class="const-btn" data-const="gemini" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Gemini</button>
+    <button class="const-btn" data-const="bigdipper" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Big Dipper</button>
+    <button class="const-btn" data-const="cassiopeia" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Cassiopeia</button>
+    <button class="const-btn" data-const="cygnus" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Cygnus</button>
+    <button class="const-btn" data-const="scorpius" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Scorpius</button>
+    <button class="const-btn" data-const="crux" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">S. Cross</button>
+    <button class="const-btn" data-const="taurus" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Taurus</button>
+    <button class="const-btn" data-const="canismajor" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Canis Major</button>
+  </div>
   <div class="layer-row" style="margin-top:8px;border-top:1px solid rgba(60,80,120,0.2);padding-top:8px;"><input type="checkbox" id="actual-size-toggle"><label for="actual-size-toggle" style="color:#aa6644;">Actual Size (lol)</label></div>
 </div>
 
@@ -373,6 +402,7 @@
       <div class="help-row"><span class="help-key">L</span><span class="help-desc">The Log Truth — what's really going on</span></div>
       <div class="help-row"><span class="help-key">X</span><span class="help-desc">Toggle coordinate grid (lat/long lines)</span></div>
       <div class="help-row"><span class="help-key">Z</span><span class="help-desc">Toggle sector grid (named sectors)</span></div>
+      <div class="help-row"><span class="help-key">O</span><span class="help-desc">Toggle constellations — use buttons to fly to each</span></div>
       <div class="help-row"><span class="help-key">?</span><span class="help-desc">Toggle this help screen</span></div>
       <div class="help-row"><span class="help-key">ESC</span><span class="help-desc">Close overlays / end tour</span></div>
     </div>
@@ -454,10 +484,65 @@ const GALAXY_DATA = {
   notableStars: [
     // --- Galactic landmarks ---
     { name: "Sagittarius A*", type: "Supermassive Black Hole · 4M solar masses", x: 0, y: 0, z: 0, magnitude: -1, color: "#ffcc44", size: 3.5, distFromSun_ly: 26000, desc: "The monster at the center of our galaxy. 4 million solar masses crammed into a region smaller than Mercury's orbit. Event horizon 24 million km across. Stars orbit it at 3% light speed. The Event Horizon Telescope imaged its shadow in 2022. Won the 2020 Nobel Prize for the team that proved it exists. It's currently quiet — but it wasn't always." },
-    { name: "Betelgeuse",     type: "Red Supergiant · 700× solar radius",  dist: 26700, angle: 1.34, z: 0.02, color: "#ff6633", size: 2.2, distFromSun_ly: 700, desc: "Orion's red shoulder. 700× the Sun's radius — if placed at the Sun, it would swallow Mars. The 'Great Dimming' of 2020 made headlines (supernova?!) but turned out to be just a giant dust sneeze. It will go supernova eventually — could be tomorrow, could be 100,000 years. When it does, it'll be visible in daylight for weeks. Only 10 million years old but already dying. Stars this massive live fast and die spectacular." },
-    { name: "Sirius",         type: "A1V Binary · Brightest star in night sky · Only 8.6 ly away · Its white dwarf companion Sirius B is the size of Earth but weighs as much as the Sun · Ancient Egyptians based their calendar on it",   dist: 25991, angle: 1.29, z: 0.0, color: "#aaccff", size: 2.0, distFromSun_ly: 8.6 },
-    { name: "Rigel",          type: "B8Ia Blue Supergiant · 120,000× solar luminosity · Orion's brightest star · If it replaced the Sun you'd need SPF infinity · Only 8M years old but already dying", dist: 25130, angle: 1.32, z: -0.01, color: "#99bbff", size: 2.0, distFromSun_ly: 860 },
-    { name: "Deneb",          type: "A2Ia Supergiant · 200,000× solar luminosity · 2,600 ly away yet still one of brightest in our sky · Tail of Cygnus the Swan · If it were as close as Sirius it would cast shadows at night",   dist: 23500, angle: 1.25, z: 0.02, color: "#ddeeff", size: 1.8, distFromSun_ly: 2600 },
+    { name: "Betelgeuse",     type: "Red Supergiant · 700× solar radius",  dist: 26652, angle: 1.3089, z: -0.0974, color: "#ff6633", size: 2.2, distFromSun_ly: 700, constellation: "orion", desc: "Orion's red shoulder. 700× the Sun's radius — if placed at the Sun, it would swallow Mars. The 'Great Dimming' of 2020 made headlines (supernova?!) but turned out to be just a giant dust sneeze. It will go supernova eventually — could be tomorrow, could be 100,000 years. When it does, it'll be visible in daylight for weeks. Only 10 million years old but already dying. Stars this massive live fast and die spectacular." },
+    { name: "Sirius",         type: "A1V Binary · Brightest star in night sky · Only 8.6 ly away · Its white dwarf companion Sirius B is the size of Earth but weighs as much as the Sun · Ancient Egyptians based their calendar on it",   dist: 26005, angle: 1.3003, z: -0.0006, color: "#aaccff", size: 2.0, distFromSun_ly: 8.6, constellation: "canismajor" },
+    { name: "Rigel",          type: "B8Ia Blue Supergiant · 120,000× solar luminosity · Orion's brightest star · If it replaced the Sun you'd need SPF infinity · Only 8M years old but already dying", dist: 26686, angle: 1.3148, z: -0.3429, color: "#99bbff", size: 2.0, distFromSun_ly: 860, constellation: "orion" },
+    { name: "Bellatrix",     type: "B2III Blue Giant · Orion's right shoulder · 6,400× solar luminosity · 250 ly away · One of the hottest stars visible to the naked eye · Name means 'female warrior' in Latin", dist: 26218, angle: 1.3044, z: -0.0391, color: "#aabbff", size: 1.5, distFromSun_ly: 250, constellation: "orion" },
+    { name: "Mintaka",       type: "O9.5II + B2V · Orion's Belt (west) · Actually an eclipsing binary + 2 more stars · 1,200 ly away · Almost exactly on the celestial equator — ancient navigators loved it", dist: 27044, angle: 1.3187, z: -0.3207, color: "#aaccff", size: 1.4, distFromSun_ly: 1200, constellation: "orion" },
+    { name: "Alnilam",       type: "B0Ia Blue Supergiant · Orion's Belt (center) · 275,000× solar luminosity · The most distant of the Belt stars at 2,000 ly · Losing mass at a ferocious rate via stellar wind", dist: 27754, angle: 1.3293, z: -0.5513, color: "#99bbff", size: 1.5, distFromSun_ly: 2000, constellation: "orion" },
+    { name: "Alnitak",       type: "O9.5Ib + B1IV · Orion's Belt (east) · Triple star system · 1,260 ly away · Illuminates the Flame Nebula and sits right next to the Horsehead Nebula", dist: 27112, angle: 1.3178, z: -0.3579, color: "#99bbff", size: 1.4, distFromSun_ly: 1260, constellation: "orion" },
+    { name: "Saiph",         type: "B0.5Ia Blue Supergiant · Orion's left foot · 650 ly away · 57,500× solar luminosity · Looks dimmer than Rigel only because most of its light is in ultraviolet", dist: 26553, angle: 1.3082, z: -0.2644, color: "#99bbff", size: 1.4, distFromSun_ly: 650, constellation: "orion" },
+    // --- Gemini (The Twins) ---
+    { name: "Castor",        type: "A1V+A2V Sextuple star system · 6 stars masquerading as one · Only 51 ly away · The 'mortal twin' — each pair is a binary, and the three pairs orbit each other", dist: 26045, angle: 1.3004, z: 0.0207, color: "#ddeeff", size: 1.6, distFromSun_ly: 51, constellation: "gemini" },
+    { name: "Pollux",        type: "K0III Orange Giant · Closest giant star to Earth at 34 ly · Has a confirmed exoplanet (Pollux b) · The 'immortal twin' — brighter than Castor despite being β Geminorum", dist: 26031, angle: 1.3002, z: 0.0127, color: "#ffcc77", size: 1.7, distFromSun_ly: 34, constellation: "gemini", planets: [{ name: "Pollux b (Thestias)", note: "Jupiter-mass planet, 1.6 AU orbit, discovered 2006 via radial velocity" }] },
+    { name: "Alhena",        type: "A0IV Subgiant · Gemini's feet · 109 ly away · Where the twins' bodies converge · Name means 'the brand' in Arabic", dist: 26107, angle: 1.3008, z: 0.0038, color: "#ccddff", size: 1.3, distFromSun_ly: 109, constellation: "gemini" },
+    { name: "Mebsuta",       type: "G8Ib Yellow Supergiant · 840 ly away · 8,500× solar luminosity · Part of Castor's twin line · 150× the Sun's radius", dist: 26788, angle: 1.3073, z: 0.2174, color: "#ffdd88", size: 1.3, distFromSun_ly: 840, constellation: "gemini" },
+    { name: "Tejat",         type: "M3III Red Giant · 230 ly away · Pulsating variable star · One of the legs of the twins · Also called Tejat Posterior", dist: 26222, angle: 1.3020, z: 0.0320, color: "#ff8855", size: 1.2, distFromSun_ly: 230, constellation: "gemini" },
+    { name: "Mekbuda",       type: "G0Ib-II Cepheid Variable · 1,170 ly away · Pulsates every 10.15 days · Used as a cosmic distance marker · One of the nearest classical Cepheids", dist: 27139, angle: 1.3074, z: 0.1830, color: "#ffdd66", size: 1.2, distFromSun_ly: 1170, constellation: "gemini" },
+    { name: "Wasat",         type: "F0IV Subgiant · 59 ly away · Name means 'the middle' · A binary star with a faint 8th-magnitude companion · Pluto was discovered near this star in 1930", dist: 26056, angle: 1.3004, z: 0.0143, color: "#eeddcc", size: 1.1, distFromSun_ly: 59, constellation: "gemini" },
+    // --- Big Dipper (Ursa Major asterism) ---
+    { name: "Dubhe",         type: "K0III Orange Giant + F0V companion · 124 ly · The 'pointer star' — draw a line through Dubhe and Merak to find Polaris · Name means 'bear' in Arabic", dist: 26055, angle: 1.2989, z: 0.1074, color: "#ffbb66", size: 1.5, distFromSun_ly: 124, constellation: "bigdipper" },
+    { name: "Merak",         type: "A1V Main Sequence · 80 ly · The other pointer star · 63× solar luminosity · Part of the Ursa Major Moving Group — most Dipper stars travel through space together", dist: 26040, angle: 1.2991, z: 0.0647, color: "#ccddff", size: 1.3, distFromSun_ly: 80, constellation: "bigdipper" },
+    { name: "Phecda",        type: "A0V Main Sequence · 84 ly · Bowl's bottom-left corner · Another Ursa Major Moving Group member · 65× solar luminosity", dist: 26038, angle: 1.2988, z: 0.0680, color: "#ccddff", size: 1.2, distFromSun_ly: 84, constellation: "bigdipper" },
+    { name: "Megrez",        type: "A3V Main Sequence · 81 ly · Where handle meets bowl · Faintest of the 7 Dipper stars · Only 14× solar luminosity", dist: 26031, angle: 1.2990, z: 0.0701, color: "#ccddff", size: 1.1, distFromSun_ly: 81, constellation: "bigdipper" },
+    { name: "Alioth",        type: "A1III-IV Peculiar · 81 ly · Brightest star in Ursa Major · Magnetic field varies with a 5.1-day period · Handle start", dist: 26027, angle: 1.2990, z: 0.0715, color: "#ddeeff", size: 1.4, distFromSun_ly: 81, constellation: "bigdipper" },
+    { name: "Mizar",         type: "A2V + A1V Binary · 78 ly · Famous naked-eye double with Alcor · First telescopic binary ever resolved (1617) · First spectroscopic binary ever discovered (1889)", dist: 26024, angle: 1.2989, z: 0.0689, color: "#ddeeff", size: 1.3, distFromSun_ly: 78, constellation: "bigdipper" },
+    { name: "Alkaid",        type: "B3V Main Sequence · 104 ly · Handle tip · NOT a Moving Group member — it moves independently · 3rd brightest in Ursa Major · Name means 'leader of the daughters of the bier'", dist: 26028, angle: 1.2983, z: 0.0901, color: "#aabbff", size: 1.3, distFromSun_ly: 104, constellation: "bigdipper" },
+    // --- Cassiopeia (The W) ---
+    { name: "Segin",         type: "B3III Blue Giant · 430 ly · Leftmost star of the W · Slowly pulsating B star · In one of the richest Milky Way star fields", dist: 26211, angle: 1.2857, z: 0.0075, color: "#aabbff", size: 1.2, distFromSun_ly: 430, constellation: "cassiopeia" },
+    { name: "Ruchbah",       type: "A5IV-V Subgiant · 100 ly · Eclipsing binary · Brightness dips every 2 years when its companion passes in front · The W's first dip", dist: 26053, angle: 1.2967, z: -0.0052, color: "#ddeeff", size: 1.2, distFromSun_ly: 100, constellation: "cassiopeia" },
+    { name: "Gamma Cas",     type: "B0.5IVe Subgiant · 550 ly · Center peak of the W · Violent Be star that throws off gas shells unpredictably · X-ray mystery source · Spins so fast it's nearly tearing itself apart", dist: 26319, angle: 1.2829, z: 0.0096, color: "#aaccff", size: 1.5, distFromSun_ly: 550, constellation: "cassiopeia" },
+    { name: "Schedar",       type: "K0IIIa Orange Giant · 230 ly · The W's second dip · Brightest in Cassiopeia · Name means 'the breast' in Arabic · 500× solar luminosity", dist: 26142, angle: 1.2931, z: -0.0080, color: "#ffbb66", size: 1.4, distFromSun_ly: 230, constellation: "cassiopeia" },
+    { name: "Caph",          type: "F2III Giant · 55 ly · Rightmost of the W · Delta Scuti variable — pulsates every 2.5 hours · One of the nearest constellation stars", dist: 26036, angle: 1.2984, z: 0.0010, color: "#ffeedd", size: 1.3, distFromSun_ly: 55, constellation: "cassiopeia" },
+    // --- Cygnus (The Northern Cross) ---
+    { name: "Sadr",          type: "F8Iab Yellow Supergiant · 1,800 ly · Center of the Northern Cross · Surrounded by a huge emission nebula (IC 1318) · 33,000× solar luminosity", dist: 25749, angle: 1.2311, z: 0.0628, color: "#ffeedd", size: 1.4, distFromSun_ly: 1800, constellation: "cygnus" },
+    { name: "Gienah Cyg",    type: "K0III Orange Giant · 72 ly · Left wing of the Swan · Not to be confused with Gienah in Corvus · Means 'the wing' in Arabic", dist: 25979, angle: 1.2974, z: 0.0025, color: "#ffbb66", size: 1.2, distFromSun_ly: 72, constellation: "cygnus" },
+    { name: "Delta Cyg",     type: "B9.5III + F1V Binary · 165 ly · Right wing of the Swan · Blue-white primary with a yellowish companion · Forms the crossbar with Gienah", dist: 25992, angle: 1.2937, z: 0.0058, color: "#ccddff", size: 1.2, distFromSun_ly: 165, constellation: "cygnus" },
+    { name: "Albireo",       type: "K3II + B8V · 430 ly · The most beautiful double star in the sky · Gold and blue pair visible in any small telescope · Foot of the Cross / head of the Swan", dist: 25929, angle: 1.2837, z: -0.0375, color: "#ffcc44", size: 1.4, distFromSun_ly: 430, constellation: "cygnus" },
+    // --- Scorpius (The Scorpion) ---
+    { name: "Graffias",      type: "B1V + B2V Binary · 400 ly · Head of the Scorpion · One of the claws · Both components are hot blue-white stars", dist: 25628, angle: 1.3031, z: 0.1236, color: "#aabbff", size: 1.3, distFromSun_ly: 400, constellation: "scorpius" },
+    { name: "Dschubba",      type: "B0.3IV Subgiant · 400 ly · Forehead of the Scorpion · Be star with a gas disk · Unexpectedly brightened in 2000 — still not fully understood", dist: 25620, angle: 1.3023, z: 0.1103, color: "#aabbff", size: 1.3, distFromSun_ly: 400, constellation: "scorpius" },
+    { name: "Antares",       type: "M1.5Iab Red Supergiant · 550 ly · Heart of the Scorpion · 700× solar radius · Rival of Mars (Anti-Ares) in redness · Has a blue companion hidden in its glare · Will go supernova", dist: 25470, angle: 1.3037, z: 0.1144, color: "#ff4422", size: 2.2, distFromSun_ly: 550, constellation: "scorpius", desc: "The red heart of the Scorpion. 700× the Sun's radius — if placed at the Sun it would extend past Mars's orbit (hence the name 'rival of Mars'). A red supergiant only 12 million years old but already in its death throes. Has a hidden blue companion star, Antares B, that's nearly impossible to see in the red supergiant's glare. When it goes supernova (within a million years), it will be visible in daylight. The Scorpion's most important star — ancient navigators used it to mark the seasons." },
+    { name: "Epsilon Sco",   type: "K1III Orange Giant · 65 ly · Tail begins here · Close enough to see its orange color easily with the naked eye · One of the nearest Scorpius stars", dist: 25937, angle: 1.3005, z: 0.0068, color: "#ffaa55", size: 1.2, distFromSun_ly: 65, constellation: "scorpius" },
+    { name: "Sargas",        type: "F1II Bright Giant · 270 ly · Tail curve · Unusually hot for its type · One of the most luminous F-type stars known · Means 'the sting' in Sumerian", dist: 25738, angle: 1.3025, z: 0.0047, color: "#ffeedd", size: 1.3, distFromSun_ly: 270, constellation: "scorpius" },
+    { name: "Shaula",        type: "B2IV + B Subgiants · 570 ly · Tail tip — the stinger · 2nd brightest in Scorpius · Actually a triple star system · Name means 'the raised tail'", dist: 25446, angle: 1.3050, z: -0.0298, color: "#aabbff", size: 1.5, distFromSun_ly: 570, constellation: "scorpius" },
+    // --- Southern Cross (Crux) ---
+    { name: "Acrux",         type: "B0.5IV + B1V Triple · 320 ly · Bottom of the Cross · Brightest in Crux · On 5 national flags · The southernmost first-magnitude star", dist: 25842, angle: 1.3107, z: -0.0167, color: "#aabbff", size: 1.5, distFromSun_ly: 320, constellation: "crux" },
+    { name: "Mimosa",        type: "B0.5III Blue Giant · 280 ly · Left arm of the Cross · Beta Crucis · Pulsating variable (Beta Cephei type) · 34,000× solar luminosity", dist: 25874, angle: 1.3096, z: 0.0049, color: "#aabbff", size: 1.4, distFromSun_ly: 280, constellation: "crux" },
+    { name: "Gacrux",        type: "M3.5III Red Giant · 89 ly · Top of the Cross · Closest red giant to Earth in Crux · Striking color contrast with the blue stars below", dist: 25956, angle: 1.3030, z: 0.0078, color: "#ff7744", size: 1.4, distFromSun_ly: 89, constellation: "crux" },
+    { name: "Imai",          type: "B2IV Blue Subgiant · 345 ly · Right arm of the Cross · Delta Crucis · Variable star · Completes the famous four-star asterism", dist: 25814, angle: 1.3112, z: 0.0060, color: "#aabbff", size: 1.3, distFromSun_ly: 345, constellation: "crux" },
+    // --- Taurus (The Bull) ---
+    { name: "Aldebaran",     type: "K5III Orange Giant · 65 ly · Eye of the Bull · 14th brightest star · 44× solar diameter · Appears to sit in the Hyades cluster but is actually half the distance · Name means 'the follower' (follows the Pleiades)", dist: 26064, angle: 1.3000, z: -0.0113, color: "#ff8833", size: 1.8, distFromSun_ly: 65, constellation: "taurus" },
+    { name: "Elnath",        type: "B7III Blue Giant · 134 ly · Tip of the northern horn · Shared with Auriga · 700× solar luminosity · One of the few stars on the border of two constellations", dist: 26134, angle: 1.2997, z: -0.0070, color: "#aabbff", size: 1.4, distFromSun_ly: 134, constellation: "taurus" },
+    { name: "Zeta Tau",      type: "B4IIIpe Blue Giant · 440 ly · Tip of the southern horn · Near the Crab Nebula (M1) — the remnant of the 1054 supernova that Chinese astronomers recorded", dist: 26436, angle: 1.3017, z: -0.0383, color: "#aabbff", size: 1.3, distFromSun_ly: 440, constellation: "taurus" },
+    { name: "Theta Tau",     type: "G7III + A7III Binary · 155 ly · Hyades cluster member · The V-point of the bull's face · A naked-eye double with different colors", dist: 26151, angle: 1.3000, z: -0.0349, color: "#ffcc77", size: 1.2, distFromSun_ly: 155, constellation: "taurus" },
+    { name: "Ain",           type: "K0III Orange Giant · 155 ly · The Bull's other eye · Has an exoplanet! (Ain b) · Part of the Hyades cluster · Name means 'the eye' in Arabic", dist: 26153, angle: 1.3000, z: -0.0242, color: "#ffaa55", size: 1.2, distFromSun_ly: 155, constellation: "taurus", planets: [{ name: "Ain b", note: "Jupiter-mass, discovered 2007" }] },
+    // --- Canis Major (The Great Dog) ---
+    { name: "Mirzam",        type: "B1II-III Blue Giant · 500 ly · The Announcer — rises just before Sirius · Beta CMa · Pulsating variable · Name means 'the herald'", dist: 26314, angle: 1.3146, z: -0.0696, color: "#aabbff", size: 1.3, distFromSun_ly: 500, constellation: "canismajor" },
+    { name: "Wezen",         type: "F8Ia Yellow Supergiant · 1,800 ly · 50,000× solar luminosity · One of the most luminous stars visible to the naked eye · Will go supernova · Name means 'the weight'", dist: 26981, angle: 1.3557, z: -0.3126, color: "#ffeedd", size: 1.4, distFromSun_ly: 1800, constellation: "canismajor" },
+    { name: "Adhara",        type: "B2Iab Blue Supergiant · 430 ly · 2nd brightest in Canis Major · 22,000× solar luminosity · Was the brightest star in the sky 4.7 million years ago when it was closer", dist: 26229, angle: 1.3133, z: -0.1113, color: "#aabbff", size: 1.4, distFromSun_ly: 430, constellation: "canismajor" },
+    { name: "Aludra",        type: "B5Ia Blue Supergiant · 2,000 ly · Tail of the Dog · 66,000× solar luminosity · Losing mass rapidly via stellar wind · Will likely explode as a supernova", dist: 26974, angle: 1.3641, z: -0.4158, color: "#aabbff", size: 1.3, distFromSun_ly: 2000, constellation: "canismajor" },
+    { name: "Deneb",          type: "A2Ia Supergiant · 200,000× solar luminosity · 2,600 ly away yet still one of brightest in our sky · Tail of Cygnus the Swan · If it were as close as Sirius it would cast shadows at night",   dist: 25679, angle: 1.2014, z: 0.4067, color: "#ddeeff", size: 1.8, distFromSun_ly: 2600, constellation: "cygnus" },
     { name: "Eta Carinae",    type: "LBV Hypergiant · 5 million × solar luminosity",   dist: 18500, angle: 1.10, z: -0.01, color: "#ffaa55", size: 2.5, distFromSun_ly: 7500, desc: "A ticking cosmic bomb. 5 million times the Sun's luminosity, 100+ solar masses, and deeply unstable. The Great Eruption of 1843 briefly made it the 2nd brightest star in the sky — it ejected 10 solar masses of gas that now forms the Homunculus Nebula around it. It's a binary system where both stars are massive enough to go supernova. When it finally blows (could be any century now), it may produce a hypernova or even a gamma-ray burst. Fortunately we're not in the firing line." },
     { name: "Cygnus X-1",    type: "Stellar Black Hole · 21 solar masses",        dist: 19900, angle: 1.20, z: 0.01, color: "#8866cc", size: 2.0, distFromSun_ly: 6100, desc: "The first widely accepted black hole. 21 solar masses of collapsed star, invisible except for the X-rays screaming off the accretion disk as it devours its companion star HDE 226868. Settled a famous bet between Stephen Hawking and Kip Thorne — Hawking bet against it being a black hole (he lost, and paid up with a magazine subscription). Discovered in 1964, confirmed over the following decades. The companion star is a blue supergiant being slowly stripped of its outer layers. A cosmic crime scene in real time." },
     { name: "UY Scuti",      type: "Red Supergiant · 1,700× solar radius · If placed at the Sun it would extend past Jupiter's orbit · Light takes 5 hours to travel around it · Basically a very diffuse, very confused gas cloud", dist: 20700, angle: 0.95, z: 0.0, color: "#ff4422", size: 2.8, distFromSun_ly: 5100 },
@@ -799,6 +884,7 @@ class Star {
     this.credit = data.credit || "";
     this.planets = data.planets || null;
     this.distFromSun_ly = data.distFromSun_ly;
+    this.constellation = data.constellation || null;
 
     if (data.x !== undefined) {
       this.position = new Vec3(data.x, data.z || 0, data.y || 0);
@@ -1125,6 +1211,47 @@ class Navigator {
       this.targetPitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, this.targetPitch));
       this.lastMouse = { x: e.clientX, y: e.clientY };
     });
+
+    // === TOUCH SUPPORT (mobile) ===
+    let _pinchDist = 0;
+    this.dom.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) {
+        this.dragging = true;
+        this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      } else if (e.touches.length === 2) {
+        this.dragging = false;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        _pinchDist = Math.sqrt(dx * dx + dy * dy);
+      }
+    }, { passive: true });
+
+    this.dom.addEventListener('touchmove', e => {
+      e.preventDefault();
+      if (e.touches.length === 1 && this.dragging) {
+        const dx = e.touches[0].clientX - this.lastMouse.x;
+        const dy = e.touches[0].clientY - this.lastMouse.y;
+        this.targetYaw -= dx * 0.004;
+        this.targetPitch -= dy * 0.004;
+        this.targetPitch = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, this.targetPitch));
+        this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      } else if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (_pinchDist > 0) {
+          const factor = _pinchDist / dist;
+          this.smoothZoom = Math.max(this.minDist, Math.min(this.maxDist, this.smoothZoom * factor));
+        }
+        _pinchDist = dist;
+      }
+    }, { passive: false });
+
+    this.dom.addEventListener('touchend', () => {
+      this.dragging = false;
+      _pinchDist = 0;
+    }, { passive: true });
+
     // Scroll behavior:
     //   Two-finger up/down (or mouse wheel) → zoom in/out
     //   Two-finger left/right               → strafe horizontally
@@ -1387,6 +1514,10 @@ class Galaxy {
     this._addSun();
     this.layers.sun = [this.sunMesh];
 
+    // Constellation lines
+    this.layers.constellation = [];
+    this._addConstellations();
+
     // Subtle galactic plane
     this.layers.plane = [];
     this._addPlaneHint();
@@ -1468,6 +1599,148 @@ class Galaxy {
     this.sunMesh.add(pRing);
 
     this.scene.add(this.sunMesh);
+  }
+
+  _addConstellations() {
+    const findPos = (name) => {
+      const s = this.stars.find(st => st.name === name);
+      return s ? s.position.toThree() : null;
+    };
+
+    const lineMat = new THREE.LineBasicMaterial({
+      color: 0x5588cc, transparent: true, opacity: 0.6, depthWrite: false
+    });
+
+    // Define all constellations
+    const constellations = [
+      { id: 'orion', label: 'O R I O N', lines: [
+        ['Betelgeuse', 'Bellatrix'],   // shoulders
+        ['Betelgeuse', 'Alnitak'],     // left shoulder to belt
+        ['Bellatrix', 'Mintaka'],      // right shoulder to belt
+        ['Mintaka', 'Alnilam'],        // belt
+        ['Alnilam', 'Alnitak'],        // belt
+        ['Alnitak', 'Saiph'],          // belt to left foot
+        ['Mintaka', 'Rigel'],          // belt to right foot
+      ]},
+      { id: 'gemini', label: 'G E M I N I', lines: [
+        ['Castor', 'Pollux'],          // heads
+        ['Castor', 'Mebsuta'],        // right twin torso
+        ['Mebsuta', 'Tejat'],         // right twin leg
+        ['Tejat', 'Alhena'],          // right twin to feet
+        ['Pollux', 'Wasat'],          // left twin torso
+        ['Wasat', 'Mekbuda'],         // left twin leg
+        ['Mekbuda', 'Alhena'],        // left twin to feet
+      ]},
+      { id: 'bigdipper', label: 'B I G   D I P P E R', lines: [
+        ['Dubhe', 'Merak'],           // bowl right
+        ['Merak', 'Phecda'],          // bowl bottom
+        ['Phecda', 'Megrez'],         // bowl left
+        ['Megrez', 'Dubhe'],          // bowl top (close the bowl)
+        ['Megrez', 'Alioth'],         // handle start
+        ['Alioth', 'Mizar'],          // handle middle
+        ['Mizar', 'Alkaid'],          // handle tip
+      ]},
+      { id: 'cassiopeia', label: 'C A S S I O P E I A', lines: [
+        ['Segin', 'Ruchbah'],         // W shape segment 1
+        ['Ruchbah', 'Gamma Cas'],     // W shape segment 2
+        ['Gamma Cas', 'Schedar'],     // W shape segment 3
+        ['Schedar', 'Caph'],          // W shape segment 4
+      ]},
+      { id: 'cygnus', label: 'C Y G N U S', lines: [
+        ['Deneb', 'Sadr'],            // neck (shaft top)
+        ['Sadr', 'Albireo'],          // neck to tail (shaft bottom)
+        ['Gienah Cyg', 'Sadr'],       // left wing to center
+        ['Sadr', 'Delta Cyg'],        // center to right wing
+      ]},
+      { id: 'scorpius', label: 'S C O R P I U S', lines: [
+        ['Graffias', 'Dschubba'],     // claws to head
+        ['Dschubba', 'Antares'],      // head to heart
+        ['Antares', 'Epsilon Sco'],   // body
+        ['Epsilon Sco', 'Sargas'],    // tail curve
+        ['Sargas', 'Shaula'],         // stinger
+      ]},
+      { id: 'crux', label: 'S O U T H E R N   C R O S S', lines: [
+        ['Acrux', 'Gacrux'],          // vertical bar
+        ['Mimosa', 'Imai'],           // horizontal bar
+      ]},
+      { id: 'taurus', label: 'T A U R U S', lines: [
+        ['Aldebaran', 'Ain'],         // eye to face
+        ['Ain', 'Elnath'],            // face to north horn tip
+        ['Ain', 'Zeta Tau'],          // face to south horn tip
+        ['Theta Tau', 'Aldebaran'],   // Hyades to eye
+      ]},
+      { id: 'canismajor', label: 'C A N I S   M A J O R', lines: [
+        ['Sirius', 'Mirzam'],         // nose to front leg
+        ['Sirius', 'Wezen'],          // nose to body
+        ['Wezen', 'Adhara'],          // body to hind leg
+        ['Wezen', 'Aludra'],          // body to tail
+      ]},
+    ];
+
+    // Draw each constellation
+    const allCentroids = [];
+    for (const c of constellations) {
+      // Lines
+      for (const [a, b] of c.lines) {
+        const pa = findPos(a), pb = findPos(b);
+        if (!pa || !pb) continue;
+        const geom = new THREE.BufferGeometry().setFromPoints([pa, pb]);
+        const line = new THREE.Line(geom, lineMat);
+        line.visible = false;
+        this.scene.add(line);
+        this.layers.constellation.push(line);
+      }
+
+      // Label at centroid — dynamically sized, smaller to reduce overlap
+      const cStars = this.stars.filter(s => s.constellation === c.id);
+      if (cStars.length > 0) {
+        const cx = cStars.reduce((s, st) => s + st.position.x, 0) / cStars.length;
+        const cy = cStars.reduce((s, st) => s + st.position.y, 0) / cStars.length;
+        const cz = cStars.reduce((s, st) => s + st.position.z, 0) / cStars.length;
+
+        const can = document.createElement('canvas');
+        const ctx = can.getContext('2d');
+        ctx.font = 'bold 22px sans-serif';
+        const tw = Math.max(128, Math.ceil(ctx.measureText(c.label).width) + 20);
+        can.width = tw; can.height = 36;
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillStyle = '#5588cc';
+        ctx.textAlign = 'center';
+        ctx.fillText(c.label, tw / 2, 26);
+        const tex = new THREE.CanvasTexture(can);
+        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0.7 });
+        const label = new THREE.Sprite(mat);
+        const aspect = tw / 36;
+        label.scale.set(0.7 * aspect * 0.14, 0.7 * 0.14, 1);
+        label.position.set(cx, cy + 0.12, cz);
+        label.visible = false;
+        label.userData.constellationLabel = true;
+        label.userData.centroid = new THREE.Vector3(cx, cy, cz);
+        this.scene.add(label);
+        this.layers.constellation.push(label);
+
+        allCentroids.push(new THREE.Vector3(cx, cy, cz));
+      }
+    }
+
+    // Store per-constellation centroids for fly-to buttons
+    this._constellationCentroids = {};
+    for (const c of constellations) {
+      const cStars = this.stars.filter(s => s.constellation === c.id);
+      if (cStars.length > 0) {
+        this._constellationCentroids[c.id] = new THREE.Vector3(
+          cStars.reduce((s, st) => s + st.position.x, 0) / cStars.length,
+          cStars.reduce((s, st) => s + st.position.y, 0) / cStars.length,
+          cStars.reduce((s, st) => s + st.position.z, 0) / cStars.length
+        );
+      }
+    }
+    // Combined centroid for general constellation view
+    if (allCentroids.length > 0) {
+      this._constellationCenter = new THREE.Vector3();
+      for (const c of allCentroids) this._constellationCenter.add(c);
+      this._constellationCenter.divideScalar(allCentroids.length);
+    }
   }
 
   _addSectorOverlay() {
@@ -2230,6 +2503,38 @@ class App {
       }
     });
 
+    // === TOUCH: tap to select, double-tap to fly-to ===
+    let _lastTapTime = 0, _tapTimeout = null;
+    this.renderer.domElement.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) {
+        mouseDownPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+    }, { passive: true });
+
+    this.renderer.domElement.addEventListener('touchend', e => {
+      if (e.changedTouches.length !== 1) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - mouseDownPos.x;
+      const dy = t.clientY - mouseDownPos.y;
+      if (Math.sqrt(dx * dx + dy * dy) > 12) return; // was a drag
+
+      const now = Date.now();
+      const cx = t.clientX, cy = t.clientY;
+
+      if ((now - _lastTapTime) < 300) {
+        // Double-tap → fly to star
+        clearTimeout(_tapTimeout);
+        _lastTapTime = 0;
+        this.renderer.domElement.dispatchEvent(new MouseEvent('dblclick', { clientX: cx, clientY: cy, bubbles: true }));
+      } else {
+        // Single tap → select star (delayed to rule out double-tap)
+        _lastTapTime = now;
+        _tapTimeout = setTimeout(() => {
+          this.renderer.domElement.dispatchEvent(new MouseEvent('click', { clientX: cx, clientY: cy, bubbles: true }));
+        }, 300);
+      }
+    }, { passive: true });
+
     // Hover detection
     const hoverMouse = new THREE.Vector2();
     const hoverRaycaster = new THREE.Raycaster();
@@ -2283,12 +2588,45 @@ class App {
         const objs = this.galaxy.layers[layerName] || [];
         for (const obj of objs) {
           obj.visible = visible;
-          // For groups, also toggle children
           if (obj.isGroup) {
             obj.traverse(child => { child.visible = visible; });
           }
         }
+        // Show/hide constellation buttons when constellation checkbox toggles
+        if (layerName === 'constellation') {
+          document.getElementById('constellation-btns').style.display = visible ? 'block' : 'none';
+        }
       });
+    });
+
+    // Constellation fly-to buttons
+    document.querySelectorAll('.const-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.const;
+        const center = this.galaxy._constellationCentroids[id];
+        if (!center) return;
+
+        // Ensure constellations are visible
+        const cb = document.getElementById('layer-constellation');
+        if (!cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change')); }
+
+        // Fly camera to Sol's perspective looking at this constellation
+        const sunPos = this.galaxy.sunPosition.toThree();
+        const d = sunPos.distanceTo(center);
+        this.nav.flyTo(center, d);
+        this.nav.targetYaw = Math.atan2(sunPos.x - center.x, sunPos.z - center.z);
+        const dy = sunPos.y - center.y;
+        this.nav.targetPitch = Math.asin(Math.max(-0.8, Math.min(0.8, dy / d)));
+
+        // Highlight active button
+        document.querySelectorAll('.const-btn').forEach(b => {
+          b.style.borderColor = b === btn ? 'rgba(85,136,204,0.9)' : 'rgba(85,136,204,0.4)';
+          b.style.color = b === btn ? '#88bbff' : '#5588cc';
+        });
+      });
+
+      btn.addEventListener('mouseover', () => { btn.style.background = 'rgba(55,75,105,0.9)'; });
+      btn.addEventListener('mouseout', () => { btn.style.background = 'rgba(40,55,80,0.7)'; });
     });
 
     // Actual Size toggle — stars are points, space is empty
@@ -2456,6 +2794,14 @@ class App {
       if (e.key === '1') this._setFilterMode('all');
       if (e.key === '2') this._setFilterMode('planets');
       if (e.key === '3') this._setFilterMode('stars');
+
+      // O = toggle constellation lines on/off
+      if (k === 'o') {
+        const cb = document.getElementById('layer-constellation');
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+        return;
+      }
 
       // A = toggle Actual Size
       if (k === 'a') {
@@ -2729,6 +3075,18 @@ class App {
       const d = camPos.distanceTo(mesh.position);
       const s = Math.max(0.012, Math.min(1.0, Math.pow(d / 90, 0.7)));
       mesh.scale.setScalar(s);
+    }
+
+    // Fade constellation labels by distance — nearby labels are bright, distant ones dim
+    if (this.galaxy.layers.constellation) {
+      for (const obj of this.galaxy.layers.constellation) {
+        if (obj.isSprite && obj.userData.constellationLabel && obj.visible) {
+          const d = camPos.distanceTo(obj.userData.centroid);
+          // Fade: full at d<1, dim at d>5, hidden at d>10
+          const opacity = Math.max(0.08, Math.min(0.7, 1.0 - (d - 1.0) / 6.0));
+          obj.material.opacity = opacity;
+        }
+      }
     }
 
     // Pulse the Sun "You Are Here" ring

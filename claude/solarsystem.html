@@ -7,7 +7,7 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #000; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; color: #ccd; }
-canvas { display: block; }
+canvas { display: block; touch-action: none; }
 
 /* HUD - top left */
 #hud {
@@ -221,6 +221,17 @@ canvas { display: block; }
 #controls {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
   color: #334455; font-size: 14px; z-index: 5; pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  #hud { top: 10px; left: 10px; }
+  #hud > div:first-child { font-size: 14px !important; }
+  #layer-panel { bottom: 10px; right: 10px; max-width: 45vw; font-size: 12px; max-height: 50vh; overflow-y: auto; }
+  #help-btn { bottom: 10px; left: 10px; font-size: 16px; width: 32px; height: 32px; }
+  #zoom-bar { display: none; }
+  #photo-viewer { bottom: 50px; right: 10px; left: 10px; max-width: none; max-height: 50vh; }
+  #hover-tip { display: none; }
+  #help-overlay .help-box { width: 90vw; max-height: 80vh; padding: 16px; }
 }
 </style>
 </head>
@@ -1492,10 +1503,12 @@ class Navigator {
     }, { passive: false });
 
     // Touch support
-    let touchStartDist = 0, touchStartZoom = 0;
+    let touchStartDist = 0, touchStartZoom = 0, touchOrigin = { x: 0, y: 0 }, touchMoved = false;
     window.addEventListener('touchstart', e => {
       if (e.touches.length === 1) {
-        dragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+        dragging = true; touchMoved = false;
+        lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+        touchOrigin = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       } else if (e.touches.length === 2) {
         dragging = false;
         const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -1508,6 +1521,7 @@ class Navigator {
       e.preventDefault();
       if (e.touches.length === 1 && dragging) {
         const dx = e.touches[0].clientX - lastX, dy = e.touches[0].clientY - lastY;
+        if (Math.abs(dx) + Math.abs(dy) > 3) touchMoved = true;
         lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
         this.targetYaw -= dx * 0.005;
         this.targetPitch += dy * 0.005;
@@ -1533,7 +1547,27 @@ class Navigator {
         }
       }
     }, { passive: false });
-    window.addEventListener('touchend', () => { dragging = false; });
+    window.addEventListener('touchend', e => {
+      dragging = false;
+      // Tap / double-tap detection for mobile
+      if (e.changedTouches.length === 1 && !touchMoved) {
+        const t = e.changedTouches[0];
+        {
+          const now = Date.now();
+          const cx = t.clientX, cy = t.clientY;
+          if ((now - (this._lastTapTime || 0)) < 300) {
+            clearTimeout(this._tapTimeout);
+            this._lastTapTime = 0;
+            el.dispatchEvent(new MouseEvent('dblclick', { clientX: cx, clientY: cy, bubbles: true }));
+          } else {
+            this._lastTapTime = now;
+            this._tapTimeout = setTimeout(() => {
+              el.dispatchEvent(new MouseEvent('click', { clientX: cx, clientY: cy, bubbles: true }));
+            }, 300);
+          }
+        }
+      }
+    });
   }
 
   flyTo(position, dist, pitch) {
