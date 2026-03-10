@@ -2877,9 +2877,11 @@ class App {
     const descEl = document.getElementById('pv-desc');
     descEl.textContent = star.desc || '';
 
-    // planet buttons
+    // planet buttons — clean up previous
     const existingPlanets = pv.querySelector('.pv-planets');
     if (existingPlanets) existingPlanets.remove();
+    const existingBack = pv.querySelector('.pv-back-btn');
+    if (existingBack) existingBack.remove();
     if (star.planets && star.planets.length > 0) {
       this._selectedStar = star;
       const div = document.createElement('div');
@@ -2891,9 +2893,22 @@ class App {
         btn.onclick = () => {
           document.getElementById('pv-name').textContent = p.name;
           document.getElementById('pv-etym').textContent = '';
-          document.getElementById('pv-type').textContent = p.type;
-          descEl.textContent = p.sky ? p.sky.desc : '';
+          document.getElementById('pv-type').textContent = p.type || '';
+          descEl.textContent = p.sky ? p.sky.desc : (p.note || '');
           distEl.textContent = p.mass ? 'Mass: ' + p.mass + ' · Period: ' + p.period_days + ' days' : '';
+          // Show back button
+          let backBtn = pv.querySelector('.pv-back-btn');
+          if (!backBtn) {
+            backBtn = document.createElement('span');
+            backBtn.className = 'pv-planet-btn pv-back-btn';
+            backBtn.style.cssText = 'display:block;margin-top:6px;text-align:center;color:#7799bb;';
+            div.parentNode.insertBefore(backBtn, div);
+          }
+          backBtn.textContent = '\u2190 Back to ' + star.name;
+          backBtn.style.display = 'block';
+          backBtn.onclick = () => { this._showStarInfo(star); };
+          // Hide planet buttons while viewing planet
+          div.style.display = 'none';
         };
         div.appendChild(btn);
       });

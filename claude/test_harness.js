@@ -218,6 +218,33 @@ function testMilkyWay() {
     }
   }
 
+  // 10b. Planet popup navigation (back button)
+  section("MILKY WAY — Planet popup navigation");
+  // Stars with planets should have a working back-to-star flow
+  const starsWithPlanets = allStarNames.filter(name => {
+    const idx = html.indexOf(`name: "${name}"`);
+    if (idx < 0) return false;
+    const block = html.substring(idx, idx + 800);
+    return block.includes("planets:");
+  });
+  pass(`${starsWithPlanets.length} stars have planets`);
+
+  // Check that _showStarInfo creates a back button when switching to planet view
+  if (js.includes("pv-back-btn")) pass("Back button class (pv-back-btn) exists in JS");
+  else fail("No back button (pv-back-btn) in planet popup — can't return to star");
+
+  // Check that back button calls _showStarInfo to restore star view
+  if (js.includes("_showStarInfo(star)") && js.includes("Back to")) pass("Back button calls _showStarInfo to restore star view");
+  else fail("Back button doesn't restore star info");
+
+  // Check that back button gets cleaned up when showing a new star
+  if (js.includes("pv-back-btn") && js.includes(".remove()")) pass("Back button cleaned up on new star selection");
+  else fail("Back button not cleaned up — may stack on repeated planet views");
+
+  // Check that planet buttons get hidden when viewing planet detail
+  if (js.includes("div.style.display") && js.includes("'none'")) pass("Planet buttons hidden during planet detail view");
+  else fail("Planet buttons not hidden during planet detail — UI may be cluttered");
+
   // 11. Element IDs referenced in JS exist in HTML
   section("MILKY WAY — DOM element references");
   const idRefRe = /getElementById\(['"]([^'"]+)['"]\)/g;
