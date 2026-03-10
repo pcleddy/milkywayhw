@@ -245,6 +245,13 @@
   }
   .mode-btn:hover { color: #99aacc; background: rgba(60,80,120,0.2); }
   .mode-btn.active { color: #aaccff; background: rgba(60,90,140,0.4); }
+  .const-btn {
+    background: rgba(40,55,80,0.7); border: 1px solid rgba(85,136,204,0.4);
+    border-radius: 4px; padding: 3px 4px; color: #5588cc; font-size: 10px;
+    cursor: pointer; text-align: center; white-space: nowrap;
+  }
+  .const-btn:hover { background: rgba(60,80,120,0.8); color: #88bbee; }
+  .const-btn:active, .const-btn.active { background: rgba(60,90,140,0.5); color: #aaddff; }
 
   /* === MOBILE RESPONSIVE === */
   @media (max-width: 768px) {
@@ -311,16 +318,18 @@
   <div class="layer-row"><input type="checkbox" id="layer-sectors" checked data-layer="sectors"><label for="layer-sectors">Sector Grid (Z)</label></div>
   <div class="layer-row"><input type="checkbox" id="layer-coordgrid" data-layer="coordgrid"><label for="layer-coordgrid">Coord Grid (X)</label></div>
   <div class="layer-row"><input type="checkbox" id="layer-constellation" data-layer="constellation"><label for="layer-constellation">Constellations</label></div>
-  <div id="constellation-btns" style="display:none;padding:2px 0 4px 22px;">
-    <button class="const-btn" data-const="orion" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Orion</button>
-    <button class="const-btn" data-const="gemini" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Gemini</button>
-    <button class="const-btn" data-const="bigdipper" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Big Dipper</button>
-    <button class="const-btn" data-const="cassiopeia" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Cassiopeia</button>
-    <button class="const-btn" data-const="cygnus" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Cygnus</button>
-    <button class="const-btn" data-const="scorpius" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Scorpius</button>
-    <button class="const-btn" data-const="crux" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">S. Cross</button>
-    <button class="const-btn" data-const="taurus" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Taurus</button>
-    <button class="const-btn" data-const="canismajor" style="background:rgba(40,55,80,0.7);border:1px solid rgba(85,136,204,0.4);border-radius:4px;padding:2px 8px;color:#5588cc;font-size:11px;cursor:pointer;margin:1px 2px;">Canis Major</button>
+  <div id="constellation-btns" style="display:none;padding:4px 0 4px 18px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;">
+      <button class="const-btn" data-const="orion">Orion</button>
+      <button class="const-btn" data-const="gemini">Gemini</button>
+      <button class="const-btn" data-const="bigdipper">Big Dipper</button>
+      <button class="const-btn" data-const="cassiopeia">Cassiopeia</button>
+      <button class="const-btn" data-const="cygnus">Cygnus</button>
+      <button class="const-btn" data-const="scorpius">Scorpius</button>
+      <button class="const-btn" data-const="crux">S. Cross</button>
+      <button class="const-btn" data-const="taurus">Taurus</button>
+      <button class="const-btn" data-const="canismajor">Canis Maj.</button>
+    </div>
   </div>
   <div class="layer-row" style="margin-top:8px;border-top:1px solid rgba(60,80,120,0.2);padding-top:8px;"><input type="checkbox" id="actual-size-toggle"><label for="actual-size-toggle" style="color:#aa6644;">Actual Size (lol)</label></div>
 </div>
