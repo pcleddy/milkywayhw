@@ -489,13 +489,13 @@ const nav = {
             if (Math.abs(this.targetPitch - this._flyPitch) < 0.001) this._flyPitch = null;
         }
         this.distance += (this.smoothZoom - this.distance) * 0.08;
-        this.targetPitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, this.targetPitch));
         this.yaw += (this.targetYaw - this.yaw) * 0.12;
         this.pitch += (this.targetPitch - this.pitch) * 0.12;
         const cx = this.target.x + Math.cos(this.pitch) * Math.sin(this.yaw) * this.distance;
         const cy = this.target.y + Math.sin(this.pitch) * this.distance;
         const cz = this.target.z + Math.cos(this.pitch) * Math.cos(this.yaw) * this.distance;
         camera.position.set(cx, cy, cz);
+        camera.up.set(0, Math.cos(this.pitch) < 0 ? -1 : 1, 0);
         camera.lookAt(this.target);
     }
 };
@@ -874,7 +874,8 @@ window.addEventListener('mousemove', e => {
     if (dragging3d) {
         const dx = e.clientX - dragStart3d.x, dy = e.clientY - dragStart3d.y;
         if (Math.abs(dx) + Math.abs(dy) > 3) dragMoved3d = true;
-        nav.targetYaw -= dx * 0.004;
+        const flip = Math.cos(nav.targetPitch) < 0 ? -1 : 1;
+        nav.targetYaw -= dx * 0.004 * flip;
         nav.targetPitch += dy * 0.004;
         dragStart3d = {x: e.clientX, y: e.clientY};
     }
@@ -926,7 +927,8 @@ renderer.domElement.addEventListener('touchmove', e => {
     if (e.touches.length === 1 && dragging3d) {
         const dx = e.touches[0].clientX - dragStart3d.x, dy = e.touches[0].clientY - dragStart3d.y;
         if (Math.abs(dx) + Math.abs(dy) > 3) dragMoved3d = true;
-        nav.targetYaw -= dx * 0.005;
+        const flip = Math.cos(nav.targetPitch) < 0 ? -1 : 1;
+        nav.targetYaw -= dx * 0.005 * flip;
         nav.targetPitch += dy * 0.005;
         dragStart3d = {x: e.touches[0].clientX, y: e.touches[0].clientY};
     } else if (e.touches.length === 2) {
